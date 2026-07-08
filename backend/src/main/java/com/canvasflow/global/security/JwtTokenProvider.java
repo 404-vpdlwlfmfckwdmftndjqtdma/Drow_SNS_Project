@@ -1,6 +1,7 @@
 package com.canvasflow.global.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -11,8 +12,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 /**
- * JWT 발급/검증 담당. A(인증) 담당자가 구현.
- * TODO: access/refresh 토큰 발급, 파싱, 만료 검증 로직 작성
+ * JWT 발급/검증 담당.
  */
 @Component
 public class JwtTokenProvider {
@@ -34,7 +34,6 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(Long userId) {
-        // TODO: subject/claims 설계 후 구현
         Date now = new Date();
         return Jwts.builder()
                 .subject(String.valueOf(userId))
@@ -45,19 +44,37 @@ public class JwtTokenProvider {
     }
 
     public String createRefreshToken(Long userId) {
-        // TODO: 구현
-        return null;
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + refreshTokenExpirationMs))
+                .signWith(key)
+                .compact();
+    }
+
+    public long getRefreshTokenExpirationMs() {
+        return refreshTokenExpirationMs;
     }
 
     public Long getUserId(String token) {
-        Claims claims = Jwts.parser().verifyWith(key).build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return Long.valueOf(claims.getSubject());
+        return Long.valueOf(parseClaims(token).getSubject());
     }
 
     public boolean validateToken(String token) {
-        // TODO: 예외 처리 포함 검증 로직 구현
-        return true;
+        try {
+            parseClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }
