@@ -22,6 +22,15 @@ public class ContentAccessService {
     private final SubscriptionRepository subscriptionRepository;
 
     @Transactional(readOnly = true)
+    public boolean isSubscribedToUser(Long subscriberId, Long userId) {
+        if (subscriberId == null || userId == null) {
+            return false;
+        }
+        return subscriptionRepository.existsBySubscriberIdAndTargetTypeAndTargetIdAndStatus(
+                subscriberId, SubscriptionTargetType.USER, userId, SubscriptionStatus.ACTIVE);
+    }
+
+    @Transactional(readOnly = true)
     public boolean isLocked(ContentVisibility visibility, Long authorId, Long channelId, Long viewerId) {
         if (visibility == ContentVisibility.PUBLIC) {
             return false;
@@ -33,9 +42,7 @@ public class ContentAccessService {
             return false; // 작성자 본인은 항상 열람 가능
         }
 
-        boolean subscribedToAuthor = subscriptionRepository
-                .existsBySubscriberIdAndTargetTypeAndTargetIdAndStatus(
-                        viewerId, SubscriptionTargetType.USER, authorId, SubscriptionStatus.ACTIVE);
+        boolean subscribedToAuthor = isSubscribedToUser(viewerId, authorId);
 
         boolean subscribedToChannel = channelId != null && subscriptionRepository
                 .existsBySubscriberIdAndTargetTypeAndTargetIdAndStatus(

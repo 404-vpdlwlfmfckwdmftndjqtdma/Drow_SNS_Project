@@ -26,3 +26,7 @@ frontend/.turbo/
 # os
 .DS_Store
 Thumbs.db
+
+# local tool/cache files
+frontend/.claude/
+*.tsbuildinfo

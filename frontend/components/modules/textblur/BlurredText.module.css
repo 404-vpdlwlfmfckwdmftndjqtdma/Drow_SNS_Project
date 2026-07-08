@@ -1,0 +1,27 @@
+/* 비구독자에게 보이는 잠긴 구간: 내용은 이미 ● 이지만 시각적으로 블러 효과를 얹는다 */
+.locked {
+  filter: blur(3px);
+  background: var(--color-surface-container);
+  border-radius: 3px;
+  padding: 0 2px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.locked:hover {
+  filter: blur(2px);
+}
+
+/* 블러 필터의 영향을 받지 않도록 자물쇠는 별도 표시 */
+.lockIcon {
+  font-size: 0.8em;
+  margin-left: 2px;
+}
+
+/* 구독자에게 보이는 해제된 구간: 은은한 강조로 "유료 구간" 표시 */
+.unlocked {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-radius: 3px;
+  padding: 0 2px;
+}

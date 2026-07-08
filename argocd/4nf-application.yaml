@@ -1,0 +1,33 @@
+# ArgoCD Application — 4nf (backend + frontend)
+#
+# 이 파일은 "git에 올려두기만" 해서는 아무 일도 일어나지 않는다.
+# ArgoCD가 인식하려면 클러스터에 한 번 적용해야 한다:
+#   kubectl apply -f argocd/4nf-application.yaml
+#
+# 주의: 이 저장소는 현재 private 이므로, ArgoCD에 repo 자격증명이 등록돼 있어야
+#       source(k8s/)를 읽을 수 있다. (저장소를 public 전환하거나
+#       `argocd repo add` 로 자격증명 등록 필요)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: 4nf
+  namespace: argocd            # ArgoCD가 Application을 감시하는 네임스페이스
+spec:
+  project: default             # 기본 AppProject
+
+  source:
+    repoURL: https://github.com/404-vpdlwlfmfckwdmftndjqtdma/Drow_SNS_Project.git
+    targetRevision: main       # 워크플로가 이미지 태그를 커밋하는 브랜치
+    path: k8s                  # 4nf-backend.yaml / 4nf-frontend.yaml 위치
+
+  destination:
+    server: https://kubernetes.default.svc   # ArgoCD와 같은 클러스터(in-cluster)
+    namespace: lion-4nf                       # 배포 대상 네임스페이스 (이미 존재, DB 포함)
+
+  syncPolicy:
+    # main에 새 커밋이 들어오면 ArgoCD가 자동으로 sync.
+    automated:
+      prune: true      # git에서 삭제된 리소스는 클러스터에서도 제거
+      selfHeal: true   # 수동 변경을 git 상태로 되돌림
+    syncOptions:
+      - CreateNamespace=false  # lion-4nf 는 이미 있으므로 생성 안 함

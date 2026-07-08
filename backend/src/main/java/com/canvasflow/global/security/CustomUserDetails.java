@@ -1,6 +1,5 @@
 package com.canvasflow.global.security;
 
-import com.canvasflow.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,10 +11,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final User user;
+    private final Long userId;
+    private final String email;
+    private final String password;
 
     public Long getUserId() {
-        return user.getId();
+        return userId;
     }
 
     @Override
@@ -25,11 +26,11 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return user.getEmail();
+        return email;
     }
 }
