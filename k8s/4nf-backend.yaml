@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 4nf-backend
+  namespace: lion-4nf
+  labels:
+    app: 4nf-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: 4nf-backend
+  template:
+    metadata:
+      labels:
+        app: 4nf-backend
+    spec:
+      containers:
+        - name: 4nf-backend
+          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:b36ca7275e5822a344dae91ddabf1dcaa4f5d129
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            # --- DB 접속 (같은 네임스페이스의 postgres 서비스) ---
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "lion4nf"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            # --- 빈 DB이므로 첫 배포에 스키마 자동 생성 (application.yml의 none 오버라이드) ---
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+          # JWT_SECRET / CLOUDINARY_* 는 별도 Secret(4nf-secret)에서 주입 (값은 git에 없음)
+          envFrom:
+            - secretRef:
+                name: 4nf-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: 4nf-backend
+  namespace: lion-4nf
+  labels:
+    app: 4nf-backend
+spec:
+  selector:
+    app: 4nf-backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: 4nf-backend
+  namespace: lion-4nf
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    external-dns.alpha.kubernetes.io/target: viinac.iptime.org
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - 4nf-api.coder-han.com
+      secretName: 4nf-backend-tls
+  rules:
+    - host: 4nf-api.coder-han.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: 4nf-backend
+                port:
+                  number: 8080
