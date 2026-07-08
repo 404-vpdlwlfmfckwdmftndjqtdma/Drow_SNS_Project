@@ -1,0 +1,42 @@
+package com.canvasflow.domain.auth.controller;
+
+import com.canvasflow.domain.auth.dto.LoginRequest;
+import com.canvasflow.domain.auth.dto.ReissueRequest;
+import com.canvasflow.domain.auth.dto.SignupRequest;
+import com.canvasflow.domain.auth.dto.TokenResponse;
+import com.canvasflow.domain.auth.service.AuthService;
+import com.canvasflow.global.response.ApiResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RequiredArgsConstructor
+@RestController
+@RequestMapping("/api/v1/auth")
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/signup")
+    public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody SignupRequest request) {
+        authService.signup(request);
+        return ResponseEntity.ok(ApiResponse.ok("회원가입이 완료되었습니다.", null));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.login(request)));
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<ApiResponse<TokenResponse>> reissue(@Valid @RequestBody ReissueRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.reissue(request)));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("X-User-Id") Long userId) {
+        authService.logout(userId);
+        return ResponseEntity.ok(ApiResponse.ok("로그아웃되었습니다.", null));
+    }
+}

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: canvasflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: canvasflow
+      POSTGRES_USER: canvasflow
+      POSTGRES_PASSWORD: canvasflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - canvasflow-pg-data:/var/lib/postgresql/data
+
+volumes:
+  canvasflow-pg-data:
