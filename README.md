@@ -10,8 +10,8 @@
 
 | 분류 | 기술 |
 |------|------|
-| **Backend** | Spring Boot 4.1.0, Java 25, Gradle 9.6.1 |
-| **Frontend** | Next.js 16 (App Router), React 19, TypeScript |
+| **Backend** | Spring Boot 4.1.0, Java 21, Gradle 9.6.1 |
+| **Frontend** | Next.js 16 (App Router), React 19, TypeScript, CSS Modules |
 | **Database** | PostgreSQL 17 |
 | **인증** | Spring Security + JWT (MVP는 JWT만, 소셜로그인은 2차 확장) |
 | **이미지/영상** | Cloudinary (업로드·변환, 영상 최대 100MB) |
@@ -60,6 +60,17 @@ npm run dev
 ```
 
 프론트 환경변수는 `.env.local` 사용 (`.env.local.example` 참고).
+
+**스타일링** — Tailwind/CSS-in-JS 대신 **CSS Modules**(`*.module.css`) 사용. 디자인 토큰(색상/간격/radius/shadow)은 `styles/globals.css`의 CSS 변수로 정의되어 있고, 각 컴포넌트/페이지의 `.module.css` 안에서 `var(--토큰명)`으로 참조한다.
+
+```tsx
+// app/posts/page.tsx
+import styles from "./page.module.css";
+
+export default function PostListPage() {
+  return <main className={styles.container}>...</main>;
+}
+```
 
 ---
 
@@ -110,6 +121,7 @@ throw new CanvasflowException(ErrorCode.POST_NOT_FOUND); // 실패는 GlobalExce
 2. lib/api.ts 의 axios 인스턴스 사용 (토큰 자동 첨부)
 3. lib/image.ts 로 미디어 업로드 후 URL만 폼에 담기
 4. 페이지(app/**)/컴포넌트(components/**) 구현
+5. 스타일은 CSS Modules 사용 — 각 page.tsx / 컴포넌트와 같은 폴더에 동일한 이름의 *.module.css 를 두고 import
 ```
 
 ### 개발 모드 / 운영 모드
@@ -179,7 +191,11 @@ canvasFlow/
     │   ├── auth.ts        # 토큰 저장/삭제
     │   ├── image.ts       # Cloudinary 업로드 (서버 경유)
     │   └── constants.ts
+    ├── styles/globals.css # 디자인 토큰 (색상/간격/radius/shadow, CSS 변수)
     └── types/index.ts     # 공통 TypeScript 타입 (수정 전 팀원 공지)
+
+# 각 app/**/page.tsx, components/**/*.tsx 는 동일 폴더에 짝을 이루는
+# page.module.css / ComponentName.module.css 를 가진다 (CSS Modules).
 ```
 
 ---

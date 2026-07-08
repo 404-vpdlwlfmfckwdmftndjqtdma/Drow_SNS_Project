@@ -1,0 +1,25 @@
+.gate {
+  padding: var(--space-md);
+  border-radius: var(--radius);
+  text-align: center;
+  color: var(--color-on-surface-variant);
+}
+
+.gate[data-visibility="BLUR"] {
+  filter: blur(6px);
+  background: var(--color-surface-container);
+}
+
+.gate[data-visibility="BLACKBOX"] {
+  background: var(--color-on-surface);
+  color: var(--color-surface);
+}
+
+.gate[data-visibility="RESTRICTED"] {
+  background: var(--color-surface-container);
+  border: 1px dashed var(--color-outline);
+}
+
+.gate[data-visibility="PARTIAL"] {
+  background: linear-gradient(var(--color-surface-container-lowest), var(--color-surface-container));
+}

@@ -1,0 +1,30 @@
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-md) var(--container-margin);
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: var(--space-sm);
+}
+
+.meta {
+  display: flex;
+  gap: var(--space-sm);
+  color: var(--color-on-surface-variant);
+  font-size: 14px;
+  margin-bottom: var(--space-md);
+}
+
+.content {
+  line-height: 1.7;
+  margin-bottom: var(--space-lg);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}

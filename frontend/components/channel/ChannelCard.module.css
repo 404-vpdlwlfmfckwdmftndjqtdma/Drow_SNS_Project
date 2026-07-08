@@ -1,0 +1,17 @@
+.card {
+  padding: var(--space-md);
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 var(--space-xs);
+}
+
+.description {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+}
