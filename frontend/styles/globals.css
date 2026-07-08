@@ -1,33 +1,77 @@
-/* 디자인 토큰. 컴포넌트/페이지의 .module.css 안에서 var(--토큰명) 으로 사용한다. */
+/*
+ * 디자인 토큰 - Stitch 디자인(Creative Collaborative Nexus) 기준.
+ * 컴포넌트/페이지의 .module.css 안에서 var(--토큰명) 으로 참조한다.
+ */
 :root {
-  --color-primary: #6d28d9;
+  /* Brand colors */
+  --color-primary: #6b38d4;           /* Creative Purple */
   --color-on-primary: #ffffff;
-  --color-primary-container: #ede9fe;
+  --color-primary-container: #8455ef;
+  --color-on-primary-container: #fffbff;
 
-  --color-surface: #fafafa;
-  --color-surface-container: #f0eded;
-  --color-surface-container-lowest: #ffffff;
+  --color-secondary: #0058be;         /* Electric Blue */
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #2170e4;
+  --color-on-secondary-container: #fefcff;
 
-  --color-on-surface: #1b1c1c;
-  --color-on-surface-variant: #5b5b5b;
-  --color-outline: #90807d;
+  --color-tertiary: #994100;          /* Dynamic Orange */
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #c05400;
+  --color-on-tertiary-container: #fffbff;
+
   --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
 
+  /* Surfaces */
+  --color-background: #f7f9fb;
+  --color-on-background: #191c1e;
+  --color-surface: #f7f9fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #eceef0;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-container-highest: #e0e3e5;
+
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #494454;
+  --color-outline: #7b7486;
+  --color-outline-variant: #cbc3d7;
+
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, #6b38d4 0%, #0058be 100%);
+
+  /* Radius (matches Stitch tailwind config: DEFAULT/lg/xl/full) */
   --radius-sm: 4px;
   --radius: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
 
+  /* Spacing (8px base unit) */
+  --space-base: 8px;
   --space-xs: 4px;
   --space-sm: 12px;
   --space-md: 24px;
-  --space-lg: 40px;
-  --container-margin: 20px;
+  --space-lg: 48px;
+  --space-xl: 80px;
   --gutter: 16px;
+  --margin-mobile: 16px;
+  --margin-desktop: 40px;
 
-  --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.05);
-  --shadow-floating: 0px 8px 24px rgba(0, 0, 0, 0.08);
+  /* Elevation */
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+  --glass-blur: blur(12px);
+
+  /* Typography */
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
 }
 
 * {
@@ -41,12 +85,110 @@ body {
 }
 
 body {
-  color: var(--color-on-surface);
-  background: var(--color-surface);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-on-background);
+  background: var(--color-background);
+  font-family: var(--font-body);
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* Typography scale (see creative_collaborative_nexus/DESIGN.md) */
+.text-display-lg { font-family: var(--font-display); font-size: 48px; line-height: 56px; font-weight: 700; letter-spacing: -0.02em; }
+.text-display-sm { font-family: var(--font-display); font-size: 32px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em; }
+.text-headline-lg { font-family: var(--font-display); font-size: 24px; line-height: 32px; font-weight: 600; }
+.text-headline-lg-mobile { font-family: var(--font-display); font-size: 20px; line-height: 28px; font-weight: 600; }
+.text-body-lg { font-family: var(--font-body); font-size: 18px; line-height: 28px; font-weight: 400; }
+.text-body-md { font-family: var(--font-body); font-size: 16px; line-height: 24px; font-weight: 400; }
+.text-label-md { font-family: var(--font-body); font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0.05em; }
+.text-writing-canvas { font-family: var(--font-body); font-size: 20px; line-height: 32px; font-weight: 400; letter-spacing: -0.01em; }
+
+/* Brand gradient text (logo) */
+.brand-gradient-text {
+  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Glassmorphism overlay (nav bars, context menus) */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+}
+
+/* Content block elevation */
+.canvasShadow {
+  box-shadow: var(--shadow-card);
+}
+
+/* Presence pulse (collaborator online indicator) */
+@keyframes presencePulseGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(107, 56, 212, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(107, 56, 212, 0.7); }
+}
+.presencePulse {
+  animation: presencePulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Document "read more" fade */
+.textFade {
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}
+
+/* Heavy blur for locked/private content ("frosted window") */
+.contentRestrictionBlur {
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Redacted text block ("black-box" marker) */
+.redactionBlock {
+  background-color: var(--color-on-surface);
+  color: transparent;
+  user-select: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.redactionBlock:hover {
+  background-color: var(--color-on-surface-variant);
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-surface-container-highest); border-radius: 10px; }
+
+/* Material Symbols Outlined icon font (loaded via <link> in app/layout.tsx) */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+.material-symbols-outlined.filled {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
 }

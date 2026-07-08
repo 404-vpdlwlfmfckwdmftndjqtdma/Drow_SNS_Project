@@ -1,0 +1,12 @@
+.main {
+  padding-top: 64px;
+  padding-bottom: 80px;
+  min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+  .main {
+    padding-left: 256px;
+    padding-bottom: 0;
+  }
+}

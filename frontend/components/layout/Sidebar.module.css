@@ -1,0 +1,94 @@
+.sidebar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 64px;
+    height: calc(100vh - 64px);
+    width: 256px;
+    padding: var(--space-base);
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    z-index: 40;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.brandIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.brandSub {
+  font-size: 10px;
+  color: var(--color-on-surface-variant);
+}
+
+.nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: 0 var(--space-base);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  color: var(--color-on-surface-variant);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+
+.navItem:hover {
+  background: var(--color-surface-container-high);
+}
+
+.navItemActive {
+  composes: navItem;
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  font-weight: 700;
+}
+
+.footer {
+  margin-top: auto;
+  padding: var(--space-base);
+}
+
+.logoutItem {
+  composes: navItem;
+}
+
+.logoutItem:hover {
+  background: rgba(186, 26, 26, 0.1);
+  color: var(--color-error);
+}
