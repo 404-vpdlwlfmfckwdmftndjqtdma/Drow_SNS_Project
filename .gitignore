@@ -26,6 +26,9 @@ frontend/.turbo/
 # os
 .DS_Store
 Thumbs.db
+/backend/gradle/wrapper/gradle-wrapper.jar
+/backend/gradlew
+/backend/gradlew.bat
 
 # local tool/cache files
 frontend/.claude/

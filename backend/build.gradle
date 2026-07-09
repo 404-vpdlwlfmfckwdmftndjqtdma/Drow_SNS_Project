@@ -54,6 +54,9 @@ dependencies {
     // Media upload (Cloudinary)
     implementation 'com.cloudinary:cloudinary-http5:2.0.0'
 
+    // .env support for local dev (Spring Boot 4 auto-integration module)
+    developmentOnly 'me.paulschwarz:springboot4-dotenv:5.1.0'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
