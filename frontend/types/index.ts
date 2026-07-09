@@ -61,16 +61,6 @@ export interface PostDetail {
   createdAt: string;
 }
 
-// 수정 화면 hydration용 — GET /posts/{id}/edit 응답 (작성/수정 스토어에 통째로 채움)
-export interface PostEditData {
-  title: string;
-  content: string | null;
-  visibility: ContentVisibility;
-  tags?: string[];
-  /** 모듈별 확장 데이터. key = 백엔드 PostModule.key() */
-  extensions: Record<string, unknown>;
-}
-
 export interface Channel {
   id: number;
   ownerId: number;

@@ -39,9 +39,9 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
-            # --- 빈 DB이므로 첫 배포에 스키마 자동 생성 (application.yml의 none 오버라이드) ---
+            # --- JPA 자동 DDL 비활성화 ---
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-              value: "update"
+              value: "none"
           # JWT_SECRET / CLOUDINARY_* 는 별도 Secret(4nf-secret)에서 주입 (값은 git에 없음)
           envFrom:
             - secretRef:
