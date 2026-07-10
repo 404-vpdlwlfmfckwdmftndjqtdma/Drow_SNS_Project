@@ -22,6 +22,9 @@ spec:
           ports:
             - containerPort: 3000
           # NEXT_PUBLIC_API_URL 은 빌드 시점에 이미지에 박히므로 런타임 env 불필요
+      # 로컬 볼륨/노드 고정 요건 때문에 vm200 에 배치 고정
+      nodeSelector:
+        kubernetes.io/hostname: asus-vm200
 ---
 apiVersion: v1
 kind: Service
