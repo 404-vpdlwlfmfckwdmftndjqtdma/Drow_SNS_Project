@@ -7,7 +7,7 @@ export default function PostCard({ post }: { post: PostSummary }) {
     <article className={`${styles.card} ${post.locked ? styles.locked : ""}`}>
       <div className={styles.thumbnail} />
       <div className={styles.body}>
-        <h3 className={styles.title}>{post.title}</h3>
+        {/* TODO: title 없음 — 백엔드에 content만 있음, 카드에 뭘 보여줄지 확정되면 채우기 */}
         <div className={styles.meta}>
           {/* TODO: 좋아요/댓글/조회수 */}
         </div>
