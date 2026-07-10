@@ -1,15 +1,54 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import api from "@/lib/api";
 import styles from "./page.module.css";
 
 type PostType = "text" | "image" | "video";
 type Visibility = "public" | "subscribers" | "private";
 
-// 게시글 작성. TODO: MediaUploader 연동(lib/image.ts) 후 POST /api/v1/posts 호출
+// 프론트 표시용 값 -> 백엔드 ContentVisibility(PUBLIC/PRIVATE/LOCKED) 매핑
+const VISIBILITY_MAP: Record<Visibility, string> = {
+  public: "PUBLIC",
+  private: "PRIVATE",
+  subscribers: "LOCKED",
+};
+
+// 게시글 작성. TODO: MediaUploader 연동(lib/image.ts, 이미지/영상 첨부)은 아직 미구현 — 지금은 텍스트만 전송
 export default function NewPostPage() {
+  const router = useRouter();
   const [postType, setPostType] = useState<PostType>("text");
   const [visibility, setVisibility] = useState<Visibility>("public");
+  const [content, setContent] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // TODO: 로그인(JWT) 붙으면 X-User-Id 대신 Authorization 토큰 기반으로 전환
+  const handleSubmit = async () => {
+    if (!content.trim()) {
+      alert("내용을 입력해주세요.");
+      return;
+    }
+    const tags = tagsInput
+      .split("#")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+
+    setSubmitting(true);
+    try {
+      await api.post(
+        "/api/v1/posts",
+        { content, visibility: VISIBILITY_MAP[visibility], tags },
+        { headers: { "X-User-Id": 1 } }
+      );
+      router.push("/posts");
+    } catch {
+      alert("게시글 등록에 실패했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -43,7 +82,18 @@ export default function NewPostPage() {
           </div>
 
           <div data-panel="editor">
-            <textarea placeholder="무슨 생각을 하고 계신가요? 내용을 입력하세요..." />
+            <textarea
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="무슨 생각을 하고 계신가요? 내용을 입력하세요..."
+              value={content}
+            />
+
+            <input
+              onChange={(event) => setTagsInput(event.target.value)}
+              placeholder="태그를 #으로 구분해서 입력하세요 (예: #일상#그림)"
+              type="text"
+              value={tagsInput}
+            />
 
             {postType !== "text" && (
               <div data-panel="upload">
@@ -61,7 +111,7 @@ export default function NewPostPage() {
                 <button type="button"><span data-icon>alternate_email</span></button>
                 <button type="button"><span data-icon>tag</span></button>
               </div>
-              <span>0 / 2000 자</span>
+              <span>{content.length} / 2000 자</span>
             </div>
           </div>
         </div>
@@ -106,10 +156,9 @@ export default function NewPostPage() {
             )}
           </div>
 
-          {/* TODO: POST /api/v1/posts 호출 (visibility -> ContentVisibility 매핑: public=PUBLIC, subscribers=BLUR/RESTRICTED 등, private=RESTRICTED) */}
-          <button data-action="submit" type="button">
+          <button data-action="submit" disabled={submitting} onClick={handleSubmit} type="button">
             <span data-icon data-filled="true">send</span>
-            게시하기
+            {submitting ? "게시 중..." : "게시하기"}
           </button>
 
           <div data-panel="tip">
