@@ -1,7 +1,7 @@
 .container {
   max-width: 960px;
   margin: 0 auto;
-  padding: var(--space-md) var(--container-margin);
+  padding: var(--space-md) var(--margin-desktop);
 }
 
 .header {
@@ -29,13 +29,13 @@
 }
 
 .card {
-  border: 1px solid var(--color-border, #e5e5e5);
-  border-radius: 8px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius);
   padding: var(--space-sm);
 }
 
 .tag {
   margin-right: 4px;
   font-size: 12px;
-  color: var(--color-muted, #888);
+  color: var(--color-on-surface-variant);
 }
