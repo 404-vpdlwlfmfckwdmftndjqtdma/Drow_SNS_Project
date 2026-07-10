@@ -17,16 +17,19 @@ spec:
     spec:
       containers:
         - name: 4nf-frontend
-          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-frontend:83d7142ea61d9936117658a82befedc909598be0
+          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-frontend:e6dc9cef889a3038e824bf1ee166cd76d0b2eaaa
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
           # NEXT_PUBLIC_API_URL 은 빌드 시점에 이미지에 박히므로 런타임 env 불필요
+      # 로컬 볼륨/노드 고정 요건 때문에 vm200 에 배치 고정
+      nodeSelector:
+        kubernetes.io/hostname: asus-vm200
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: 4nf-frontend
+  name: nf-frontend   # Service 이름은 숫자로 시작 불가(DNS-1035) → 4 제외
   namespace: lion-4nf
   labels:
     app: 4nf-frontend
@@ -60,6 +63,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: 4nf-frontend
+                name: nf-frontend
                 port:
                   number: 3000
