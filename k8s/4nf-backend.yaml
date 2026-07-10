@@ -53,7 +53,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: 4nf-backend
+  name: nf-backend   # Service 이름은 숫자로 시작 불가(DNS-1035) → 4 제외
   namespace: lion-4nf
   labels:
     app: 4nf-backend
@@ -87,6 +87,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: 4nf-backend
+                name: nf-backend
                 port:
                   number: 8080
