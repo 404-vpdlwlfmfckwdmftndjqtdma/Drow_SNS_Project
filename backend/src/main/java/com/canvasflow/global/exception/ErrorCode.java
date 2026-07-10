@@ -27,6 +27,7 @@ public enum ErrorCode {
     // Post
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "POST_001", "게시글을 찾을 수 없습니다."),
     POST_MEDIA_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "POST_002", "첨부 가능한 파일 용량/개수를 초과했습니다."),
+    POST_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "POST_003", "게시글에 내용 또는 미디어가 하나 이상 필요합니다."),
 
     // Follow / Channel
     FOLLOW_NOT_FOUND(HttpStatus.NOT_FOUND, "FOLLOW_001", "팔로우 관계를 찾을 수 없습니다."),

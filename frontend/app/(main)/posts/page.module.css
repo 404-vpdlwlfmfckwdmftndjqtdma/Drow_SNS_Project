@@ -1,7 +1,7 @@
 .container {
   max-width: 960px;
   margin: 0 auto;
-  padding: var(--space-md) var(--container-margin);
+  padding: var(--space-md) var(--margin-desktop);
 }
 
 .header {
@@ -26,4 +26,16 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--gutter);
+}
+
+.card {
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius);
+  padding: var(--space-sm);
+}
+
+.tag {
+  margin-right: 4px;
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
 }
