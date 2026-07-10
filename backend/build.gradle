@@ -54,6 +54,9 @@ dependencies {
     // Media upload (Cloudinary)
     implementation 'com.cloudinary:cloudinary-http5:2.0.0'
 
+    // API docs (Swagger UI) - springdoc 3.x = Spring Boot 4 지원 라인
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
+
     // .env support for local dev (Spring Boot 4 auto-integration module)
     developmentOnly 'me.paulschwarz:springboot4-dotenv:5.1.0'
 
