@@ -185,6 +185,12 @@
   color: var(--color-on-surface-variant);
 }
 
+.errorText {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-error);
+}
+
 .submit {
   height: 48px;
   border-radius: var(--radius-md);

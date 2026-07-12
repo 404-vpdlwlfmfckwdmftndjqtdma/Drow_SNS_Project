@@ -1,12 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isLoggedIn } from "@/lib/auth";
 import styles from "./Header.module.css";
 
-// 상단 GNB. 로고 + 팔로잉/채널 탭 + 검색 + 알림/업로드/프로필.
+// 상단 GNB. 로고 + 팔로잉/채널 탭 + 검색 + 알림/업로드/프로필(로그인 시) 또는 로그인 링크(비로그인 시).
 export default function Header() {
   const pathname = usePathname();
+  // SSR에서는 항상 false로 시작하고, 마운트 후 실제 로그인 상태로 갱신한다 (localStorage는 클라이언트에만 존재).
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setLoggedIn(isLoggedIn());
+  }, [pathname]);
 
   return (
     <header className={`${styles.header} glass`}>
@@ -32,16 +40,24 @@ export default function Header() {
       </div>
 
       <div className={styles.right}>
-        <Link href="/notifications" className={styles.iconButton}>
-          <span className="material-symbols-outlined">notifications</span>
-        </Link>
-        <Link href="/posts/new" className={styles.uploadButton}>
-          업로드
-        </Link>
-        <Link href="/mypage" className={styles.avatar}>
-          {/* TODO: 로그인한 사용자 프로필 이미지로 교체 */}
-          <span className="material-symbols-outlined">account_circle</span>
-        </Link>
+        {loggedIn ? (
+          <>
+            <Link href="/notifications" className={styles.iconButton}>
+              <span className="material-symbols-outlined">notifications</span>
+            </Link>
+            <Link href="/posts/new" className={styles.uploadButton}>
+              업로드
+            </Link>
+            <Link href="/mypage" className={styles.avatar}>
+              {/* TODO: 로그인한 사용자 프로필 이미지로 교체 */}
+              <span className="material-symbols-outlined">account_circle</span>
+            </Link>
+          </>
+        ) : (
+          <Link href="/login" className={styles.loginLink}>
+            로그인
+          </Link>
+        )}
       </div>
     </header>
   );

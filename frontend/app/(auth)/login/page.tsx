@@ -1,10 +1,37 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 import Link from "next/link";
+import api from "@/lib/api";
+import { setTokens } from "@/lib/auth";
 import styles from "./page.module.css";
 
-// TODO: 이메일/비밀번호 폼 -> POST /api/v1/auth/login -> setTokens() -> 홈으로 리다이렉트
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      const { data } = await api.post("/api/v1/auth/login", { email, password });
+      const { accessToken, refreshToken } = data.data;
+      setTokens(accessToken, refreshToken);
+      router.push("/");
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
+      setError(message ?? "로그인에 실패했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <section className={styles.visual}>
@@ -32,10 +59,18 @@ export default function LoginPage() {
               <p className={styles.subtitle}>창작의 즐거움을 함께 나누는 커뮤니티에 다시 오신 것을 환영합니다.</p>
             </div>
 
-            <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+            <form className={styles.form} onSubmit={handleSubmit}>
               <div className={styles.field}>
                 <label className={styles.label} htmlFor="email">이메일 주소</label>
-                <input className={styles.input} id="email" type="email" placeholder="name@example.com" />
+                <input
+                  className={styles.input}
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
 
               <div className={styles.field}>
@@ -43,7 +78,15 @@ export default function LoginPage() {
                   <label className={styles.label} htmlFor="password">비밀번호</label>
                   <Link href="#" className={styles.forgotLink}>비밀번호를 잊으셨나요?</Link>
                 </div>
-                <input className={styles.input} id="password" type="password" placeholder="••••••••" />
+                <input
+                  className={styles.input}
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </div>
 
               <label className={styles.checkboxRow}>
@@ -51,9 +94,10 @@ export default function LoginPage() {
                 로그인 상태 유지
               </label>
 
-              {/* TODO: 로그인 성공 시 홈으로 이동 */}
-              <button className={styles.submit} type="submit">
-                로그인
+              {error && <p className={styles.errorText}>{error}</p>}
+
+              <button className={styles.submit} type="submit" disabled={submitting}>
+                {submitting ? "로그인 중..." : "로그인"}
                 <span className="material-symbols-outlined">arrow_forward</span>
               </button>
             </form>

@@ -1,10 +1,41 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 import Link from "next/link";
+import api from "@/lib/api";
 import styles from "./page.module.css";
 
-// TODO: 이름/이메일/비밀번호 폼 -> POST /api/v1/auth/signup -> 로그인 페이지로 이동
+// 이름 입력값은 백엔드 User 엔티티의 nickname(2~20자)에 대응된다.
 export default function RegisterPage() {
+  const router = useRouter();
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!agreed) {
+      setError("약관 및 정책에 동의해주세요.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api.post("/api/v1/auth/signup", { email, password, nickname });
+      router.push("/login");
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
+      setError(message ?? "회원가입에 실패했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <section className={styles.visual}>
@@ -32,24 +63,52 @@ export default function RegisterPage() {
               <p className={styles.subtitle}>창작의 즐거움을 함께 나누는 커뮤니티에 합류하세요.</p>
             </div>
 
-            <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+            <form className={styles.form} onSubmit={handleSubmit}>
               <div className={styles.field}>
                 <label className={styles.label} htmlFor="name">이름</label>
-                <input className={styles.input} id="name" type="text" placeholder="홍길동" />
+                <input
+                  className={styles.input}
+                  id="name"
+                  type="text"
+                  placeholder="홍길동"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  minLength={2}
+                  maxLength={20}
+                  required
+                />
               </div>
 
               <div className={styles.field}>
                 <label className={styles.label} htmlFor="email">이메일 주소</label>
-                <input className={styles.input} id="email" type="email" placeholder="name@example.com" />
+                <input
+                  className={styles.input}
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
 
               <div className={styles.field}>
                 <label className={styles.label} htmlFor="password">비밀번호</label>
-                <input className={styles.input} id="password" type="password" placeholder="••••••••" />
+                <input
+                  className={styles.input}
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
+                  maxLength={64}
+                  required
+                />
               </div>
 
               <label className={styles.checkboxRow}>
-                <input type="checkbox" />
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
                 <span>
                   <Link href="#" className={styles.forgotLink}>이용 약관</Link> 및{" "}
                   <Link href="#" className={styles.forgotLink}>개인정보 처리방침</Link>에 동의하며, CanvasFlow의
@@ -57,9 +116,10 @@ export default function RegisterPage() {
                 </span>
               </label>
 
-              {/* TODO: 회원가입 성공 시 로그인 페이지로 이동 */}
-              <button className={styles.submit} type="submit">
-                시작하기
+              {error && <p className={styles.errorText}>{error}</p>}
+
+              <button className={styles.submit} type="submit" disabled={submitting}>
+                {submitting ? "가입 중..." : "시작하기"}
                 <span className="material-symbols-outlined">arrow_forward</span>
               </button>
             </form>
