@@ -13,15 +13,15 @@ export default function RegisterPage() {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [agreed, setAgreed] = useState(false);
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!agreed) {
-      setError("약관 및 정책에 동의해주세요.");
+    if (password !== passwordConfirm) {
+      setError("비밀번호가 일치하지 않습니다.");
       return;
     }
     setSubmitting(true);
@@ -39,13 +39,8 @@ export default function RegisterPage() {
   return (
     <div className={styles.page}>
       <section className={styles.visual}>
-        <div className={styles.collabBadge}>
-          <div className={styles.avatarStack}>
-            <span />
-            <span />
-            <span />
-          </div>
-          <span className={styles.collabLabel}>3명이 작업 중</span>
+        <div className={styles.logoBadge}>
+          <span className={styles.logoText}>CanvasFlow</span>
         </div>
         <div className={styles.brandPanel}>
           <h2 className={styles.brandTitle}>
@@ -107,14 +102,20 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <label className={styles.checkboxRow}>
-                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-                <span>
-                  <Link href="#" className={styles.forgotLink}>이용 약관</Link> 및{" "}
-                  <Link href="#" className={styles.forgotLink}>개인정보 처리방침</Link>에 동의하며, CanvasFlow의
-                  커뮤니티 가이드라인을 준수합니다.
-                </span>
-              </label>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="passwordConfirm">비밀번호 확인</label>
+                <input
+                  className={styles.input}
+                  id="passwordConfirm"
+                  type="password"
+                  placeholder="••••••••"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  minLength={8}
+                  maxLength={64}
+                  required
+                />
+              </div>
 
               {error && <p className={styles.errorText}>{error}</p>}
 

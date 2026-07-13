@@ -32,9 +32,13 @@ public class UserService {
 
     @Transactional
     public UserResponse updateNickname(Long userId, UpdateNicknameRequest request) {
-        // TODO: 닉네임 중복 검증(userRepository.existsByNickname) 추가
         User user = getUserOrThrow(userId);
-        user.changeNickname(request.nickname());
+        String newNickname = request.nickname();
+        // 현재 닉네임과 동일하면(변경 없음) 중복 검증을 건너뛴다 — 안 그러면 본인 닉네임 때문에 항상 막힘.
+        if (!newNickname.equals(user.getNickname()) && userRepository.existsByNickname(newNickname)) {
+            throw new CanvasflowException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+        }
+        user.changeNickname(newNickname);
         return UserResponse.from(user);
     }
 

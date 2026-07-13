@@ -35,14 +35,6 @@ export default function LoginPage() {
   return (
     <div className={styles.page}>
       <section className={styles.visual}>
-        <div className={styles.collabBadge}>
-          <div className={styles.avatarStack}>
-            <span />
-            <span />
-            <span />
-          </div>
-          <span className={styles.collabLabel}>3명이 작업 중</span>
-        </div>
         <div className={styles.brandPanel}>
           <h2 className={styles.brandTitle}>
             함께 그리는 상상, <span>창의력의 흐름.</span>
@@ -76,7 +68,7 @@ export default function LoginPage() {
               <div className={styles.field}>
                 <div className={styles.labelRow}>
                   <label className={styles.label} htmlFor="password">비밀번호</label>
-                  <Link href="#" className={styles.forgotLink}>비밀번호를 잊으셨나요?</Link>
+                  <Link href="/forgot-password" className={styles.forgotLink}>비밀번호를 잊으셨나요?</Link>
                 </div>
                 <input
                   className={styles.input}
@@ -88,11 +80,6 @@ export default function LoginPage() {
                   required
                 />
               </div>
-
-              <label className={styles.checkboxRow}>
-                <input type="checkbox" />
-                로그인 상태 유지
-              </label>
 
               {error && <p className={styles.errorText}>{error}</p>}
 
