@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { logout } from "@/lib/authActions";
 import styles from "./Sidebar.module.css";
 
 // TODO: 데모용 고정 id(1) -> 실제로는 팔로우 중인 채널 목록/추천에서 진입
@@ -21,6 +22,12 @@ function isActive(pathname: string, href: string): boolean {
 // 데스크톱 좌측 레일 네비게이션. 로고/스튜디오 정보 + 4개 메뉴 + 로그아웃.
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
 
   return (
     <aside className={`${styles.sidebar} glass`}>
@@ -47,8 +54,7 @@ export default function Sidebar() {
       </nav>
 
       <div className={styles.footer}>
-        {/* TODO: 로그아웃 API 연동 (POST /api/v1/auth/logout) */}
-        <button className={styles.logoutItem} type="button">
+        <button className={styles.logoutItem} type="button" onClick={handleLogout}>
           <span className="material-symbols-outlined">logout</span>
           <span>로그아웃</span>
         </button>
