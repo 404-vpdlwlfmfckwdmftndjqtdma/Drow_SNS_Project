@@ -4,7 +4,7 @@ import com.canvasflow.like.dto.LikeResponse;
 import com.canvasflow.like.entity.Like;
 import com.canvasflow.like.entity.LikeTargetType;
 import com.canvasflow.like.repository.LikeRepository;
-import com.canvasflow.user.service.UserService;
+import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LikeService {
 
     private final LikeRepository likeRepository;
-    private final UserService userService;
+    private final UserFacade userFacade;
     // TODO: NotificationService 주입 -> 좋아요 발생 시 대상 작성자에게 알림
 
     @Transactional
@@ -24,7 +24,7 @@ public class LikeService {
         if (likeRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId)) {
             throw new CanvasflowException(ErrorCode.ALREADY_LIKED);
         }
-        if (!userService.existsById(userId)) {
+        if (!userFacade.existsById(userId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
         likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());

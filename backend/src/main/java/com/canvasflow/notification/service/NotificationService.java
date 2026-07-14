@@ -3,7 +3,7 @@ package com.canvasflow.notification.service;
 import com.canvasflow.notification.entity.Notification;
 import com.canvasflow.notification.entity.NotificationType;
 import com.canvasflow.notification.repository.NotificationRepository;
-import com.canvasflow.user.service.UserService;
+import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final UserService userService;
+    private final UserFacade userFacade;
 
     @Transactional
     public void notify(Long receiverId, NotificationType type, String message, Long relatedId) {
-        if (!userService.existsById(receiverId)) {
+        if (!userFacade.existsById(receiverId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
         notificationRepository.save(Notification.builder()

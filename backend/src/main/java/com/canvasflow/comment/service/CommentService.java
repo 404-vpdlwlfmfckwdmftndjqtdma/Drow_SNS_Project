@@ -7,7 +7,7 @@ import com.canvasflow.comment.entity.Comment;
 import com.canvasflow.comment.repository.CommentRepository;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
-import com.canvasflow.user.service.UserService;
+import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 public class CommentService {
 
     private final CommentRepository commentRepository;
-    private final UserService userService;
+    private final UserFacade userFacade;
 
     @Transactional
     public CommentResponse create(Long userId, Long postId, CommentCreateRequest request) {
@@ -45,7 +45,7 @@ public class CommentService {
             }
         }
 
-        String writerNickname = userService.getNicknameOrThrow(userId);
+        String writerNickname = userFacade.getNicknameOrThrow(userId);
 
         Comment comment = commentRepository.save(Comment.builder()
                 .postId(postId)
@@ -87,7 +87,7 @@ public class CommentService {
     public CommentResponse update(Long commentId, Long userId, CommentUpdateRequest request) {
         Comment comment = getOwnedActiveComment(commentId, userId);
         comment.changeContent(request.content());
-        String nickname = userService.findNicknameById(userId);
+        String nickname = userFacade.findNicknameById(userId);
         return CommentResponse.of(comment, nickname, List.of());
     }
 
@@ -127,6 +127,6 @@ public class CommentService {
                 .map(Comment::getWriterId)
                 .distinct()
                 .toList();
-        return userService.findNicknamesByIds(writerIds);
+        return userFacade.findNicknamesByIds(writerIds);
     }
 }

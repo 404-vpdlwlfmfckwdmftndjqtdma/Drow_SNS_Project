@@ -1,7 +1,7 @@
 import styles from "./page.module.css";
 
-// 다른 사용자 프로필 + 팔로우/친구추가/채널참여 버튼 + 게시글 포트폴리오.
-// TODO: GET /api/v1/users/{id}, POST/DELETE /api/v1/follows/{id} 연동
+// 다른 사용자 프로필(= 구 "채널 상세") + 팔로우/친구추가 버튼 + 게시글 포트폴리오.
+// TODO: GET /api/v1/mypage/{id}(프로필+카운트), POST/DELETE /api/v1/follows/{id} 연동
 export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -44,11 +44,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
             <button className={styles.glassBtn} type="button">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
               친구 추가
-            </button>
-            {/* TODO: POST /api/v1/channels/{channelId}/members */}
-            <button className={styles.glassBtn} type="button">
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>forum</span>
-              채널 참여
             </button>
           </div>
         </div>

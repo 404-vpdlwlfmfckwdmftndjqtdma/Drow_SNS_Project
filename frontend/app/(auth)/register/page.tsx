@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,7 +28,7 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await api.post("/api/v1/auth/signup", { email, password, nickname });
-      router.push("/login");
+      setSuccess(true);
     } catch (err) {
       const message = axios.isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
       setError(message ?? "회원가입에 실패했습니다.");
@@ -53,82 +54,100 @@ export default function RegisterPage() {
       <section className={styles.formSide}>
         <div className={styles.formCenter}>
           <div className={styles.formInner}>
-            <div>
-              <h1 className={styles.title}>계정 만들기</h1>
-              <p className={styles.subtitle}>창작의 즐거움을 함께 나누는 커뮤니티에 합류하세요.</p>
-            </div>
-
-            <form className={styles.form} onSubmit={handleSubmit}>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="name">이름</label>
-                <input
-                  className={styles.input}
-                  id="name"
-                  type="text"
-                  placeholder="홍길동"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  minLength={2}
-                  maxLength={20}
-                  required
-                />
+            {success ? (
+              <div className={styles.successBox}>
+                <span className={`material-symbols-outlined ${styles.successIcon}`}>check_circle</span>
+                <h1 className={styles.title}>회원가입이 되었습니다</h1>
+                <p className={styles.subtitle}>이제 로그인하고 CanvasFlow를 시작해보세요.</p>
+                <div className={styles.successActions}>
+                  <button className={styles.submit} type="button" onClick={() => router.push("/login")}>
+                    로그인하러가기
+                  </button>
+                  <button className={styles.secondaryButton} type="button" onClick={() => router.push("/")}>
+                    메인으로 가기
+                  </button>
+                </div>
               </div>
+            ) : (
+              <>
+                <div>
+                  <h1 className={styles.title}>계정 만들기</h1>
+                  <p className={styles.subtitle}>창작의 즐거움을 함께 나누는 커뮤니티에 합류하세요.</p>
+                </div>
 
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="email">이메일 주소</label>
-                <input
-                  className={styles.input}
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+                <form className={styles.form} onSubmit={handleSubmit}>
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="name">이름</label>
+                    <input
+                      className={styles.input}
+                      id="name"
+                      type="text"
+                      placeholder="홍길동"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      minLength={2}
+                      maxLength={20}
+                      required
+                    />
+                  </div>
 
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="password">비밀번호</label>
-                <input
-                  className={styles.input}
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={8}
-                  maxLength={64}
-                  required
-                />
-              </div>
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="email">이메일 주소</label>
+                    <input
+                      className={styles.input}
+                      id="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
 
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="passwordConfirm">비밀번호 확인</label>
-                <input
-                  className={styles.input}
-                  id="passwordConfirm"
-                  type="password"
-                  placeholder="••••••••"
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                  minLength={8}
-                  maxLength={64}
-                  required
-                />
-              </div>
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="password">비밀번호</label>
+                    <input
+                      className={styles.input}
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      minLength={8}
+                      maxLength={64}
+                      required
+                    />
+                  </div>
 
-              {error && <p className={styles.errorText}>{error}</p>}
+                  <div className={styles.field}>
+                    <label className={styles.label} htmlFor="passwordConfirm">비밀번호 확인</label>
+                    <input
+                      className={styles.input}
+                      id="passwordConfirm"
+                      type="password"
+                      placeholder="••••••••"
+                      value={passwordConfirm}
+                      onChange={(e) => setPasswordConfirm(e.target.value)}
+                      minLength={8}
+                      maxLength={64}
+                      required
+                    />
+                  </div>
 
-              <button className={styles.submit} type="submit" disabled={submitting}>
-                {submitting ? "가입 중..." : "시작하기"}
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </form>
+                  {error && <p className={styles.errorText}>{error}</p>}
 
-            <p className={styles.footerText}>
-              이미 계정이 있으신가요?
-              <Link href="/login" className={styles.footerLink}>로그인</Link>
-            </p>
+                  <button className={styles.submit} type="submit" disabled={submitting}>
+                    {submitting ? "가입 중..." : "가입하기"}
+                    <span className="material-symbols-outlined">arrow_forward</span>
+                  </button>
+                </form>
+
+                <p className={styles.footerText}>
+                  이미 계정이 있으신가요?
+                  <Link href="/login" className={styles.footerLink}>로그인</Link>
+                </p>
+              </>
+            )}
           </div>
         </div>
 

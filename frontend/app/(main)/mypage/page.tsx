@@ -1,20 +1,43 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import api from "@/lib/api";
+import type { ApiResponse, User } from "@/types";
 import styles from "./page.module.css";
 
-// 마이페이지: 프로필 + 그림/문서/숏폼 탭 포트폴리오 + 팔로워/진행중 협업 사이드바.
-// TODO: GET /api/v1/mypage 로 요약 데이터, GET /api/v1/posts?authorId=me 로 포트폴리오 목록 연동
+// 마이페이지: 프로필(닉네임/소개/이미지는 실제 연동) + 그림/문서/숏폼 탭 포트폴리오 + 팔로워/진행중 협업 사이드바.
+// TODO: 팔로워/창작물/조회수 등 통계는 GET /api/v1/mypage 집계 API(2.1) 완성 후 연동, 포트폴리오 목록도 GET /api/v1/posts?authorId=me 로 연동
 export default function MyPage() {
+  const router = useRouter();
+  const [me, setMe] = useState<User | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<ApiResponse<User>>("/api/v1/users/me");
+        setMe(res.data.data);
+      } catch {
+        // 비로그인 등으로 실패하면 프로필 영역은 빈 상태로 둔다.
+      }
+    })();
+  }, []);
+
   return (
     <div className={styles.container}>
       <section className={styles.cover} />
 
       <div className={styles.profileRow}>
-        <div className={styles.avatarWrap}>
+        <div
+          className={styles.avatarWrap}
+          style={me?.profileImageUrl ? { backgroundImage: `url(${me.profileImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+        >
           <div className={styles.onlineDot} />
         </div>
         <div className={styles.profileInfo}>
-          <h1 className={styles.name}>이민수 (Minsoo Lee)</h1>
+          <h1 className={styles.name}>{me?.nickname ?? "불러오는 중..."}</h1>
           <p className={styles.bio}>
-            @minsoo_creates • 디지털 아트 &amp; 모션 디자이너 • 다양한 분야를 넘나드는 디자인으로 창의적인 영감을 나눕니다.
+            {me?.bio || "소개가 아직 없습니다."}
           </p>
           <div className={styles.stats}>
             <div>
@@ -33,14 +56,13 @@ export default function MyPage() {
             </div>
           </div>
           <div className={styles.actions}>
-            {/* TODO: /mypage/profile 로 이동 */}
-            <button className={styles.primaryBtn} type="button">
+            <button
+              className={styles.primaryBtn}
+              type="button"
+              onClick={() => router.push("/mypage/profile")}
+            >
               <span className="material-symbols-outlined filled" style={{ fontSize: 20 }}>edit</span>
               프로필 수정
-            </button>
-            <button className={styles.glassBtn} type="button">
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>settings</span>
-              설정
             </button>
           </div>
         </div>

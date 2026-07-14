@@ -39,12 +39,15 @@ public class User extends BaseTimeEntity {
         this.bio = bio;
     }
 
-    // TODO: 닉네임/프로필 이미지 수정 메서드 (changeNickname, changeProfileImage) 구현
     public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
 
     public void changeProfileImage(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public void changeBio(String bio) {
+        this.bio = bio;
     }
 }
