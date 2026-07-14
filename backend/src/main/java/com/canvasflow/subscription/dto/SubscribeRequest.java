@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record SubscribeRequest(
-        @NotNull SubscriptionTargetType targetType,
-        @NotNull Long targetId,
-        @NotBlank String tier
+        Long tierId   // null 이면 무료 구독(팔로우)
 ) {
 }

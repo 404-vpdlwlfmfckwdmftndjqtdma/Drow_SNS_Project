@@ -1,5 +1,8 @@
 package com.canvasflow.subscription.service;
 
+import com.canvasflow.purchase.PurchaseReader;
+import com.canvasflow.purchase.repository.PostPurchaseRepository;
+import com.canvasflow.subscription.entity.Subscription;
 import com.canvasflow.subscription.entity.SubscriptionStatus;
 import com.canvasflow.subscription.entity.SubscriptionTargetType;
 import com.canvasflow.subscription.repository.SubscriptionRepository;
@@ -9,45 +12,47 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 게시글 상세 조회 시 "구독 여부에 따라 콘텐츠를 다르게 표시"하는 핵심 판정 로직.
- * PostService.getDetail() 에서 이 서비스를 호출해 locked 여부를 받아
- * PostResponse.from(post, locked) 로 마스킹 처리한다.
- *
- * TODO: BLUR/BLACKBOX/PARTIAL 각 정책별 프론트 표현은 프론트에서 locked+visibility 조합으로 렌더링.
+ * 열람 권한 판정: 다음 중 하나면 열람 가능
+ *   1. 전체 공개 글 (requiredLevel = 0)
+ *   2. 본인 글
+ *   3. 채널 구독 등급이 요구 레벨 이상
+ *   4. 해당 게시물을 단건 구매함
  */
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ContentAccessService {
 
     private final SubscriptionRepository subscriptionRepository;
+    private final PurchaseReader purchaseReader;
 
-    @Transactional(readOnly = true)
-    public boolean isSubscribedToUser(Long subscriberId, Long userId) {
-        if (subscriberId == null || userId == null) {
-            return false;
-        }
-        return subscriptionRepository.existsBySubscriberIdAndTargetTypeAndTargetIdAndStatus(
-                subscriberId, SubscriptionTargetType.USER, userId, SubscriptionStatus.ACTIVE);
+    public boolean canView(Long viewerId, Long channelId, Long postId,
+                           Long authorId, int requiredLevel) {
+        if (requiredLevel <= 0) return true;               // 전체 공개
+        if (viewerId == null) return false;                // 비로그인
+        if (viewerId.equals(authorId)) return true;        // 본인 글
+
+        // 1) 채널 구독 등급 판정
+        int level = subscriptionRepository
+                .findBySubscriberIdAndChannelId(viewerId, channelId)
+                .map(Subscription::effectiveLevel)
+                .orElse(0);
+        if (level >= requiredLevel) return true;
+
+        // 2) 단건 구매 판정
+        return purchaseReader.hasPurchased(viewerId, postId);
     }
 
-    @Transactional(readOnly = true)
-    public boolean isLocked(ContentVisibility visibility, Long authorId, Long channelId, Long viewerId) {
-        if (visibility == ContentVisibility.PUBLIC) {
-            return false;
-        }
-        if (viewerId == null) {
-            return true;
-        }
-        if (viewerId.equals(authorId)) {
-            return false; // 작성자 본인은 항상 열람 가능
-        }
-
-        boolean subscribedToAuthor = isSubscribedToUser(viewerId, authorId);
-
-        boolean subscribedToChannel = channelId != null && subscriptionRepository
-                .existsBySubscriberIdAndTargetTypeAndTargetIdAndStatus(
-                        viewerId, SubscriptionTargetType.CHANNEL, channelId, SubscriptionStatus.ACTIVE);
-
-        return !(subscribedToAuthor || subscribedToChannel);
+    /**
+     * 피드 목록용: 채널 등급을 한 번만 구해서 재사용.
+     * 목록에서는 구매 여부까지 글마다 조회하면 N+1이 되므로,
+     * viewer가 구매한 postId 목록을 IN 쿼리로 한 번에 가져와 Set으로 비교할 것.
+     */
+    public int effectiveLevel(Long viewerId, Long channelId) {
+        if (viewerId == null) return 0;
+        return subscriptionRepository
+                .findBySubscriberIdAndChannelId(viewerId, channelId)
+                .map(Subscription::effectiveLevel)
+                .orElse(0);
     }
 }
