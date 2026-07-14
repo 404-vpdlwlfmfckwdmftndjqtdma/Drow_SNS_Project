@@ -20,6 +20,7 @@ public class PostController {
 
     private final PostService postService;
 
+    //게시글 등록
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createPost(@RequestHeader("X-User-Id") Long userId,
                                                   @RequestBody PostRequestDto postRequestDto) {
@@ -27,10 +28,41 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.ok(postEntity.getPostId()));
     }
 
+    // required = false: 비로그인 사용자도 피드는 봐야 하니까 헤더가 없어도 에러 내지 않고 viewerId=null로 받는다
+    //게시글 목록
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PostViewDto>>> getAllPosts() {
-        return ResponseEntity.ok(ApiResponse.ok(postService.getAllPosts()));
+    public ResponseEntity<ApiResponse<List<PostViewDto>>> getAllPosts(
+            @RequestHeader(value = "X-User-Id", required = false) Long viewerId) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.getAllPosts(viewerId)));
     }
+
+    //게시글 상세
+    @GetMapping("/{postId}")
+    public ResponseEntity<ApiResponse<PostViewDto>> getPost(
+            @RequestHeader(value = "X-User-Id", required = false) Long viewerId,
+            @PathVariable Long postId){
+        return ResponseEntity.ok(ApiResponse.ok(postService.getDetail(viewerId, postId)));
+    }
+
+    //게시글 수정
+    @PutMapping("/{postId}")
+    public ResponseEntity<ApiResponse<Void>> updatePost(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long postId,
+            @RequestBody PostRequestDto postRequestDto){
+        postService.updatePost(userId, postId, postRequestDto);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    //게시글 삭제
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<ApiResponse<Void>> deletePost(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long postId){
+        postService.deletePost(userId, postId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
 
 
 }

@@ -37,11 +37,6 @@
     "opsz" 24;
 }
 
-.container [data-icon][data-size="large"] {
-  font-size: 48px;
-  opacity: 0.4;
-}
-
 .container [data-icon][data-tone="primary"] {
   color: var(--color-primary);
 }
@@ -58,38 +53,6 @@
   }
 }
 
-.container [data-panel="type-selector"] {
-  background: var(--color-surface-container-lowest);
-  border-radius: var(--radius-lg);
-  padding: 6px;
-  display: flex;
-  gap: 4px;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--color-surface-container-high);
-  margin-bottom: var(--space-md);
-}
-
-.container [data-panel="type-selector"] button {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) 0;
-  border-radius: var(--radius-md);
-  border: none;
-  background: none;
-  color: var(--color-on-surface-variant);
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.container [data-panel="type-selector"] button[data-active="true"] {
-  background: var(--color-primary);
-  color: #fff;
-  font-weight: 700;
-}
-
 .container [data-panel="editor"] {
   background: var(--color-surface-container-lowest);
   border-radius: var(--radius-lg);
@@ -97,12 +60,14 @@
   min-height: 440px;
   display: flex;
   flex-direction: column;
+  gap: var(--space-md);
   box-shadow: var(--shadow-card);
   border: 1px solid var(--color-surface-container-high);
 }
 
 .container [data-panel="editor"] textarea {
   flex: 1;
+  min-height: 160px;
   border: none;
   resize: none;
   font-size: 20px;
@@ -113,55 +78,24 @@
   outline: none;
 }
 
-.container [data-panel="upload"] {
-  margin-top: var(--space-md);
-  border: 2px dashed var(--color-surface-container-highest);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+.container [data-char-count] {
+  align-self: flex-end;
+  font-size: 13px;
   color: var(--color-on-surface-variant);
-  cursor: pointer;
 }
 
-.container [data-panel="upload"] p:first-of-type {
-  font-weight: 700;
-}
-
-.container [data-panel="upload"] p:last-of-type {
+.tagsInput {
+  width: 100%;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-surface-container-high);
+  background: var(--color-surface-container-low);
   font-size: 14px;
-  opacity: 0.7;
 }
 
-.container [data-toolbar] {
-  margin-top: var(--space-lg);
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--color-surface-container-high);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.container [data-toolbar] > div {
-  display: flex;
-  gap: 4px;
-}
-
-.container [data-toolbar] button {
-  background: none;
-  border: none;
-  color: var(--color-on-surface-variant);
-  padding: var(--space-sm);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-}
-
-.container [data-toolbar] > span {
-  font-size: 14px;
-  color: var(--color-on-surface-variant);
+.tagsInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .container [data-panel="settings"] {
@@ -223,9 +157,9 @@
 .container [data-action="submit"] {
   width: 100%;
   padding: var(--space-md);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-full);
   border: none;
-  background: var(--gradient-brand);
+  background: var(--color-primary);
   color: #fff;
   font-weight: 700;
   font-size: 18px;
@@ -236,27 +170,18 @@
   cursor: pointer;
   box-shadow: var(--shadow-floating);
   margin-bottom: var(--space-md);
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.container [data-panel="tip"] {
-  background: rgba(107, 56, 212, 0.04);
-  border: 1px solid rgba(107, 56, 212, 0.1);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
+.container [data-action="submit"]:hover {
+  background: #5b2fb8;
 }
 
-.container [data-panel="tip"] p:first-child {
-  color: var(--color-primary);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin: 0 0 var(--space-sm);
+.container [data-action="submit"]:active {
+  transform: scale(0.98);
 }
 
-.container [data-panel="tip"] p:last-child {
-  color: var(--color-on-surface-variant);
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 0;
+.container [data-action="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

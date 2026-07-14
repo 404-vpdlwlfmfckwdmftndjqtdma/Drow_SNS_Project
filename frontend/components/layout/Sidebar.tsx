@@ -8,12 +8,11 @@ import { logout } from "@/lib/authActions";
 import Logo from "@/components/common/Logo";
 import styles from "./Sidebar.module.css";
 
-// TODO: 데모용 고정 id(1) -> 실제로는 팔로우 중인 채널 목록/추천에서 진입
 const NAV_ITEMS = [
   { href: "/posts", label: "피드", icon: "grid_view" },
   { href: "/mypage", label: "마이페이지", icon: "account_circle" },
   { href: "/mypage/follow", label: "친구", icon: "group" },
-  { href: "/channels/1", label: "채널", icon: "hub" },
+  { href: "/channels", label: "채널", icon: "hub" },
 ];
 
 function isActive(pathname: string, href: string): boolean {

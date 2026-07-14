@@ -1,11 +1,47 @@
 .uploader {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.dropzone {
+  margin-top: var(--space-md);
+  border: 2px dashed var(--color-surface-container-highest);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+}
+
+.dropzone[data-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropzone p:first-of-type {
+  font-weight: 700;
+}
+
+.dropzone p:last-of-type {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.previewList {
+  display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
-  padding: var(--space-md);
-  border: 1px dashed var(--color-outline);
-  border-radius: var(--radius);
-  background: var(--color-surface-container);
+}
+
+.previewItem {
+  position: relative;
+  width: 96px;
+  height: 96px;
 }
 
 .preview {
@@ -13,4 +49,20 @@
   height: 96px;
   border-radius: var(--radius);
   background: var(--color-surface-container-lowest);
+  object-fit: cover;
+}
+
+.removeButton {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-surface-container-highest);
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
 }
