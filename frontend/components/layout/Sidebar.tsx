@@ -5,47 +5,59 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import { logout } from "@/lib/authActions";
+import Logo from "@/components/common/Logo";
 import styles from "./Sidebar.module.css";
 
 const NAV_ITEMS = [
-  { href: "/", label: "피드", icon: "grid_view" },
+  { href: "/posts", label: "피드", icon: "grid_view" },
   { href: "/mypage", label: "마이페이지", icon: "account_circle" },
   { href: "/mypage/follow", label: "친구", icon: "group" },
   { href: "/channels", label: "채널", icon: "hub" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
+  if (href === "/posts") return pathname === "/posts" || pathname.startsWith("/posts/");
+  if (href.startsWith("/channels")) return pathname === "/channels" || pathname.startsWith("/channels/");
   return pathname === href;
 }
 
-// 데스크톱 좌측 레일 네비게이션. 로고/스튜디오 정보 + 4개 메뉴 + 로그인/로그아웃(하단, 로그인 상태에 따라 통일 표시).
+// 데스크톱 좌측 레일 네비게이션. 로고 + 4개 메뉴 + 로그인/로그아웃 토글.
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   // SSR에서는 항상 false로 시작하고, 마운트 후 실제 로그인 상태로 갱신한다 (localStorage는 클라이언트에만 존재).
   const [loggedIn, setLoggedIn] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
 
   useEffect(() => {
     setLoggedIn(isLoggedIn());
   }, [pathname]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    document.fonts.ready.then(() => {
+      if (mounted) {
+        setFontsReady(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    setLoggedIn(false);
+    router.push("/posts");
   };
 
   return (
-    <aside className={`${styles.sidebar} glass`}>
-      <div className={styles.brand}>
-        <div className={styles.brandIcon}>
-          <span className="material-symbols-outlined">palette</span>
-        </div>
-        <div>
-          <p className={styles.brandName}>크리에이티브 스튜디오</p>
-          <p className={styles.brandSub}>Collaborative Space</p>
-        </div>
-      </div>
+    <aside className={`${styles.sidebar} ${fontsReady ? styles.sidebarReady : ""} glass`}>
+      <Link href="/posts" className={styles.logo}>
+        <Logo />
+      </Link>
 
       <nav className={styles.nav}>
         {NAV_ITEMS.map((item) => {
@@ -66,7 +78,7 @@ export default function Sidebar() {
             <span>로그아웃</span>
           </button>
         ) : (
-          <Link href="/login" className={styles.logoutItem}>
+          <Link href="/login" className={styles.loginItem}>
             <span className="material-symbols-outlined">login</span>
             <span>로그인</span>
           </Link>

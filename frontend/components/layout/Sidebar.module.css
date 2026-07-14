@@ -1,51 +1,28 @@
 .sidebar {
-  display: none;
-}
-
-@media (min-width: 1024px) {
-  .sidebar {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    left: 0;
-    top: 64px;
-    height: calc(100vh - 64px);
-    width: 256px;
-    padding: var(--space-base);
-    border-right: 1px solid rgba(255, 255, 255, 0.3);
-    z-index: 40;
-  }
-}
-
-.brand {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 256px;
+  padding: var(--space-md) var(--space-base) var(--space-base);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  z-index: 40;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.brandIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--color-primary-container);
-  color: var(--color-on-primary-container);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.sidebarReady {
+  visibility: visible;
+  opacity: 1;
 }
 
-.brandName {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-on-surface);
-}
-
-.brandSub {
-  font-size: 10px;
-  color: var(--color-on-surface-variant);
+.logo {
+  display: block;
+  padding: var(--space-sm);
+  margin: 0 var(--space-base) var(--space-md);
 }
 
 .nav {
@@ -54,6 +31,7 @@
   flex-direction: column;
   gap: var(--space-xs);
   padding: 0 var(--space-base);
+  margin-top: var(--space-sm); /* 12px */
 }
 
 .navItem {
@@ -86,9 +64,28 @@
 
 .logoutItem {
   composes: navItem;
+  width: 100%;
 }
 
 .logoutItem:hover {
   background: rgba(186, 26, 26, 0.1);
   color: var(--color-error);
+}
+
+.loginItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-base);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  transition: opacity 0.15s ease;
+}
+
+.loginItem:hover {
+  opacity: 0.88;
 }

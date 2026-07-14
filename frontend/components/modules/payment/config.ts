@@ -7,5 +7,5 @@ export const TOSS_CLIENT_KEY =
 export const PAYMENT_SUCCESS_PATH = "/payment/success";
 export const PAYMENT_FAIL_PATH = "/payment/fail";
 
-// 결제를 시작한 CanvasFlow 페이지로 돌아가기 위한 세션 저장 키
-export const PAYMENT_RETURN_URL_KEY = "canvasflow_payment_return_url";
+// 결제를 시작한 4nf 페이지로 돌아가기 위한 세션 저장 키
+export const PAYMENT_RETURN_URL_KEY = "4nf_payment_return_url";

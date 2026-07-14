@@ -1,12 +1,6 @@
 .main {
-  padding-top: 64px;
-  padding-bottom: 80px;
+  /* 고정 헤더 제거 후 디자인용 상단 여백 */
+  padding-top: var(--space-md);
+  padding-left: 256px;
   min-height: 100vh;
-}
-
-@media (min-width: 1024px) {
-  .main {
-    padding-left: 256px;
-    padding-bottom: 0;
-  }
 }

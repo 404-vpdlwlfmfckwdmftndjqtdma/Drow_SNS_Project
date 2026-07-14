@@ -23,7 +23,7 @@ export default function LoginPage() {
       const { data } = await api.post("/api/v1/auth/login", { email, password });
       const { accessToken, refreshToken } = data.data;
       setTokens(accessToken, refreshToken);
-      router.push("/");
+      router.push("/posts");
     } catch (err) {
       const message = axios.isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
       setError(message ?? "로그인에 실패했습니다.");
