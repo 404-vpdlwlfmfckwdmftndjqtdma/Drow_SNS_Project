@@ -20,7 +20,7 @@ export default function Header() {
     <header className={`${styles.header} glass`}>
       <div className={styles.left}>
         <Link href="/" className={`${styles.logo} brand-gradient-text`}>
-          CanvasFlow
+          404 Not Found
         </Link>
         <nav className={styles.tabs}>
           <Link href="/" className={pathname === "/" ? styles.tabActive : styles.tab}>

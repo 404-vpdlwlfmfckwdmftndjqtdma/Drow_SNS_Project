@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "CanvasFlow",
+  title: "404 Not Found (4nf)",
   description: "그림·글·영상을 자유롭게 게시하고 소통하는 SNS",
 };
 

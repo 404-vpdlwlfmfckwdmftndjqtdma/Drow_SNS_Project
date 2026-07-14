@@ -12,7 +12,7 @@ import {
 interface PayButtonProps {
   amount: number; // 결제 금액 (원)
   orderName: string; // 주문명
-  returnUrl: string; // 결제 결과 확인 후 돌아갈 CanvasFlow 내부 경로
+  returnUrl: string; // 결제 결과 확인 후 돌아갈 4nf 내부 경로
   successUrl?: string; // 성공 시 이동할 절대 URL (기본: /payment/success)
   failUrl?: string; // 실패 시 이동할 절대 URL (기본: /payment/fail)
   children?: ReactNode; // 버튼 라벨 (기본: "결제하기")

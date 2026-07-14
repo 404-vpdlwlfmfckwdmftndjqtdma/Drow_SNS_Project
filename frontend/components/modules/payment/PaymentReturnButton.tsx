@@ -6,7 +6,7 @@ import styles from "./PaymentStatus.module.css";
 
 const FALLBACK_URL = "/";
 
-/** 토스 결제를 시작하기 직전에 저장한 CanvasFlow 페이지로 돌아간다. */
+/** 토스 결제를 시작하기 직전에 저장한 4nf 페이지로 돌아간다. */
 export default function PaymentReturnButton() {
   const router = useRouter();
 

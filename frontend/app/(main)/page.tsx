@@ -111,7 +111,7 @@ export default function HomePage() {
             <button type="button"><span className="material-symbols-outlined">share</span></button>
           </div>
           <p className={styles.caption}><strong>키네틱 유동성: 에피소드 4</strong></p>
-          <p className={styles.caption}>새로운 캔버스플로우 엔진을 사용한 실시간 액체 시뮬레이션입니다. 정말 놀랍네요.</p>
+          <p className={styles.caption}>새로운 4nf 엔진을 사용한 실시간 액체 시뮬레이션입니다. 정말 놀랍네요.</p>
         </div>
       </article>
     </div>

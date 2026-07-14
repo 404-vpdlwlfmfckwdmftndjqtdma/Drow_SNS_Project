@@ -16,7 +16,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         <div className={styles.profileInfo}>
           <h1 className={styles.name}>Elena Rivers</h1>
           <p className={styles.bio}>
-            다양한 분야를 넘나드는 디자이너로서 생성 예술과 인간 감정의 교차점을 탐구합니다. @캔버스플로우 콜렉티브의 수석 큐레이터입니다.
+            다양한 분야를 넘나드는 디자이너로서 생성 예술과 인간 감정의 교차점을 탐구합니다. @4nf 콜렉티브의 수석 큐레이터입니다.
             <span style={{ display: "none" }}>{id}</span>
           </p>
           <div className={styles.stats}>
