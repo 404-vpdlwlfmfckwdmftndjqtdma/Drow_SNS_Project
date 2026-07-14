@@ -2,21 +2,21 @@ package com.canvasflow.subscription.dto;
 
 import com.canvasflow.subscription.entity.Subscription;
 import com.canvasflow.subscription.entity.SubscriptionStatus;
-import com.canvasflow.subscription.entity.SubscriptionTargetType;
 
 public record SubscriptionResponse(
         Long id,
-        SubscriptionTargetType targetType,
-        Long targetId,
-        String tier,
+        Long channelId,
+        Long tierId,        // 무료 구독이면 null
+        String tierName,    // 무료 구독이면 null
         SubscriptionStatus status
 ) {
     public static SubscriptionResponse from(Subscription subscription) {
+        var tier = subscription.getTier();
         return new SubscriptionResponse(
                 subscription.getId(),
-                subscription.getTargetType(),
-                subscription.getTargetId(),
-                subscription.getTier(),
+                subscription.getChannelId(),
+                tier == null ? null : tier.getId(),
+                tier == null ? null : tier.getName(),
                 subscription.getStatus()
         );
     }
