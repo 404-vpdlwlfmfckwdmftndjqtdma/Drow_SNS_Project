@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { isLoggedIn } from "@/lib/auth";
 import { logout } from "@/lib/authActions";
 import styles from "./Sidebar.module.css";
 
@@ -19,27 +21,32 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href;
 }
 
-// 데스크톱 좌측 레일 네비게이션. 로고/스튜디오 정보 + 4개 메뉴 + 로그아웃.
+// 데스크톱 좌측 레일 네비게이션. 로고 + 4개 메뉴 + 로그인/로그아웃 토글.
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  // SSR에서는 항상 false로 시작하고, 마운트 후 실제 로그인 상태로 갱신한다 (localStorage는 클라이언트에만 존재).
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setLoggedIn(isLoggedIn());
+  }, [pathname]);
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    setLoggedIn(false);
+    router.push("/");
   };
 
   return (
     <aside className={`${styles.sidebar} glass`}>
-      <div className={styles.brand}>
-        <div className={styles.brandIcon}>
-          <span className="material-symbols-outlined">palette</span>
-        </div>
-        <div>
-          <p className={styles.brandName}>크리에이티브 스튜디오</p>
-          <p className={styles.brandSub}>Collaborative Space</p>
-        </div>
-      </div>
+      <Link href="/" className={styles.logo}>
+        <span className={styles.logoMark}>4NF</span>
+        <span className={styles.logoType}>
+          <span className={`${styles.logoTitle} brand-gradient-text`}>404</span>
+          <span className={styles.logoSub}>Not Found</span>
+        </span>
+      </Link>
 
       <nav className={styles.nav}>
         {NAV_ITEMS.map((item) => {
@@ -54,10 +61,17 @@ export default function Sidebar() {
       </nav>
 
       <div className={styles.footer}>
-        <button className={styles.logoutItem} type="button" onClick={handleLogout}>
-          <span className="material-symbols-outlined">logout</span>
-          <span>로그아웃</span>
-        </button>
+        {loggedIn ? (
+          <button className={styles.logoutItem} type="button" onClick={handleLogout}>
+            <span className="material-symbols-outlined">logout</span>
+            <span>로그아웃</span>
+          </button>
+        ) : (
+          <Link href="/login" className={styles.loginItem}>
+            <span className="material-symbols-outlined">login</span>
+            <span>로그인</span>
+          </Link>
+        )}
       </div>
     </aside>
   );

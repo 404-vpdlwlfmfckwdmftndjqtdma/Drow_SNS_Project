@@ -8,43 +8,58 @@
     flex-direction: column;
     position: fixed;
     left: 0;
-    top: 64px;
-    height: calc(100vh - 64px);
+    top: 0;
+    height: 100vh;
     width: 256px;
-    padding: var(--space-base);
+    padding: var(--space-md) var(--space-base) var(--space-base);
     border-right: 1px solid rgba(255, 255, 255, 0.3);
     z-index: 40;
   }
 }
 
-.brand {
+.logo {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
+  gap: 10px;
+  padding: var(--space-sm);
+  margin: 0 var(--space-base) var(--space-md);
 }
 
-.brandIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--color-primary-container);
-  color: var(--color-on-primary-container);
+.logoMark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(107, 56, 212, 0.35);
 }
 
-.brandName {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-on-surface);
+.logoType {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
 }
 
-.brandSub {
-  font-size: 10px;
+.logoTitle {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.logoSub {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
   color: var(--color-on-surface-variant);
 }
 
@@ -86,9 +101,28 @@
 
 .logoutItem {
   composes: navItem;
+  width: 100%;
 }
 
 .logoutItem:hover {
   background: rgba(186, 26, 26, 0.1);
   color: var(--color-error);
+}
+
+.loginItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-base);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  transition: opacity 0.15s ease;
+}
+
+.loginItem:hover {
+  opacity: 0.88;
 }

@@ -1,4 +1,3 @@
-import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import BottomNav from "@/components/layout/BottomNav";
 import styles from "./layout.module.css";
@@ -8,7 +7,6 @@ import styles from "./layout.module.css";
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Header />
       <Sidebar />
       <main className={styles.main}>{children}</main>
       <BottomNav />
