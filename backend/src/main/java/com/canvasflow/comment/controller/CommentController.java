@@ -3,6 +3,7 @@ package com.canvasflow.comment.controller;
 import com.canvasflow.comment.dto.CommentCreateRequest;
 import com.canvasflow.comment.dto.CommentResponse;
 import com.canvasflow.comment.dto.CommentUpdateRequest;
+import com.canvasflow.comment.dto.CommentCountResponse;
 import com.canvasflow.comment.service.CommentService;
 import com.canvasflow.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -41,6 +42,11 @@ public class CommentController {
             @RequestHeader(value = "X-User-Id", required = false) Long viewerId,
             @PathVariable Long postId, Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(commentService.getComments(postId, viewerId, pageable)));
+    }
+
+    @GetMapping("/api/v1/posts/{postId}/comments/count")
+    public ResponseEntity<ApiResponse<CommentCountResponse>> getCommentCount(@PathVariable Long postId) {
+        return ResponseEntity.ok(ApiResponse.ok(commentService.getCommentCount(postId)));
     }
 
     // 이 게시글의 댓글을 보고 있는 모든 클라이언트에게 생성/수정/삭제를 실시간으로 브로드캐스트한다.

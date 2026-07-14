@@ -22,4 +22,10 @@ public class PostReaderImpl implements PostReader {
         // TODO 단건 구매 가격 정책 확정 후 PostEntity에 singlePurchasePrice를 추가한다.
     }
 
+    @Override
+    public Optional<PostInfo> getPostInfo(Long postId) {
+        return postRepository.findById(postId)
+                .map(post -> new PostInfo(post.getUserId()));
+    }
+
 }

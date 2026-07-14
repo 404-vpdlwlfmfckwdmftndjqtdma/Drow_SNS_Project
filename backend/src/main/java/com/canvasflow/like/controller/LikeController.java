@@ -1,7 +1,7 @@
 package com.canvasflow.like.controller;
 
 import com.canvasflow.like.dto.LikeResponse;
-import com.canvasflow.like.entity.LikeTargetType;
+import com.canvasflow.like.LikeTargetType;
 import com.canvasflow.like.service.LikeService;
 import com.canvasflow.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;

@@ -11,5 +11,9 @@ public interface PostReader {
 
     Optional<PostPurchaseInfo> getPurchaseInfo(Long postId);
 
+    Optional<PostInfo> getPostInfo(Long postId);
+
     record PostPurchaseInfo(Long authorId, BigDecimal singlePurchasePrice) {}
+
+    record PostInfo(Long authorId) {}
 }

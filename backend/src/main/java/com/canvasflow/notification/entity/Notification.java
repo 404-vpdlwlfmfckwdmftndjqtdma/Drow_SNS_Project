@@ -1,5 +1,7 @@
 package com.canvasflow.notification.entity;
 
+import com.canvasflow.notification.NotificationTargetType;
+import com.canvasflow.notification.NotificationType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

@@ -1,7 +1,7 @@
 package com.canvasflow.like.repository;
 
 import com.canvasflow.like.entity.Like;
-import com.canvasflow.like.entity.LikeTargetType;
+import com.canvasflow.like.LikeTargetType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

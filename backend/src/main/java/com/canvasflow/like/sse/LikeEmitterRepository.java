@@ -1,6 +1,6 @@
 package com.canvasflow.like.sse;
 
-import com.canvasflow.like.entity.LikeTargetType;
+import com.canvasflow.like.LikeTargetType;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
