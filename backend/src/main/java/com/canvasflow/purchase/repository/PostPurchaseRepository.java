@@ -1,6 +1,9 @@
 package com.canvasflow.purchase.repository;
 
 import com.canvasflow.purchase.entity.PostPurchase;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Range;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -21,5 +24,8 @@ public interface PostPurchaseRepository extends JpaRepository<PostPurchase, Long
             Long buyerId, List<Long> postIds, PostPurchase.Status status);
 
     /** 내 구매 내역 */
-    List<PostPurchase> findByBuyerIdOrderByCreatedAtDesc(Long buyerId);
+    Page<PostPurchase> findByBuyerIdOrderByCreatedAtDesc(Long buyerId, PostPurchase.Status status, Pageable pageable);
+
+    Page<PostPurchase> findByBuyerIdAndStatusOrderByCreatedAtDesc(
+            Long buyerId, PostPurchase.Status status, Pageable pageable);
 }
