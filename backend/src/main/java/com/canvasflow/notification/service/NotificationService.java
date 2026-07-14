@@ -6,7 +6,6 @@ import com.canvasflow.notification.entity.NotificationTargetType;
 import com.canvasflow.notification.entity.NotificationType;
 import com.canvasflow.notification.repository.NotificationRepository;
 import com.canvasflow.notification.sse.SseEmitterRepository;
-import com.canvasflow.user.repository.UserRepository;
 import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
@@ -37,9 +36,17 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserFacade userFacade;
+    private final SseEmitterRepository sseEmitterRepository;
 
     @Transactional
-    public void notify(Long receiverId, NotificationType type, String message, Long relatedId) {
+    public void notify(
+            Long receiverId,
+            Long senderId,
+            NotificationType type,
+            NotificationTargetType targetType,
+            Long targetId,
+            String message
+    ) {
         if (!userFacade.existsById(receiverId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
