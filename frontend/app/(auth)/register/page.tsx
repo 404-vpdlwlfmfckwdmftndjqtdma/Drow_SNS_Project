@@ -40,6 +40,7 @@ export default function RegisterPage() {
     <div className={styles.page}>
       <section className={styles.visual}>
         <div className={styles.logoBadge}>
+          <span className={styles.logoMark}>4NF</span>
           <span className={styles.logoText}>404 Not Found</span>
         </div>
         <div className={styles.brandPanel}>

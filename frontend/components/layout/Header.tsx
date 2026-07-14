@@ -19,8 +19,12 @@ export default function Header() {
   return (
     <header className={`${styles.header} glass`}>
       <div className={styles.left}>
-        <Link href="/" className={`${styles.logo} brand-gradient-text`}>
-          404 Not Found
+        <Link href="/" className={styles.logo}>
+          <span className={styles.logoMark}>4NF</span>
+          <span className={styles.logoType}>
+            <span className={`${styles.logoTitle} brand-gradient-text`}>404</span>
+            <span className={styles.logoSub}>Not Found</span>
+          </span>
         </Link>
         <nav className={styles.tabs}>
           <Link href="/" className={pathname === "/" ? styles.tabActive : styles.tab}>
