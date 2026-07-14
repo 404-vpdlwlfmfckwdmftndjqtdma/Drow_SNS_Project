@@ -15,6 +15,7 @@ public class PostMediaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long mediaId;
 
     @Column(name = "post_id", nullable = false)

@@ -1,5 +1,6 @@
 package com.canvasflow.user.controller;
 
+import com.canvasflow.user.dto.UpdateBioRequest;
 import com.canvasflow.user.dto.UpdateNicknameRequest;
 import com.canvasflow.user.dto.UpdateProfileImageRequest;
 import com.canvasflow.user.dto.UserResponse;
@@ -45,6 +46,14 @@ public class UserController {
             @Valid @RequestBody UpdateProfileImageRequest request) {
         requireLogin(authMember);
         return ResponseEntity.ok(ApiResponse.ok(userService.updateProfileImage(authMember.userId(), request)));
+    }
+
+    @PatchMapping("/me/bio")
+    public ResponseEntity<ApiResponse<UserResponse>> updateBio(
+            @AuthenticationPrincipal AuthMember authMember,
+            @Valid @RequestBody UpdateBioRequest request) {
+        requireLogin(authMember);
+        return ResponseEntity.ok(ApiResponse.ok(userService.updateBio(authMember.userId(), request)));
     }
 
     @GetMapping("/{userId}")

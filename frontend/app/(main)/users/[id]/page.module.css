@@ -84,10 +84,19 @@
   }
 }
 
+.nameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin: 0 0 var(--space-xs);
+}
+
 .name {
   font-family: var(--font-display);
   font-size: 32px;
-  margin: 0 0 var(--space-xs);
+  margin: 0;
 }
 
 .bio {
@@ -124,6 +133,7 @@
 .actions {
   display: flex;
   gap: var(--space-sm);
+  flex-shrink: 0;
 }
 
 .primaryBtn {
@@ -149,47 +159,16 @@
   box-shadow: none;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-lg);
-}
-
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-.tabs {
-  display: flex;
-  gap: var(--space-lg);
-  border-bottom: 1px solid var(--color-outline-variant);
-  margin-bottom: var(--space-lg);
-  overflow-x: auto;
-}
-
-.tab {
-  padding-bottom: var(--space-md);
-  font-size: 14px;
-  color: var(--color-on-surface-variant);
-  white-space: nowrap;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.tabActive {
-  composes: tab;
-  color: var(--color-primary);
-  font-weight: 700;
-  border-bottom: 2px solid var(--color-primary);
-}
-
 .portfolioGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-md);
+}
+
+@media (min-width: 1024px) {
+  .portfolioGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .portfolioCardWide {
@@ -277,90 +256,6 @@
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-}
-
-.sidebarCard {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  margin-bottom: var(--space-lg);
-}
-
-.sidebarHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-lg);
-}
-
-.sidebarTitle {
-  font-family: var(--font-display);
-  font-size: 24px;
-  margin: 0;
-}
-
-.viewAll {
-  color: var(--color-primary);
-  font-weight: 700;
-  font-size: 14px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.followerItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  margin-bottom: var(--space-md);
-  cursor: pointer;
-}
-
-.followerAvatar {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
-  background: var(--color-surface-container-high);
-  flex-shrink: 0;
-}
-
-.followerName {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.followerMeta {
-  font-size: 12px;
-  color: var(--color-on-surface-variant);
-}
-
-.liveCollabCard {
-  composes: sidebarCard;
-  border-left: 4px solid var(--color-primary);
-}
-
-.liveBadge {
-  background: rgba(107, 56, 212, 0.1);
-  color: var(--color-primary);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 2px var(--space-sm);
-  border-radius: var(--radius-full);
-}
-
-.joinCanvasBtn {
-  width: 100%;
-  padding: var(--space-sm);
-  background: var(--color-primary-container);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: var(--space-sm);
 }
 
 .docCard {
