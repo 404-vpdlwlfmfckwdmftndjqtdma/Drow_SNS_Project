@@ -13,8 +13,6 @@ import com.canvasflow.notification.entity.NotificationTargetType;
 import com.canvasflow.notification.entity.NotificationType;
 import com.canvasflow.notification.service.NotificationService;
 import com.canvasflow.post.repository.PostRepository;
-import com.canvasflow.user.entity.User;
-import com.canvasflow.user.repository.UserRepository;
 import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
@@ -36,7 +34,6 @@ public class LikeService {
     private static final long SUBSCRIBE_TIMEOUT_MS = 30 * 60 * 1000L;
 
     private final LikeRepository likeRepository;
-    private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final NotificationService notificationService;
@@ -51,11 +48,9 @@ public class LikeService {
         if (likeRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId)) {
             throw new CanvasflowException(ErrorCode.ALREADY_LIKED);
         }
-        if (!userFacade.existsById(userId)) {
-            throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
-        }
+        String likerNickname = userFacade.getNicknameOrThrow(userId);
         likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());
-        notifyLiked(liker, targetType, targetId);
+        notifyLiked(userId, likerNickname, targetType, targetId);
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
         broadcastCount(targetType, targetId, likeCount);
         broadcastCommentLikeIfNeeded(targetType, targetId, likeCount);
@@ -63,24 +58,24 @@ public class LikeService {
     }
 
     // 알림 저장은 좋아요 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다.
-    private void notifyLiked(User liker, LikeTargetType targetType, Long targetId) {
+    private void notifyLiked(Long likerId, String likerNickname, LikeTargetType targetType, Long targetId) {
         try {
             if (targetType == LikeTargetType.POST) {
                 postRepository.findById(targetId).ifPresent(post -> {
-                    if (!post.getUserId().equals(liker.getId())) {
+                    if (!post.getUserId().equals(likerId)) {
                         notificationService.notify(
-                                post.getUserId(), liker.getId(), NotificationType.LIKE,
+                                post.getUserId(), likerId, NotificationType.LIKE,
                                 NotificationTargetType.POST, targetId,
-                                liker.getNickname() + "님이 회원님의 게시글을 좋아합니다.");
+                                likerNickname + "님이 회원님의 게시글을 좋아합니다.");
                     }
                 });
             } else {
                 commentRepository.findById(targetId).ifPresent(comment -> {
-                    if (!comment.getWriterId().equals(liker.getId())) {
+                    if (!comment.getWriterId().equals(likerId)) {
                         notificationService.notify(
-                                comment.getWriterId(), liker.getId(), NotificationType.LIKE,
+                                comment.getWriterId(), likerId, NotificationType.LIKE,
                                 NotificationTargetType.COMMENT, targetId,
-                                liker.getNickname() + "님이 회원님의 댓글을 좋아합니다.");
+                                likerNickname + "님이 회원님의 댓글을 좋아합니다.");
                     }
                 });
             }

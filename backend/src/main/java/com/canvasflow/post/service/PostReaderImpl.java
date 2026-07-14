@@ -17,9 +17,9 @@ public class PostReaderImpl implements PostReader {
 
     @Override
     public Optional<PostPurchaseInfo> getPurchaseInfo(Long postId) {
-        return  postRepository.findById(postId)
-                .map(p -> new PostPurchaseInfo(p.getAuthorId(), p.getSinglePurchasePrice()));
-        // TODO PostEntity에 추가 나경님과 상담要
+        return postRepository.findById(postId)
+                .map(post -> new PostPurchaseInfo(post.getUserId(), null));
+        // TODO 단건 구매 가격 정책 확정 후 PostEntity에 singlePurchasePrice를 추가한다.
     }
 
 }

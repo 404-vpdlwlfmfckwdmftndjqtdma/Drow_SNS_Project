@@ -12,12 +12,6 @@ import com.canvasflow.global.exception.ErrorCode;
 import com.canvasflow.like.entity.Like;
 import com.canvasflow.like.entity.LikeTargetType;
 import com.canvasflow.like.repository.LikeRepository;
-import com.canvasflow.notification.entity.NotificationTargetType;
-import com.canvasflow.notification.entity.NotificationType;
-import com.canvasflow.notification.service.NotificationService;
-import com.canvasflow.post.repository.PostRepository;
-import com.canvasflow.user.entity.User;
-import com.canvasflow.user.repository.UserRepository;
 import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,10 +43,7 @@ public class CommentService {
     private static final long SUBSCRIBE_TIMEOUT_MS = 30 * 60 * 1000L;
 
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
     private final LikeRepository likeRepository;
-    private final PostRepository postRepository;
-    private final NotificationService notificationService;
     private final CommentEmitterRepository commentEmitterRepository;
     private final UserFacade userFacade;
 
@@ -80,7 +71,7 @@ public class CommentService {
                 .content(request.content())
                 .build());
 
-        return CommentResponse.of(comment, writerNickname, List.of());
+        return CommentResponse.of(comment, writerNickname, 0L, false, List.of());
     }
 
     // 원댓글만 페이징하고, 그 페이지에 뜬 원댓글들의 대댓글은 전부(페이징 없이) 붙여서 내려준다.
@@ -140,7 +131,7 @@ public class CommentService {
         Comment comment = getOwnedActiveComment(commentId, userId);
         comment.changeContent(request.content());
         String nickname = userFacade.findNicknameById(userId);
-        return CommentResponse.of(comment, nickname, List.of());
+        return CommentResponse.of(comment, nickname, 0L, false, List.of());
     }
 
     // 삭제된(DELETED) 원댓글에도 새 대댓글이 계속 달릴 수 있으므로(스레드 맥락 유지),
