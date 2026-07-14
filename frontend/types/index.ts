@@ -34,10 +34,9 @@ export interface PostMedia {
 }
 
 export interface PostSummary {
-  id: number;
-  title: string;
+  postId: number;
   thumbnailUrl?: string;
-  authorId: number;
+  userId: number;
   authorNickname: string;
   viewCount: number;
   likeCount: number;
@@ -47,11 +46,9 @@ export interface PostSummary {
 }
 
 export interface PostDetail {
-  id: number;
-  authorId: number;
+  postId: number;
+  userId: number;
   authorNickname: string;
-  channelId?: number;
-  title: string;
   content: string | null; // locked=true 면 null
   visibility: ContentVisibility;
   locked: boolean;

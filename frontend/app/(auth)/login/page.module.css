@@ -18,44 +18,6 @@
   }
 }
 
-.collabBadge {
-  position: absolute;
-  top: var(--margin-desktop);
-  right: var(--margin-desktop);
-  display: flex;
-  align-items: center;
-  z-index: 10;
-}
-
-.avatarStack {
-  display: flex;
-}
-
-.avatarStack > span {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  border: 2px solid #fff;
-  background: var(--color-surface-container-high);
-  margin-left: -12px;
-  display: inline-block;
-}
-
-.avatarStack > span:first-child {
-  margin-left: 0;
-}
-
-.collabLabel {
-  margin-left: var(--space-sm);
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-full);
-  font-size: 14px;
-  color: var(--color-on-surface);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
 .brandPanel {
   position: absolute;
   bottom: var(--space-xl);
@@ -183,6 +145,12 @@
   gap: var(--space-sm);
   font-size: 16px;
   color: var(--color-on-surface-variant);
+}
+
+.errorText {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-error);
 }
 
 .submit {

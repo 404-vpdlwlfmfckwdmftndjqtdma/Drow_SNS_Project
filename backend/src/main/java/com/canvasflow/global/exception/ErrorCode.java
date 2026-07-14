@@ -19,6 +19,7 @@ public enum ErrorCode {
 
     // Auth / User
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_001", "이미 사용 중인 이메일입니다."),
+    NICKNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "USER_002", "이미 사용 중인 닉네임입니다."),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_002", "이메일 또는 비밀번호가 올바르지 않습니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_003", "유효하지 않은 리프레시 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_004", "토큰이 만료되었습니다."),
@@ -27,6 +28,7 @@ public enum ErrorCode {
     // Post
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "POST_001", "게시글을 찾을 수 없습니다."),
     POST_MEDIA_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "POST_002", "첨부 가능한 파일 용량/개수를 초과했습니다."),
+    POST_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "POST_003", "게시글에 내용 또는 미디어가 하나 이상 필요합니다."),
 
     // Follow / Channel
     FOLLOW_NOT_FOUND(HttpStatus.NOT_FOUND, "FOLLOW_001", "팔로우 관계를 찾을 수 없습니다."),

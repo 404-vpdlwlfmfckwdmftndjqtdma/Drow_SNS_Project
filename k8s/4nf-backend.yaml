@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: 4nf-backend
-          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:83d7142ea61d9936117658a82befedc909598be0
+          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:24bc0ba815873fb589217f4475e7a3d21d7653e9
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -46,11 +46,14 @@ spec:
           envFrom:
             - secretRef:
                 name: 4nf-secret
+      # 로컬 볼륨/노드 고정 요건 때문에 vm200 에 배치 고정
+      nodeSelector:
+        kubernetes.io/hostname: asus-vm200
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: 4nf-backend
+  name: nf-backend   # Service 이름은 숫자로 시작 불가(DNS-1035) → 4 제외
   namespace: lion-4nf
   labels:
     app: 4nf-backend
@@ -84,6 +87,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: 4nf-backend
+                name: nf-backend
                 port:
                   number: 8080

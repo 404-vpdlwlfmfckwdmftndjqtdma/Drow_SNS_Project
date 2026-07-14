@@ -55,10 +55,11 @@ public class PostEntity extends BaseTimeEntity {
     private List<String> tags = new ArrayList<>();
 
     @Builder
-    public PostEntity(Long userId, String content, ContentVisibility visibility) {
+    public PostEntity(Long userId, String content, ContentVisibility visibility, List<String> tags) {
         this.userId = userId;
         this.content = content;
         this.visibility = visibility == null ? ContentVisibility.PUBLIC : visibility;
+        this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
         this.viewCount = 0L;
     }
 }

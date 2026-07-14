@@ -33,6 +33,10 @@ jwt:
   access-token-expiration-ms: 3600000       # 1h
   refresh-token-expiration-ms: 1209600000   # 14d
 
+toss:
+  # 토스 시크릿 키(백엔드 전용). env TOSS_SECRET_KEY 로 오버라이드, 없으면 공개 테스트 키 사용.
+  secret-key: ${TOSS_SECRET_KEY:test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R}
+
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
   api-key: ${CLOUDINARY_API_KEY}
