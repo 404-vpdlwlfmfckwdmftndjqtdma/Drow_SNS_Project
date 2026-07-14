@@ -44,6 +44,11 @@ public enum ErrorCode {
     TIER_LEVEL_DUPLICATED(HttpStatus.CONFLICT, "SUB_006", "이미 존재하는 등급 레벨입니다."),
     TIER_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "SUB_007", "등급은 최대 5개까지 만들 수 있습니다."),
 
+    // Purchase
+    ALREADY_PURCHASED(HttpStatus.CONFLICT, "PUR_001", "이미 구매한 게시물입니다."),
+    PURCHASE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "PUR_002", "단건 구매가 불가능한 게시물입니다."),
+    PURCHASE_SELF_POST(HttpStatus.BAD_REQUEST, "PUR_003", "본인의 게시물은 구매할 수 없습니다."),
+
     // Comment / Like
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_001", "댓글을 찾을 수 없습니다."),
     ALREADY_LIKED(HttpStatus.CONFLICT, "LIKE_001", "이미 좋아요를 눌렀습니다."),

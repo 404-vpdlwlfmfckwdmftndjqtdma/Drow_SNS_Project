@@ -16,7 +16,6 @@ import java.util.List;
  * 소유권 검증 대신 구조로 차단:
  *  - 생성: channelId를 받지 않고 "로그인 유저의 채널"을 서버가 직접 조회
  *  - 수정/삭제: (tierId + 내 채널) 조건으로 조회 → 남의 tier는 애초에 조회 불가(404)
- * 따라서 NOT_CHANNEL_OWNER 에러코드는 필요 없음.
  */
 @Service
 @RequiredArgsConstructor
