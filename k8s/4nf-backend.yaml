@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: 4nf-backend
-          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:60fb84b15dcae6131063e58f34fa6aba27087519
+          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:50a428f33db62f64b784699fff6a0f2ce35b24d3
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
