@@ -1,4 +1,4 @@
-package com.canvasflow.like.entity;
+package com.canvasflow.like;
 
 public enum LikeTargetType {
     POST,

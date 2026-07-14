@@ -1,6 +1,7 @@
 package com.canvasflow.like.entity;
 
 import com.canvasflow.global.common.BaseTimeEntity;
+import com.canvasflow.like.LikeTargetType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

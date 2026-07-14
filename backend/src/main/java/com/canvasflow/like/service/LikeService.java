@@ -1,22 +1,20 @@
 package com.canvasflow.like.service;
 
-import com.canvasflow.comment.entity.Comment;
-import com.canvasflow.comment.repository.CommentRepository;
-import com.canvasflow.comment.sse.CommentEmitterRepository;
-import com.canvasflow.like.dto.CommentLikeCountEvent;
+import com.canvasflow.like.LikeTargetType;
+import com.canvasflow.like.TargetLikedEvent;
 import com.canvasflow.like.dto.LikeResponse;
 import com.canvasflow.like.entity.Like;
-import com.canvasflow.like.entity.LikeTargetType;
 import com.canvasflow.like.repository.LikeRepository;
 import com.canvasflow.like.sse.LikeEmitterRepository;
-import com.canvasflow.notification.entity.NotificationTargetType;
-import com.canvasflow.notification.entity.NotificationType;
-import com.canvasflow.notification.service.NotificationService;
-import com.canvasflow.post.repository.PostRepository;
+import com.canvasflow.notification.NotificationFacade;
+import com.canvasflow.notification.NotificationTargetType;
+import com.canvasflow.notification.NotificationType;
+import com.canvasflow.post.PostReader;
 import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +22,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 
+/**
+ * 좋아요 대상이 게시글이면 post 모듈을 직접 참조해 알림을 만든다(post는 like/comment에 의존하지 않으므로
+ * 순환이 안 생김). 대상이 댓글이면 comment 모듈을 직접 참조하지 않고 TargetLikedEvent만 발행한다
+ * (comment도 이 모듈의 LikeReader를 의존하므로, 직접 참조하면 comment<->like 순환 의존이 생기기 때문).
+ */
 @RequiredArgsConstructor
 @Service
 public class LikeService {
@@ -34,14 +37,11 @@ public class LikeService {
     private static final long SUBSCRIBE_TIMEOUT_MS = 30 * 60 * 1000L;
 
     private final LikeRepository likeRepository;
-    private final PostRepository postRepository;
-    private final CommentRepository commentRepository;
-    private final NotificationService notificationService;
+    private final PostReader postReader;
+    private final NotificationFacade notificationFacade;
     private final LikeEmitterRepository likeEmitterRepository;
-    private final CommentEmitterRepository commentEmitterRepository;
-
     private final UserFacade userFacade;
-    // TODO: NotificationService 주입 -> 좋아요 발생 시 대상 작성자에게 알림
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public LikeResponse like(Long userId, LikeTargetType targetType, Long targetId) {
@@ -50,38 +50,10 @@ public class LikeService {
         }
         String likerNickname = userFacade.getNicknameOrThrow(userId);
         likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());
-        notifyLiked(userId, likerNickname, targetType, targetId);
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
+        notifyAndPublish(userId, targetType, targetId, true, likeCount);
         broadcastCount(targetType, targetId, likeCount);
-        broadcastCommentLikeIfNeeded(targetType, targetId, likeCount);
         return new LikeResponse(true, likeCount);
-    }
-
-    // 알림 저장은 좋아요 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다.
-    private void notifyLiked(Long likerId, String likerNickname, LikeTargetType targetType, Long targetId) {
-        try {
-            if (targetType == LikeTargetType.POST) {
-                postRepository.findById(targetId).ifPresent(post -> {
-                    if (!post.getUserId().equals(likerId)) {
-                        notificationService.notify(
-                                post.getUserId(), likerId, NotificationType.LIKE,
-                                NotificationTargetType.POST, targetId,
-                                likerNickname + "님이 회원님의 게시글을 좋아합니다.");
-                    }
-                });
-            } else {
-                commentRepository.findById(targetId).ifPresent(comment -> {
-                    if (!comment.getWriterId().equals(likerId)) {
-                        notificationService.notify(
-                                comment.getWriterId(), likerId, NotificationType.LIKE,
-                                NotificationTargetType.COMMENT, targetId,
-                                likerNickname + "님이 회원님의 댓글을 좋아합니다.");
-                    }
-                });
-            }
-        } catch (Exception e) {
-            // 알림 저장 실패는 무시 - 다음 접속 시 목록 조회로 확인 가능
-        }
     }
 
     @Transactional
@@ -90,9 +62,35 @@ public class LikeService {
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.LIKE_NOT_FOUND));
         likeRepository.delete(like);
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
+        notifyAndPublish(userId, targetType, targetId, false, likeCount);
         broadcastCount(targetType, targetId, likeCount);
-        broadcastCommentLikeIfNeeded(targetType, targetId, likeCount);
         return new LikeResponse(false, likeCount);
+    }
+
+    // 댓글 대상: comment 모듈을 직접 부르지 않고 이벤트만 발행한다 (누가 구독하는지 모름 - Pub/Sub).
+    // 게시글 대상: post는 like/comment에 의존하지 않아 순환 걱정이 없으므로 그냥 직접 조회+알림한다.
+    private void notifyAndPublish(Long likerId, LikeTargetType targetType, Long targetId, boolean liked, long likeCount) {
+        if (targetType == LikeTargetType.COMMENT) {
+            String likerNickname = liked ? userFacade.findNicknameById(likerId) : null;
+            eventPublisher.publishEvent(new TargetLikedEvent(targetId, likerId, likerNickname, liked, likeCount));
+            return;
+        }
+        if (!liked) {
+            return; // 게시글 좋아요 취소는 알림 없음
+        }
+        try {
+            String likerNickname = userFacade.getNicknameOrThrow(likerId);
+            postReader.getPostInfo(targetId).ifPresent(postInfo -> {
+                if (!postInfo.authorId().equals(likerId)) {
+                    notificationFacade.notify(
+                            postInfo.authorId(), likerId, NotificationType.LIKE,
+                            NotificationTargetType.POST, targetId,
+                            likerNickname + "님이 회원님의 게시글을 좋아합니다.");
+                }
+            });
+        } catch (Exception e) {
+            // 알림 저장 실패는 좋아요 자체를 막으면 안 되는 부가 효과라 무시
+        }
     }
 
     // 로그인 없이도(userId == null) 개수 조회는 가능 - 이 경우 liked는 항상 false.
@@ -140,24 +138,5 @@ public class LikeService {
                 likeEmitterRepository.remove(targetType, targetId, emitter);
             }
         }
-    }
-
-    // 댓글 좋아요는 댓글마다 별도 SSE 연결을 열지 않고, 이미 열려있는 게시글의 댓글 채널에 얹어서 보낸다
-    // (브라우저는 오리진당 동시 연결 수(HTTP/1.1 기준 6개)에 제한이 있어, 댓글 개수만큼 연결을 열면 금방 바닥난다).
-    private void broadcastCommentLikeIfNeeded(LikeTargetType targetType, Long targetId, long likeCount) {
-        if (targetType != LikeTargetType.COMMENT) {
-            return;
-        }
-        commentRepository.findById(targetId).map(Comment::getPostId).ifPresent(postId -> {
-            for (SseEmitter emitter : commentEmitterRepository.findByPostId(postId)) {
-                try {
-                    emitter.send(SseEmitter.event()
-                            .name("comment-like-count")
-                            .data(new CommentLikeCountEvent(targetId, likeCount)));
-                } catch (IOException e) {
-                    commentEmitterRepository.remove(postId, emitter);
-                }
-            }
-        });
     }
 }
