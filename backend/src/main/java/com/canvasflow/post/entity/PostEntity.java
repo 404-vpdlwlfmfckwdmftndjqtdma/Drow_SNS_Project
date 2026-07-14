@@ -62,4 +62,14 @@ public class PostEntity extends BaseTimeEntity {
         this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
         this.viewCount = 0L;
     }
+
+    public void update(String content, ContentVisibility visibility, List<String> tags){
+        this.content = content;
+        this.visibility = visibility == null ? ContentVisibility.PUBLIC : visibility;
+        this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
+    }
+
+    public void delete(){
+        this.deletedAt = LocalDateTime.now();
+    }
 }

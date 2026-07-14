@@ -7,6 +7,7 @@ import com.canvasflow.notification.entity.NotificationType;
 import com.canvasflow.notification.repository.NotificationRepository;
 import com.canvasflow.notification.sse.SseEmitterRepository;
 import com.canvasflow.user.repository.UserRepository;
+import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -35,18 +36,11 @@ public class NotificationService {
     private static final long SUBSCRIBE_TIMEOUT_MS = 30 * 60 * 1000L;
 
     private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository;
-    private final SseEmitterRepository sseEmitterRepository;
+    private final UserFacade userFacade;
 
     @Transactional
-    public void notify(
-            Long receiverId,
-            Long senderId,
-            NotificationType type,
-            NotificationTargetType targetType,
-            Long targetId,
-            String message) {
-        if (!userRepository.existsById(receiverId)) {
+    public void notify(Long receiverId, NotificationType type, String message, Long relatedId) {
+        if (!userFacade.existsById(receiverId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
         Notification notification = notificationRepository.save(Notification.builder()

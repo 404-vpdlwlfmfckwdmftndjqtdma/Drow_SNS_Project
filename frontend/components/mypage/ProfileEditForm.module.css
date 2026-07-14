@@ -1,7 +1,13 @@
+.loading {
+  padding: var(--space-lg) 0;
+  text-align: center;
+  color: var(--color-on-surface-variant);
+}
+
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-md);
 }
 
 .avatarRow {
@@ -14,23 +20,92 @@
   width: 72px;
   height: 72px;
   border-radius: var(--radius-full);
-  background: var(--color-surface-container);
+  background-color: var(--color-surface-container);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.uploadBtn {
+  position: relative;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .input {
-  padding: var(--space-sm);
-  border: 1px solid var(--color-outline);
-  border-radius: var(--radius);
-  background: var(--color-surface-container);
+  height: 48px;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-lowest);
+  font-size: 16px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(107, 56, 212, 0.2);
+}
+
+.textarea {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-lowest);
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(107, 56, 212, 0.2);
+}
+
+.errorText {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-error);
 }
 
 .submit {
   align-self: flex-end;
-  padding: var(--space-sm) var(--space-md);
+  height: 44px;
+  padding: 0 var(--space-lg);
   border: none;
-  border-radius: var(--radius);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  background: var(--gradient-brand);
+  color: #fff;
+  font-weight: 700;
   cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

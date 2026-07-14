@@ -23,7 +23,7 @@ public class MediaService {
 
     private static final Set<String> ALLOWED_IMAGE_EXT = Set.of("jpg", "jpeg", "png", "gif", "webp");
     private static final Set<String> ALLOWED_VIDEO_EXT = Set.of("mp4", "mov", "webm");
-    private static final long MAX_FILE_SIZE_BYTES = 100L * 1024 * 1024; // 100MB
+    private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024; // 50MB
 
     private final Cloudinary cloudinary;
 

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import MediaUploader, { type MediaItem } from "@/components/post/MediaUploader";
 import styles from "./page.module.css";
 
-type PostType = "text" | "image" | "video";
 type Visibility = "public" | "subscribers" | "private";
 
 // 프론트 표시용 값 -> 백엔드 ContentVisibility(PUBLIC/PRIVATE/LOCKED) 매핑
@@ -15,19 +15,21 @@ const VISIBILITY_MAP: Record<Visibility, string> = {
   subscribers: "LOCKED",
 };
 
-// 게시글 작성. TODO: MediaUploader 연동(lib/image.ts, 이미지/영상 첨부)은 아직 미구현 — 지금은 텍스트만 전송
+// 백엔드 PostEntity.content 컬럼 길이(@Lob, length=800)와 맞춤
+const CONTENT_MAX_LENGTH = 800;
+
 export default function NewPostPage() {
   const router = useRouter();
-  const [postType, setPostType] = useState<PostType>("text");
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   // TODO: 로그인(JWT) 붙으면 X-User-Id 대신 Authorization 토큰 기반으로 전환
   const handleSubmit = async () => {
-    if (!content.trim()) {
-      alert("내용을 입력해주세요.");
+    if (!content.trim() && media.length === 0) {
+      alert("내용을 입력하거나 파일을 첨부해주세요.");
       return;
     }
     const tags = tagsInput
@@ -39,7 +41,7 @@ export default function NewPostPage() {
     try {
       await api.post(
         "/api/v1/posts",
-        { content, visibility: VISIBILITY_MAP[visibility], tags },
+        { content, visibility: VISIBILITY_MAP[visibility], tags, media },
         { headers: { "X-User-Id": 1 } }
       );
       router.push("/posts");
@@ -54,65 +56,24 @@ export default function NewPostPage() {
     <div className={styles.container}>
       <div data-layout="post-form">
         <div>
-          <div data-panel="type-selector">
-            <button
-              data-active={postType === "text" ? "true" : undefined}
-              onClick={() => setPostType("text")}
-              type="button"
-            >
-              <span data-icon>notes</span>
-              텍스트
-            </button>
-            <button
-              data-active={postType === "image" ? "true" : undefined}
-              onClick={() => setPostType("image")}
-              type="button"
-            >
-              <span data-icon>image</span>
-              이미지
-            </button>
-            <button
-              data-active={postType === "video" ? "true" : undefined}
-              onClick={() => setPostType("video")}
-              type="button"
-            >
-              <span data-icon>videocam</span>
-              비디오
-            </button>
-          </div>
-
           <div data-panel="editor">
+            <MediaUploader value={media} onChange={setMedia} />
+
             <textarea
+              maxLength={CONTENT_MAX_LENGTH}
               onChange={(event) => setContent(event.target.value)}
               placeholder="무슨 생각을 하고 계신가요? 내용을 입력하세요..."
               value={content}
             />
+            <div data-char-count>{content.length} / {CONTENT_MAX_LENGTH}자</div>
 
             <input
+              className={styles.tagsInput}
               onChange={(event) => setTagsInput(event.target.value)}
               placeholder="태그를 #으로 구분해서 입력하세요 (예: #일상#그림)"
               type="text"
               value={tagsInput}
             />
-
-            {postType !== "text" && (
-              <div data-panel="upload">
-                {/* TODO: components/post/MediaUploader 로 교체 (lib/image.ts uploadMediaBatch 사용) */}
-                <span data-icon data-size="large">cloud_upload</span>
-                <p>파일을 드래그하거나 클릭하여 업로드</p>
-                <p>최대 100MB (JPG, PNG, MP4 등 지원)</p>
-              </div>
-            )}
-
-            <div data-toolbar>
-              <div>
-                <button type="button"><span data-icon>mood</span></button>
-                <button type="button"><span data-icon>location_on</span></button>
-                <button type="button"><span data-icon>alternate_email</span></button>
-                <button type="button"><span data-icon>tag</span></button>
-              </div>
-              <span>{content.length} / 2000 자</span>
-            </div>
           </div>
         </div>
 
@@ -160,16 +121,6 @@ export default function NewPostPage() {
             <span data-icon data-filled="true">send</span>
             {submitting ? "게시 중..." : "게시하기"}
           </button>
-
-          <div data-panel="tip">
-            <p>
-              <span data-icon>lightbulb</span>
-              작성 팁
-            </p>
-            <p>
-              구독자 전용 게시물은 일반 게시물보다 <strong>2.5배</strong> 더 높은 참여도를 보입니다. 전용 혜택을 강조해보세요!
-            </p>
-          </div>
         </div>
       </div>
     </div>

@@ -15,6 +15,7 @@ import com.canvasflow.notification.service.NotificationService;
 import com.canvasflow.post.repository.PostRepository;
 import com.canvasflow.user.entity.User;
 import com.canvasflow.user.repository.UserRepository;
+import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -42,14 +43,17 @@ public class LikeService {
     private final LikeEmitterRepository likeEmitterRepository;
     private final CommentEmitterRepository commentEmitterRepository;
 
+    private final UserFacade userFacade;
+    // TODO: NotificationService 주입 -> 좋아요 발생 시 대상 작성자에게 알림
 
     @Transactional
     public LikeResponse like(Long userId, LikeTargetType targetType, Long targetId) {
         if (likeRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId)) {
             throw new CanvasflowException(ErrorCode.ALREADY_LIKED);
         }
-        User liker = userRepository.findById(userId)
-                .orElseThrow(() -> new CanvasflowException(ErrorCode.USER_NOT_FOUND));
+        if (!userFacade.existsById(userId)) {
+            throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
+        }
         likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());
         notifyLiked(liker, targetType, targetId);
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);

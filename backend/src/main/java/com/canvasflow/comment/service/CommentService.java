@@ -18,6 +18,7 @@ import com.canvasflow.notification.service.NotificationService;
 import com.canvasflow.post.repository.PostRepository;
 import com.canvasflow.user.entity.User;
 import com.canvasflow.user.repository.UserRepository;
+import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,6 +54,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final NotificationService notificationService;
     private final CommentEmitterRepository commentEmitterRepository;
+    private final UserFacade userFacade;
 
     @Transactional
     public CommentResponse create(Long userId, Long postId, CommentCreateRequest request) {
@@ -69,8 +71,7 @@ public class CommentService {
             }
         }
 
-        User writer = userRepository.findById(userId)
-                .orElseThrow(() -> new CanvasflowException(ErrorCode.USER_NOT_FOUND));
+        String writerNickname = userFacade.getNicknameOrThrow(userId);
 
         Comment comment = commentRepository.save(Comment.builder()
                 .postId(postId)
@@ -79,36 +80,7 @@ public class CommentService {
                 .content(request.content())
                 .build());
 
-        notifyCommentCreated(writer, postId, parent, comment);
-
-        CommentResponse response = CommentResponse.of(comment, writer.getNickname(), 0, false, List.of());
-        broadcast(postId, "comment-created", response);
-        return response;
-    }
-
-    // 알림 저장은 댓글 작성 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다.
-    private void notifyCommentCreated(User writer, Long postId, Comment parent, Comment comment) {
-        try {
-            if (parent != null) {
-                if (!parent.getWriterId().equals(writer.getId())) {
-                    notificationService.notify(
-                            parent.getWriterId(), writer.getId(), NotificationType.REPLY,
-                            NotificationTargetType.COMMENT, parent.getId(),
-                            writer.getNickname() + "님이 회원님의 댓글에 답글을 남겼습니다.");
-                }
-                return;
-            }
-            postRepository.findById(postId).ifPresent(post -> {
-                if (!post.getUserId().equals(writer.getId())) {
-                    notificationService.notify(
-                            post.getUserId(), writer.getId(), NotificationType.COMMENT,
-                            NotificationTargetType.POST, postId,
-                            writer.getNickname() + "님이 회원님의 게시글에 댓글을 남겼습니다.");
-                }
-            });
-        } catch (Exception e) {
-            // 알림 저장 실패는 무시 - 다음 접속 시 목록 조회로 확인 가능
-        }
+        return CommentResponse.of(comment, writerNickname, List.of());
     }
 
     // 원댓글만 페이징하고, 그 페이지에 뜬 원댓글들의 대댓글은 전부(페이징 없이) 붙여서 내려준다.
@@ -167,12 +139,8 @@ public class CommentService {
     public CommentResponse update(Long commentId, Long userId, CommentUpdateRequest request) {
         Comment comment = getOwnedActiveComment(commentId, userId);
         comment.changeContent(request.content());
-        String nickname = userRepository.findById(userId).map(User::getNickname).orElse(null);
-        long likeCount = likeRepository.countByTargetTypeAndTargetId(LikeTargetType.COMMENT, commentId);
-        boolean likedByMe = likeRepository.existsByUserIdAndTargetTypeAndTargetId(userId, LikeTargetType.COMMENT, commentId);
-        CommentResponse response = CommentResponse.of(comment, nickname, likeCount, likedByMe, List.of());
-        broadcast(comment.getPostId(), "comment-updated", response);
-        return response;
+        String nickname = userFacade.findNicknameById(userId);
+        return CommentResponse.of(comment, nickname, List.of());
     }
 
     // 삭제된(DELETED) 원댓글에도 새 대댓글이 계속 달릴 수 있으므로(스레드 맥락 유지),
@@ -251,7 +219,6 @@ public class CommentService {
                 .map(Comment::getWriterId)
                 .distinct()
                 .toList();
-        return userRepository.findAllById(writerIds).stream()
-                .collect(Collectors.toMap(User::getId, User::getNickname));
+        return userFacade.findNicknamesByIds(writerIds);
     }
 }
