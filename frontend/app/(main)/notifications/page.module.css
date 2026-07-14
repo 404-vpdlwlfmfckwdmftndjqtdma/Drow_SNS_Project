@@ -9,3 +9,33 @@
   font-weight: 700;
   margin-bottom: var(--space-md);
 }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.input {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius);
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+}
+
+.connected {
+  font-size: 12px;
+  color: var(--color-primary);
+}
+
+.disconnected {
+  font-size: 12px;
+  color: var(--color-error);
+}
+
+.empty {
+  color: var(--color-on-surface-variant);
+  font-size: 14px;
+}
