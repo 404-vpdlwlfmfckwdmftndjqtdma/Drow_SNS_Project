@@ -3,6 +3,7 @@ package com.canvasflow.comment.service;
 import com.canvasflow.comment.dto.CommentCreateRequest;
 import com.canvasflow.comment.dto.CommentDeletedEvent;
 import com.canvasflow.comment.dto.CommentLikeCountEvent;
+import com.canvasflow.comment.dto.CommentCountResponse;
 import com.canvasflow.comment.dto.CommentResponse;
 import com.canvasflow.comment.dto.CommentUpdateRequest;
 import com.canvasflow.comment.entity.Comment;
@@ -72,7 +73,7 @@ public class CommentService {
             }
         }
 
-        String writerNickname = userFacade.getNicknameOrThrow(userId);
+        String writerNickname = resolveWriterNickname(userId);
 
         Comment comment = commentRepository.save(Comment.builder()
                 .postId(postId)
@@ -86,6 +87,17 @@ public class CommentService {
         CommentResponse response = CommentResponse.of(comment, writerNickname, 0L, false, List.of());
         broadcast(postId, "comment-created", response);
         return response;
+    }
+
+    private String resolveWriterNickname(Long userId) {
+        try {
+            return userFacade.getNicknameOrThrow(userId);
+        } catch (CanvasflowException e) {
+            if (e.getErrorCode() == ErrorCode.USER_NOT_FOUND) {
+                return "user-" + userId;
+            }
+            throw e;
+        }
     }
 
     // 알림 저장은 댓글 작성 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다.
@@ -175,6 +187,12 @@ public class CommentService {
                     likeSummary.likedByViewer(root.getId()),
                     replyResponses);
         });
+    }
+
+    @Transactional(readOnly = true)
+    public CommentCountResponse getCommentCount(Long postId) {
+        long count = commentRepository.countByPostId(postId);
+        return new CommentCountResponse(count);
     }
 
     @Transactional

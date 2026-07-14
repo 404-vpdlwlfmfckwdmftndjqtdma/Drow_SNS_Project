@@ -17,4 +17,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     // 삭제 시 하드/소프트 삭제 판단용 (자식 존재 여부)
     boolean existsByParentId(Long parentId);
+
+    long countByPostId(Long postId);
 }
