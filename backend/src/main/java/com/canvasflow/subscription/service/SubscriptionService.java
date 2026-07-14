@@ -7,7 +7,7 @@ import com.canvasflow.subscription.entity.SubscriptionStatus;
 import com.canvasflow.subscription.entity.SubscriptionTier;
 import com.canvasflow.subscription.repository.SubscriptionRepository;
 import com.canvasflow.subscription.repository.SubscriptionTierRepository;
-import com.canvasflow.user.repository.UserRepository;
+import com.canvasflow.user.service.UserService;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +22,12 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionTierRepository tierRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     // TODO: ChannelRepository 추가 (채널 존재 검증용)
 
     @Transactional
     public Long subscribe(Long subscriberId, Long channelId, SubscribeRequest request) {
-        if (!userRepository.existsById(subscriberId)) {
+        if (!userService.existsById(subscriberId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
         // TODO: 채널 존재 검증
