@@ -6,8 +6,7 @@ import com.canvasflow.channel.entity.Channel;
 import com.canvasflow.channel.entity.ChannelMember;
 import com.canvasflow.channel.repository.ChannelMemberRepository;
 import com.canvasflow.channel.repository.ChannelRepository;
-import com.canvasflow.user.entity.User;
-import com.canvasflow.user.repository.UserRepository;
+import com.canvasflow.user.service.UserService;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +19,11 @@ public class ChannelService {
 
     private final ChannelRepository channelRepository;
     private final ChannelMemberRepository channelMemberRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Transactional
     public Long create(Long ownerId, ChannelCreateRequest request) {
-        if (!userRepository.existsById(ownerId)) {
+        if (!userService.existsById(ownerId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
         Channel channel = Channel.builder()
@@ -40,8 +39,7 @@ public class ChannelService {
     public ChannelResponse getDetail(Long channelId) {
         Channel channel = getChannelOrThrow(channelId);
         long memberCount = channelMemberRepository.countByChannelId(channelId);
-        String ownerNickname = userRepository.findById(channel.getOwnerId())
-                .map(User::getNickname).orElse(null);
+        String ownerNickname = userService.findNicknameById(channel.getOwnerId());
         return ChannelResponse.from(channel, ownerNickname, memberCount);
     }
 
@@ -51,7 +49,7 @@ public class ChannelService {
             return; // 이미 추가됨 - idempotent
         }
         Channel channel = getChannelOrThrow(channelId);
-        if (!userRepository.existsById(userId)) {
+        if (!userService.existsById(userId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
         channelMemberRepository.save(ChannelMember.builder().channel(channel).userId(userId).build());

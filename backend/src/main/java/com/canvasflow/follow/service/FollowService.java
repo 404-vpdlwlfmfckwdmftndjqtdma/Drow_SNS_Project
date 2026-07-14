@@ -2,7 +2,7 @@ package com.canvasflow.follow.service;
 
 import com.canvasflow.follow.entity.Follow;
 import com.canvasflow.follow.repository.FollowRepository;
-import com.canvasflow.user.repository.UserRepository;
+import com.canvasflow.user.service.UserService;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FollowService {
 
     private final FollowRepository followRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Transactional
     public void follow(Long followerId, Long followingId) {
@@ -24,7 +24,7 @@ public class FollowService {
         if (followRepository.existsByFollowerIdAndFollowingId(followerId, followingId)) {
             throw new CanvasflowException(ErrorCode.ALREADY_FOLLOWING);
         }
-        if (!userRepository.existsById(followerId) || !userRepository.existsById(followingId)) {
+        if (!userService.existsById(followerId) || !userService.existsById(followingId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
 

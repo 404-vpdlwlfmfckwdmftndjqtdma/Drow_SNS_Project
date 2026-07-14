@@ -12,12 +12,22 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * 담당: 회원(User) 기본 CRUD.
- * User Entity/Repository는 이 Service를 통해서만 접근한다 — auth 모듈을 포함한 다른 모듈에서
- * com.canvasflow.user.entity.User / com.canvasflow.user.repository.UserRepository를 직접 import하지 않는다.
- * (user 모듈은 현재 package-info.java에서 OPEN으로 열려 있어 강제되진 않지만, 이 Service가 그 문을 좁히는 첫 단계다.)
+ * User Entity/Repository는 이 Service를 통해서만 접근한다 — 다른 모든 모듈은
+ * com.canvasflow.user.entity.User / com.canvasflow.user.repository.UserRepository를 직접 import하지 않고
+ * 이 파사드가 노출하는 메서드만 호출한다.
+ * user 모듈은 package-info.java가 없어 기본값(CLOSED)이고, com.canvasflow.user.service 패키지는
+ * 하위 패키지라 원래 internal로 취급된다. 이 클래스에 @PackageInfo + @NamedInterface를 붙여서
+ * package-info.java 없이 이 패키지(UserService)만 다른 모듈에 노출되도록 명시한다.
+ * entity/repository 패키지는 여전히 internal이라 ModularityTests가 계속 그쪽 직접 참조를 막아준다.
  */
+@org.springframework.modulith.PackageInfo
+@org.springframework.modulith.NamedInterface
 @RequiredArgsConstructor
 @Service
 public class UserService {
@@ -82,6 +92,40 @@ public class UserService {
         }
 
         return user.getId();
+    }
+
+    /**
+     * 유저 존재 여부만 확인한다 (다른 모듈이 회원가입 여부/유효성만 검증할 때 사용, 예: 팔로우 대상 존재 확인).
+     */
+    @Transactional(readOnly = true)
+    public boolean existsById(Long userId) {
+        return userRepository.existsById(userId);
+    }
+
+    /**
+     * 닉네임만 필요하고 유저가 없어도 예외를 던지지 않아도 되는 경우(단순 표시용) 사용한다.
+     * 유저가 없으면 null을 반환한다.
+     */
+    @Transactional(readOnly = true)
+    public String findNicknameById(Long userId) {
+        return userRepository.findById(userId).map(User::getNickname).orElse(null);
+    }
+
+    /**
+     * 닉네임이 반드시 필요하고 유저가 없으면 실패해야 하는 경우 사용한다 (예: 댓글 작성 시 작성자 검증).
+     */
+    @Transactional(readOnly = true)
+    public String getNicknameOrThrow(Long userId) {
+        return getUserOrThrow(userId).getNickname();
+    }
+
+    /**
+     * 여러 유저의 닉네임을 한 번에 조회한다 (N+1 방지용, 예: 댓글 목록에서 작성자 닉네임 일괄 조회).
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, String> findNicknamesByIds(Collection<Long> userIds) {
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
     }
 
     private User getUserOrThrow(Long userId) {
