@@ -88,13 +88,6 @@ export default function PostListPage() {
               )}
 
               <div className={styles.body}>
-                {/* 좋아요/댓글은 자리만 잡아둠 — 나중에 값/클릭 연결 */}
-                <div className={styles.actionRow}>
-                  <span className="material-symbols-outlined">favorite</span>
-                  <span className="material-symbols-outlined">mode_comment</span>
-                  <span className={styles.viewCount}>조회 {post.viewCount}</span>
-                </div>
-
                 <p className={styles.content}>
                   {shownContent}
                   {isLong && (
@@ -114,6 +107,13 @@ export default function PostListPage() {
                       #{tag}
                     </span>
                   ))}
+                </div>
+
+                {/* 좋아요/댓글은 자리만 잡아둠 — 나중에 값/클릭 연결 */}
+                <div className={styles.actionRow}>
+                  <span className="material-symbols-outlined">favorite</span>
+                  <span className="material-symbols-outlined">mode_comment</span>
+                  <span className={styles.viewCount}>조회 {post.viewCount}</span>
                 </div>
               </div>
             </Link>
