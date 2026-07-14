@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import styles from "./Header.module.css";
 
-// 상단 GNB. 로고 + 팔로잉/채널 탭 + 검색 + 알림/업로드/프로필(로그인 시) 또는 로그인 링크(비로그인 시).
+// 상단 GNB. 로고 + 팔로잉/채널 탭 + 검색 + 알림/업로드/프로필(로그인 시). 로그인/로그아웃은 좌측 사이드바 하단으로 통일.
 export default function Header() {
   const pathname = usePathname();
   // SSR에서는 항상 false로 시작하고, 마운트 후 실제 로그인 상태로 갱신한다 (localStorage는 클라이언트에만 존재).
@@ -26,8 +26,7 @@ export default function Header() {
           <Link href="/" className={pathname === "/" ? styles.tabActive : styles.tab}>
             팔로잉
           </Link>
-          {/* TODO: 데모용 고정 id(1) -> 실제로는 팔로우 중인 채널 목록/추천에서 진입 */}
-          <Link href="/channels/1" className={pathname.startsWith("/channels") ? styles.tabActive : styles.tab}>
+          <Link href="/channels" className={pathname === "/channels" ? styles.tabActive : styles.tab}>
             채널
           </Link>
         </nav>
@@ -40,7 +39,7 @@ export default function Header() {
       </div>
 
       <div className={styles.right}>
-        {loggedIn ? (
+        {loggedIn && (
           <>
             <Link href="/notifications" className={styles.iconButton}>
               <span className="material-symbols-outlined">notifications</span>
@@ -53,10 +52,6 @@ export default function Header() {
               <span className="material-symbols-outlined">account_circle</span>
             </Link>
           </>
-        ) : (
-          <Link href="/login" className={styles.loginLink}>
-            로그인
-          </Link>
         )}
       </div>
     </header>

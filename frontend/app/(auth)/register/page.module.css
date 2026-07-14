@@ -212,3 +212,45 @@
   max-width: 420px;
   margin: 0 auto;
 }
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) 0;
+}
+
+.successIcon {
+  font-size: 56px;
+  color: var(--color-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.successActions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.secondaryButton {
+  height: 48px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline-variant);
+  background: transparent;
+  color: var(--color-on-surface);
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.secondaryButton:hover {
+  background: var(--color-surface-container-high);
+}
