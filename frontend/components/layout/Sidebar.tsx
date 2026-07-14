@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import { logout } from "@/lib/authActions";
+import Logo from "@/components/common/Logo";
 import styles from "./Sidebar.module.css";
 
 // TODO: 데모용 고정 id(1) -> 실제로는 팔로우 중인 채널 목록/추천에서 진입
@@ -41,11 +42,7 @@ export default function Sidebar() {
   return (
     <aside className={`${styles.sidebar} glass`}>
       <Link href="/" className={styles.logo}>
-        <span className={styles.logoMark}>4NF</span>
-        <span className={styles.logoType}>
-          <span className={`${styles.logoTitle} brand-gradient-text`}>404</span>
-          <span className={styles.logoSub}>Not Found</span>
-        </span>
+        <Logo />
       </Link>
 
       <nav className={styles.nav}>

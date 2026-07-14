@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import Link from "next/link";
 import api from "@/lib/api";
+import Logo from "@/components/common/Logo";
 import styles from "./page.module.css";
 
 // 이름 입력값은 백엔드 User 엔티티의 nickname(2~20자)에 대응된다.
@@ -40,8 +41,7 @@ export default function RegisterPage() {
     <div className={styles.page}>
       <section className={styles.visual}>
         <div className={styles.logoBadge}>
-          <span className={styles.logoMark}>4NF</span>
-          <span className={styles.logoText}>404 Not Found</span>
+          <Logo light />
         </div>
         <div className={styles.brandPanel}>
           <h2 className={styles.brandTitle}>
