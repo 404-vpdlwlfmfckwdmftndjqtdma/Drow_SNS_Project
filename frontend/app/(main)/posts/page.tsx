@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import api from "@/lib/api";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
@@ -12,13 +13,18 @@ interface PostListItem {
   content: string;
   visibility: string;
   tags: string[];
+  media: { url: string; mediaType: "IMAGE" | "VIDEO" }[];
   viewCount: number;
   createdAt: string;
 }
 
+// 이 글자수 넘어가면 "더보기"로 접어서 보여줌 (카드 하나 높이가 들쭉날쭉해지는 것 방지)
+const CONTENT_PREVIEW_LIMIT = 120;
+
 export default function PostListPage() {
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [error, setError] = useState("");
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     api
@@ -26,6 +32,21 @@ export default function PostListPage() {
       .then((res) => setPosts(res.data.data))
       .catch(() => setError("목록을 불러오지 못했습니다."));
   }, []);
+
+  // 카드 전체가 상세페이지로 가는 링크라서, 더보기 버튼 클릭이 그 링크 이동으로 안 번지게 막아야 함
+  const toggleExpand = (event: React.MouseEvent, postId: number) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+  };
 
   return (
     <main className={styles.container}>
@@ -38,18 +59,66 @@ export default function PostListPage() {
       {error && <p>{error}</p>}
 
       <div className={styles.grid}>
-        {posts.map((post) => (
-          <article className={styles.card} key={post.postId}>
-            <p>{post.content}</p>
-            <div>
-              {post.tags.map((tag) => (
-                <span className={styles.tag} key={tag}>
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </article>
-        ))}
+        {posts.map((post) => {
+          const isExpanded = expandedIds.has(post.postId);
+          const isLong = post.content.length > CONTENT_PREVIEW_LIMIT;
+          const shownContent = isLong && !isExpanded
+            ? `${post.content.slice(0, CONTENT_PREVIEW_LIMIT)}…`
+            : post.content;
+
+          return (
+            <Link className={styles.card} href={`/posts/${post.postId}`} key={post.postId}>
+              {/* 작성자 프로필/닉네임: 아직 nickname 조회 인터페이스 연동 전이라 userId로 임시 표시 */}
+              <div className={styles.cardHeader}>
+                <div className={styles.avatar} />
+                <div>
+                  <p className={styles.authorName}>작성자 #{post.userId}</p>
+                  <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+
+              {post.media.length > 0 && (
+                <div className={styles.thumbnail}>
+                  {post.media[0].mediaType === "VIDEO" ? (
+                    <video src={post.media[0].url} muted />
+                  ) : (
+                    <img src={post.media[0].url} alt="" />
+                  )}
+                </div>
+              )}
+
+              <div className={styles.body}>
+                {/* 좋아요/댓글은 자리만 잡아둠 — 나중에 값/클릭 연결 */}
+                <div className={styles.actionRow}>
+                  <span className="material-symbols-outlined">favorite</span>
+                  <span className="material-symbols-outlined">mode_comment</span>
+                  <span className={styles.viewCount}>조회 {post.viewCount}</span>
+                </div>
+
+                <p className={styles.content}>
+                  {shownContent}
+                  {isLong && (
+                    <button
+                      className={styles.moreButton}
+                      onClick={(event) => toggleExpand(event, post.postId)}
+                      type="button"
+                    >
+                      {isExpanded ? " 접기" : " 더보기"}
+                    </button>
+                  )}
+                </p>
+
+                <div>
+                  {post.tags.map((tag) => (
+                    <span className={styles.tag} key={tag}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </main>
   );
