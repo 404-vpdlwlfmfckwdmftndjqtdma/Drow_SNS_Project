@@ -51,7 +51,7 @@ public enum ErrorCode {
 
     // Media
     INVALID_FILE_EXTENSION(HttpStatus.BAD_REQUEST, "MEDIA_001", "허용되지 않은 파일 확장자입니다."),
-    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "MEDIA_002", "파일 용량 제한(100MB)을 초과했습니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "MEDIA_002", "파일 용량 제한(50MB)을 초과했습니다."),
     MEDIA_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MEDIA_003", "미디어 업로드에 실패했습니다.");
 
     private final HttpStatus status;
