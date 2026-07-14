@@ -1,0 +1,14 @@
+.likeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.likeBtn:has(:global(.filled)) {
+  color: var(--color-error);
+}

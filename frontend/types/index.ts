@@ -87,14 +87,19 @@ export interface Subscription {
   status: "ACTIVE" | "CANCELED";
 }
 
-export type NotificationType = "COMMENT" | "LIKE" | "NEW_FOLLOWER" | "NEW_POST" | "NEW_SUBSCRIBER";
+export type NotificationType = "COMMENT" | "REPLY" | "LIKE" | "NEW_FOLLOWER" | "NEW_POST" | "NEW_SUBSCRIBER";
+
+export type NotificationTargetType = "POST" | "COMMENT";
 
 export interface AppNotification {
   id: number;
+  senderId?: number;
   type: NotificationType;
+  targetType: NotificationTargetType;
+  targetId: number;
   message: string;
-  relatedId?: number;
   isRead: boolean;
+  readAt?: string;
   createdAt: string;
 }
 

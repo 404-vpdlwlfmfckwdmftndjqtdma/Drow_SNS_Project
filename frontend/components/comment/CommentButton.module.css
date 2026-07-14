@@ -1,0 +1,9 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: none;
+  background: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+}

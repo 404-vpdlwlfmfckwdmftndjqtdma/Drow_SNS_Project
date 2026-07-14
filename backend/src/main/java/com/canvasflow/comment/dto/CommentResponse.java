@@ -19,9 +19,12 @@ public record CommentResponse(
         String content,
         boolean deleted,
         LocalDateTime createdAt,
+        long likeCount,
+        boolean likedByMe,
         List<CommentResponse> replies
 ) {
-    public static CommentResponse of(Comment comment, String writerNickname, List<CommentResponse> replies) {
+    public static CommentResponse of(
+            Comment comment, String writerNickname, long likeCount, boolean likedByMe, List<CommentResponse> replies) {
         return new CommentResponse(
                 comment.getId(),
                 comment.getPostId(),
@@ -31,6 +34,8 @@ public record CommentResponse(
                 comment.isDeleted() ? null : comment.getContent(), // 삭제된 댓글은 본문을 내려보내지 않음
                 comment.isDeleted(),
                 comment.getCreatedAt(),
+                likeCount,
+                likedByMe,
                 replies
         );
     }
