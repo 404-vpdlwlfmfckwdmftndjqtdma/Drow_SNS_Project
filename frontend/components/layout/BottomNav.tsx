@@ -10,7 +10,7 @@ export default function BottomNav() {
 
   return (
     <nav className={`${styles.nav} glass`}>
-      <Link href="/" className={pathname === "/" ? styles.itemActive : styles.item}>
+      <Link href="/posts" className={pathname.startsWith("/posts") ? styles.itemActive : styles.item}>
         <span className="material-symbols-outlined">home</span>
         <span>홈</span>
       </Link>

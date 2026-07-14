@@ -1,5 +1,4 @@
 import Sidebar from "@/components/layout/Sidebar";
-import BottomNav from "@/components/layout/BottomNav";
 import styles from "./layout.module.css";
 
 // 로그인 이후 화면(피드/게시글/채널/마이페이지/알림/검색/사용자프로필)에 공통으로 적용되는 셸.
@@ -9,7 +8,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <>
       <Sidebar />
       <main className={styles.main}>{children}</main>
-      <BottomNav />
     </>
   );
 }

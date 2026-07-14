@@ -10,14 +10,14 @@ import styles from "./Sidebar.module.css";
 
 // TODO: 데모용 고정 id(1) -> 실제로는 팔로우 중인 채널 목록/추천에서 진입
 const NAV_ITEMS = [
-  { href: "/", label: "피드", icon: "grid_view" },
+  { href: "/posts", label: "피드", icon: "grid_view" },
   { href: "/mypage", label: "마이페이지", icon: "account_circle" },
   { href: "/mypage/follow", label: "친구", icon: "group" },
   { href: "/channels/1", label: "채널", icon: "hub" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
+  if (href === "/posts") return pathname === "/posts" || pathname.startsWith("/posts/");
   if (href.startsWith("/channels")) return pathname === "/channels" || pathname.startsWith("/channels/");
   return pathname === href;
 }
@@ -28,20 +28,35 @@ export default function Sidebar() {
   const router = useRouter();
   // SSR에서는 항상 false로 시작하고, 마운트 후 실제 로그인 상태로 갱신한다 (localStorage는 클라이언트에만 존재).
   const [loggedIn, setLoggedIn] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
 
   useEffect(() => {
     setLoggedIn(isLoggedIn());
   }, [pathname]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    document.fonts.ready.then(() => {
+      if (mounted) {
+        setFontsReady(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleLogout = async () => {
     await logout();
     setLoggedIn(false);
-    router.push("/");
+    router.push("/posts");
   };
 
   return (
-    <aside className={`${styles.sidebar} glass`}>
-      <Link href="/" className={styles.logo}>
+    <aside className={`${styles.sidebar} ${fontsReady ? styles.sidebarReady : ""} glass`}>
+      <Link href="/posts" className={styles.logo}>
         <Logo />
       </Link>
 
