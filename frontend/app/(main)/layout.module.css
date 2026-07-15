@@ -1,7 +1,8 @@
 .main {
   /* 고정 사이드바와 화면 경계 사이에 모든 메인 페이지의 공통 여백을 둔다. */
   padding-top: var(--space-md);
-  padding-bottom: var(--space-lg);
+  /* 스크롤 끝에서 컨텐츠가 브라우저 하단 선에 붙어 짤려 보이지 않도록 여유를 둔다 */
+  padding-bottom: var(--space-xl);
   padding-left: 256px;
   min-height: 100vh;
 }
