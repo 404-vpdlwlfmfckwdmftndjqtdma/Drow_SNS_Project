@@ -6,6 +6,7 @@ import axios from "axios";
 import Link from "next/link";
 import api from "@/lib/api";
 import { setTokens } from "@/lib/auth";
+import Logo from "@/components/common/Logo";
 import styles from "./page.module.css";
 
 export default function LoginPage() {
@@ -35,6 +36,9 @@ export default function LoginPage() {
   return (
     <div className={styles.page}>
       <section className={styles.visual}>
+        <Link href="/posts" className={styles.logoBadge} aria-label="메인 홈으로 이동">
+          <Logo light />
+        </Link>
         <div className={styles.brandPanel}>
           <h2 className={styles.brandTitle}>
             함께 그리는 상상, <span>창의력의 흐름.</span>

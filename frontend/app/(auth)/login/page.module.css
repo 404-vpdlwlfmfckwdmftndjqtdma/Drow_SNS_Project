@@ -18,6 +18,13 @@
   }
 }
 
+.logoBadge {
+  position: absolute;
+  top: var(--margin-desktop);
+  left: var(--margin-desktop);
+  z-index: 10;
+}
+
 .brandPanel {
   position: absolute;
   bottom: var(--space-xl);

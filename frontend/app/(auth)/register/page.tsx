@@ -41,9 +41,9 @@ export default function RegisterPage() {
   return (
     <div className={styles.page}>
       <section className={styles.visual}>
-        <div className={styles.logoBadge}>
+        <Link href="/posts" className={styles.logoBadge} aria-label="메인 홈으로 이동">
           <Logo light />
-        </div>
+        </Link>
         <div className={styles.brandPanel}>
           <h2 className={styles.brandTitle}>
             함께 그리는 상상, <span>창의력의 흐름.</span>

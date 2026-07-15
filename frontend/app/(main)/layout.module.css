@@ -1,6 +1,7 @@
 .main {
-  /* 고정 헤더 제거 후 디자인용 상단 여백 */
+  /* 고정 사이드바와 화면 경계 사이에 모든 메인 페이지의 공통 여백을 둔다. */
   padding-top: var(--space-md);
+  padding-bottom: var(--space-lg);
   padding-left: 256px;
   min-height: 100vh;
 }
