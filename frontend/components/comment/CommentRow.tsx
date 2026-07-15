@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "./CommentModal.module.css";
+import { formatCommentDateTime } from "./dateTime";
 
 export interface CommentItem {
   id: number;
@@ -45,11 +46,12 @@ export default function CommentRow({ comment: c, depth, currentUserId, actions }
   const editDraft = actions.editDrafts[c.id];
   const isMine = currentUserId != null && c.writerId === currentUserId;
   const displayName = c.writerNickname ?? `유저 ${c.writerId}`;
+  const createdAtLabel = formatCommentDateTime(c.createdAt);
 
   return (
     <div className={styles.comment} style={{ marginLeft: depth * 24 }}>
       <div className={styles.meta}>
-        <span className={isMine ? styles.nicknameMine : styles.nickname}>{displayName}</span> · {c.deleted ? "[삭제됨]" : c.createdAt}
+        <span className={isMine ? styles.nicknameMine : styles.nickname}>{displayName}</span> · {c.deleted ? "[삭제됨]" : createdAtLabel}
       </div>
 
       {editDraft === undefined ? (

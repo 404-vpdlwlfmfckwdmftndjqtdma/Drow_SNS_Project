@@ -27,5 +27,35 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
         """)
     List<PostEntity> findVisiblePosts(@Param("viewerId") Long viewerId);
 
+    @Query(value = """
+            SELECT p.* FROM posts p
+            WHERE p.deleted_at IS NULL
+                AND (p.visibility <> 'PRIVATE' OR p.user_id = :userId)
+                AND EXISTS (
+                            SELECT 1
+                            FROM likes l
+                            WHERE l.user_id = :userId
+                                AND l.target_type = 'POST'
+                                AND l.target_id = p.post_id
+                )
+            ORDER BY p.created_at DESC
+            """, nativeQuery = true)
+    List<PostEntity> findVisiblePostsLikedByUser(@Param("userId") Long userId);
+
+    @Query(value = """
+            SELECT p.* FROM posts p
+            WHERE p.deleted_at IS NULL
+                AND (p.visibility <> 'PRIVATE' OR p.user_id = :userId)
+                AND EXISTS (
+                            SELECT 1
+                            FROM comments c
+                            WHERE c.post_id = p.post_id
+                                AND c.writer_id = :userId
+                                AND c.deleted_at IS NULL
+                )
+            ORDER BY p.created_at DESC
+            """, nativeQuery = true)
+    List<PostEntity> findVisiblePostsCommentedByUser(@Param("userId") Long userId);
+
 
 }

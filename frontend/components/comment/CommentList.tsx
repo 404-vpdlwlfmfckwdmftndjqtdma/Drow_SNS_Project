@@ -1,4 +1,5 @@
 import styles from "./CommentList.module.css";
+import { formatCommentDateTime } from "./dateTime";
 
 interface CommentListItem {
   id: number;
@@ -22,7 +23,7 @@ export default function CommentList({ comments, currentUserId = null }: CommentL
             <span className={c.writerId != null && c.writerId === currentUserId ? styles.nicknameMine : styles.nickname}>
               {c.writerNickname ?? (c.writerId != null ? `유저 ${c.writerId}` : "익명")}
             </span>
-            {c.createdAt ? ` · ${new Date(c.createdAt).toLocaleString()}` : ""}
+            {c.createdAt ? ` · ${formatCommentDateTime(c.createdAt)}` : ""}
           </p>
           {c.content}
         </li>
