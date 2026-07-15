@@ -49,5 +49,25 @@ public class FollowService implements FollowFacade {
         followRepository.delete(follow);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isFollowing(Long followerId, Long followingId) {
+        return followRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
+    }
+
+    /** 내가 팔로우하고 있는 사람 수 (마이페이지 "팔로잉" 카운트). */
+    @Override
+    @Transactional(readOnly = true)
+    public long countFollowing(Long userId) {
+        return followRepository.countByFollowerId(userId);
+    }
+
+    /** 나를 팔로우하는 사람 수 (마이페이지 "팔로워" 카운트). */
+    @Override
+    @Transactional(readOnly = true)
+    public long countFollowers(Long userId) {
+        return followRepository.countByFollowingId(userId);
+    }
+
     // TODO: getFollowingList / getFollowerList (Page<FollowUserResponse> 반환) 구현
 }
