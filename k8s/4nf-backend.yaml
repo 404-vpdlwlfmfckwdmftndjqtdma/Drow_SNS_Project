@@ -17,11 +17,15 @@ spec:
     spec:
       containers:
         - name: 4nf-backend
-          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:47487e6e830d7707cbf231b1aafae99af55ee784
+          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:3bf980028062dc5c410c4d756fb156f50ca1ce4e
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
+            # --- 타임존: JVM(LocalDateTime.now)이 서울 시간으로 저장하도록 고정 ---
+            # 로컬 개발 백엔드(Windows, KST)와 저장 시간 기준을 통일한다.
+            - name: TZ
+              value: "Asia/Seoul"
             # --- DB 접속 (같은 네임스페이스의 postgres 서비스) ---
             - name: DB_HOST
               value: "postgres"
