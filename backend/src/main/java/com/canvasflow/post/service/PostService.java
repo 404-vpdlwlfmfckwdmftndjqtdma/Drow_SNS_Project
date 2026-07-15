@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.canvasflow.post.PostExtension;
+
 
 /**
  * [핵심] 게시글 저장 파이프라인. core 와 기능 모듈이 만나는 유일한 지점.
@@ -33,6 +35,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostMediaRepository postMediaRepository;
     private final UserFacade userFacade;
+    private final List<PostExtension> extensions;
 
 
     //글 작성
@@ -60,6 +63,12 @@ public class PostService {
                         .build());
             }
             postMediaRepository.saveAll(mediaEntities);
+        }
+
+        //블러처리
+        Map<String, Object> extensionData = postRequestDto.extensions() != null ? postRequestDto.extensions() : Map.of();
+        for(PostExtension extension : extensions) {
+            extension.apply(postEntity.getPostId(), extensionData.get(extension.key()));
         }
 
         return postEntity;
@@ -105,18 +114,25 @@ public class PostService {
         Map<Long, String> nicknameByUserId = userFacade.findNicknamesByIds(authorIds);
 
         return posts.stream()
-                .map(post -> new PostViewDto(
-                        post.getUserId(),
-                        post.getPostId(),
-                        post.getContent(),
-                        post.getVisibility(),
-                        List.copyOf(post.getTags()),
-                        mediaByPostId.getOrDefault(post.getPostId(), List.of()),
-                        post.getViewCount(),
-                        post.getCreatedAt(),
-                        post.getUpdatedAt(),
-                        nicknameByUserId.get(post.getUserId())
-                ))
+                .map(post -> {
+                    // 상세 조회와 동일하게, 목록에서도 블러 등 모듈 렌더 파이프라인을 거쳐야 원문이 새지 않는다
+                    String renderedContent = post.getContent();
+                    for (PostExtension extension : extensions) {
+                        renderedContent = extension.render(post.getPostId(), renderedContent);
+                    }
+                    return new PostViewDto(
+                            post.getUserId(),
+                            post.getPostId(),
+                            renderedContent,
+                            post.getVisibility(),
+                            List.copyOf(post.getTags()),
+                            mediaByPostId.getOrDefault(post.getPostId(), List.of()),
+                            post.getViewCount(),
+                            post.getCreatedAt(),
+                            post.getUpdatedAt(),
+                            nicknameByUserId.get(post.getUserId())
+                    );
+                })
                 .toList();
     }
 
@@ -135,6 +151,11 @@ public class PostService {
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
         }
 
+        String renderedContent = post.getContent();
+        for (PostExtension extension : extensions) {
+            renderedContent = extension.render(post.getPostId(), renderedContent);
+        }
+
         post.increaseViewCount();
 
         List<PostRequestDto.MediaItem> mediaItems = postMediaRepository
@@ -145,7 +166,7 @@ public class PostService {
         return new PostViewDto(
                 post.getUserId(),
                 post.getPostId(),
-                post.getContent(),
+                renderedContent,
                 post.getVisibility(),
                 List.copyOf(post.getTags()),
                 mediaItems,
@@ -177,6 +198,12 @@ public class PostService {
         }
 
         post.update(postRequestDto.content(), postRequestDto.visibility(), postRequestDto.tags());
+
+        //블러처리
+        Map<String, Object> extensionData = postRequestDto.extensions() != null ? postRequestDto.extensions() : Map.of();
+        for(PostExtension extension : extensions) {
+            extension.apply(post.getPostId(), extensionData.get(extension.key()));
+        }
 
         //이미지 수정은 지우고 새로 저장 방식으로(프론트에서는 기존의 사진들도 떠 추가/삭제 가능, 서버에서는 지우고 새로 채워넣는 방식)
         postMediaRepository.deleteAllByPostId(postId);
@@ -214,7 +241,8 @@ public class PostService {
         post.delete();
     }
 
-    //조회수
+
+
 
 
 
