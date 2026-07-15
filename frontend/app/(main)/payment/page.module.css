@@ -1,0 +1,135 @@
+.page {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: var(--space-lg) var(--margin-mobile);
+}
+
+.header {
+  margin-bottom: var(--space-md);
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-xs);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.25;
+}
+
+.description {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-on-surface-variant);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.card {
+  padding: var(--space-md);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.iconWrap {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-md);
+  color: var(--color-on-primary);
+  background: var(--gradient-brand);
+  border-radius: var(--radius-md);
+}
+
+.iconWrap span {
+  font-size: 28px;
+}
+
+.orderInfo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.orderLabel {
+  margin: 0 0 var(--space-xs);
+  color: var(--color-on-surface-variant);
+  font-size: 13px;
+}
+
+.orderTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.amount {
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.divider {
+  height: 1px;
+  margin: var(--space-md) 0;
+  background: var(--color-surface-container-high);
+}
+
+.payButtonWrap button {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-on-primary);
+  background: var(--gradient-brand);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.payButtonWrap button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.payButtonWrap button:focus-visible {
+  outline: 3px solid rgba(107, 56, 212, 0.28);
+  outline-offset: 3px;
+}
+
+.notice {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-outline);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: var(--space-md) var(--margin-mobile);
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .card {
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .orderInfo {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}

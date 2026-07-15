@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import CompactChannelList from "@/components/channel/list/CompactChannelList";
 import type { ApiResponse, User } from "@/types";
 import styles from "./page.module.css";
 
@@ -27,6 +28,7 @@ export default function MyPage() {
 
   return (
     <div className={styles.container}>
+      <div className={styles.content}>
       <section className={styles.cover} />
 
       <div className={styles.profileRow}>
@@ -105,6 +107,11 @@ export default function MyPage() {
           </div>
         </div>
       </div>
+      </div>
+
+      <aside className={styles.channelPanel}>
+        <CompactChannelList />
+      </aside>
     </div>
   );
 }
