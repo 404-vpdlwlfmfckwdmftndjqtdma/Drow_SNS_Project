@@ -8,6 +8,13 @@ import CommentList from "@/components/comment/CommentList";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
+interface CommentItem {
+  id: number;
+  content: string;
+  writerId: number;
+  writerNickname?: string;
+}
+
 // 백엔드 PostViewDto 와 1:1로 맞춘 응답 타입
 interface PostDetailResponse {
   postId: number;
@@ -40,6 +47,7 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mediaIndex, setMediaIndex] = useState(0);
+  const [comments, setComments] = useState<CommentItem[]>([]);
 
   useEffect(() => {
     setMediaIndex(0);
@@ -50,6 +58,23 @@ export default function PostDetailPage() {
       .then((res) => setPost(res.data.data))
       .catch(() => setError("게시글을 불러오지 못했습니다."))
       .finally(() => setLoading(false));
+  }, [postId]);
+
+  const fetchComments = async () => {
+    try {
+      const res = await api.get<ApiResponse<{ content: CommentItem[] }>>(`/api/v1/posts/${postId}/comments`, {
+        params: { size: 50 },
+        headers: { "X-User-Id": CURRENT_USER_ID },
+      });
+      setComments(res.data.data.content);
+    } catch {
+      setError("댓글을 불러오지 못했습니다.");
+    }
+  };
+
+  useEffect(() => {
+    if (!postId) return;
+    fetchComments();
   }, [postId]);
 
   const handleDelete = async () => {
@@ -147,11 +172,10 @@ export default function PostDetailPage() {
         </div>
       </article>
 
-      {/* 댓글: 그대로 가져다 자리만 잡음. 실제 조회/등록 연동은 동현님 마저 진행 */}
       <section className={styles.commentSection}>
         <h2 className={styles.commentTitle}>댓글</h2>
-        <CommentForm postId={post.postId} />
-        <CommentList comments={[]} />
+        <CommentForm postId={post.postId} onSubmitted={fetchComments} />
+        <CommentList comments={comments} />
       </section>
     </div>
   );

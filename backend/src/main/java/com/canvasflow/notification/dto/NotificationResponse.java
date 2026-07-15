@@ -1,8 +1,8 @@
 package com.canvasflow.notification.dto;
 
 import com.canvasflow.notification.entity.Notification;
-import com.canvasflow.notification.entity.NotificationTargetType;
-import com.canvasflow.notification.entity.NotificationType;
+import com.canvasflow.notification.NotificationTargetType;
+import com.canvasflow.notification.NotificationType;
 
 import java.time.LocalDateTime;
 

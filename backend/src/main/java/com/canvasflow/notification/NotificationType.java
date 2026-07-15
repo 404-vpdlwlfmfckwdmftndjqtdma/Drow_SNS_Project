@@ -1,4 +1,4 @@
-package com.canvasflow.notification.entity;
+package com.canvasflow.notification;
 
 public enum NotificationType {
     COMMENT,        // 내 게시글에 댓글

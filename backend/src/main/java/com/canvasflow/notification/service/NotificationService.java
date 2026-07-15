@@ -2,8 +2,8 @@ package com.canvasflow.notification.service;
 
 import com.canvasflow.notification.dto.NotificationResponse;
 import com.canvasflow.notification.entity.Notification;
-import com.canvasflow.notification.entity.NotificationTargetType;
-import com.canvasflow.notification.entity.NotificationType;
+import com.canvasflow.notification.NotificationTargetType;
+import com.canvasflow.notification.NotificationType;
 import com.canvasflow.notification.repository.NotificationRepository;
 import com.canvasflow.notification.sse.SseEmitterRepository;
 import com.canvasflow.user.UserFacade;
@@ -45,8 +45,7 @@ public class NotificationService {
             NotificationType type,
             NotificationTargetType targetType,
             Long targetId,
-            String message
-    ) {
+            String message) {
         if (!userFacade.existsById(receiverId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }

@@ -2,6 +2,8 @@ package com.canvasflow.comment.service;
 
 import com.canvasflow.comment.dto.CommentCreateRequest;
 import com.canvasflow.comment.dto.CommentDeletedEvent;
+import com.canvasflow.comment.dto.CommentLikeCountEvent;
+import com.canvasflow.comment.dto.CommentCountResponse;
 import com.canvasflow.comment.dto.CommentResponse;
 import com.canvasflow.comment.dto.CommentUpdateRequest;
 import com.canvasflow.comment.entity.Comment;
@@ -9,11 +11,16 @@ import com.canvasflow.comment.repository.CommentRepository;
 import com.canvasflow.comment.sse.CommentEmitterRepository;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
-import com.canvasflow.like.entity.Like;
-import com.canvasflow.like.entity.LikeTargetType;
-import com.canvasflow.like.repository.LikeRepository;
+import com.canvasflow.like.LikeReader;
+import com.canvasflow.like.LikeTargetType;
+import com.canvasflow.like.TargetLikedEvent;
+import com.canvasflow.notification.NotificationFacade;
+import com.canvasflow.notification.NotificationTargetType;
+import com.canvasflow.notification.NotificationType;
+import com.canvasflow.post.PostReader;
 import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,7 +31,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +38,9 @@ import java.util.stream.Stream;
  * 댓글 CRUD + 1-depth 대댓글 트리 조립을 담당.
  * post_id/writer_id는 다른 모듈 소유 데이터라 FK 없이 ID만 저장하므로, 여기서 검증하지 않는 한
  * 존재하지 않는 post_id로도 댓글이 생길 수 있다 (의도된 설계 - post 존재 검증은 이번 스코프 제외).
+ * like 모듈의 LikeRepository를 직접 참조하지 않고 LikeReader(읽기 전용 창구)만 의존한다 - like가
+ * comment를 다시 참조하면 순환 의존이 생기므로, 댓글 좋아요 알림/브로드캐스트는 TargetLikedEvent를
+ * 구독해서 이 모듈이 직접 처리한다 (Domain Event + Pub/Sub).
  */
 @RequiredArgsConstructor
 @Service
@@ -43,7 +52,9 @@ public class CommentService {
     private static final long SUBSCRIBE_TIMEOUT_MS = 30 * 60 * 1000L;
 
     private final CommentRepository commentRepository;
-    private final LikeRepository likeRepository;
+    private final LikeReader likeReader;
+    private final PostReader postReader;
+    private final NotificationFacade notificationFacade;
     private final CommentEmitterRepository commentEmitterRepository;
     private final UserFacade userFacade;
 
@@ -62,7 +73,7 @@ public class CommentService {
             }
         }
 
-        String writerNickname = userFacade.getNicknameOrThrow(userId);
+        String writerNickname = resolveWriterNickname(userId);
 
         Comment comment = commentRepository.save(Comment.builder()
                 .postId(postId)
@@ -71,7 +82,69 @@ public class CommentService {
                 .content(request.content())
                 .build());
 
-        return CommentResponse.of(comment, writerNickname, 0L, false, List.of());
+        notifyCommentCreated(userId, writerNickname, postId, parent, comment);
+
+        CommentResponse response = CommentResponse.of(comment, writerNickname, 0L, false, List.of());
+        broadcast(postId, "comment-created", response);
+        return response;
+    }
+
+    private String resolveWriterNickname(Long userId) {
+        try {
+            return userFacade.getNicknameOrThrow(userId);
+        } catch (CanvasflowException e) {
+            if (e.getErrorCode() == ErrorCode.USER_NOT_FOUND) {
+                return "user-" + userId;
+            }
+            throw e;
+        }
+    }
+
+    // 알림 저장은 댓글 작성 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다.
+    private void notifyCommentCreated(Long writerId, String writerNickname, Long postId, Comment parent, Comment comment) {
+        try {
+            if (parent != null) {
+                if (!parent.getWriterId().equals(writerId)) {
+                    notificationFacade.notify(
+                            parent.getWriterId(), writerId, NotificationType.REPLY,
+                            NotificationTargetType.COMMENT, parent.getId(),
+                            writerNickname + "님이 회원님의 댓글에 답글을 남겼습니다.");
+                }
+                return;
+            }
+            postReader.getPostInfo(postId).ifPresent(postInfo -> {
+                if (!postInfo.authorId().equals(writerId)) {
+                    notificationFacade.notify(
+                            postInfo.authorId(), writerId, NotificationType.COMMENT,
+                            NotificationTargetType.POST, postId,
+                            writerNickname + "님이 회원님의 게시글에 댓글을 남겼습니다.");
+                }
+            });
+        } catch (Exception e) {
+            // 알림 저장 실패는 무시 - 다음 접속 시 목록 조회로 확인 가능
+        }
+    }
+
+    // like 모듈이 발행한 이벤트를 구독해 댓글 좋아요 알림 생성 + 실시간 브로드캐스트를 한다.
+    // like 모듈은 이 리스너의 존재도, comment 모듈의 존재도 전혀 모른다 (Domain Event + Pub/Sub).
+    @EventListener
+    public void handleCommentLiked(TargetLikedEvent event) {
+        commentRepository.findById(event.commentId()).ifPresent(comment -> {
+            broadcast(comment.getPostId(), "comment-like-count",
+                    new CommentLikeCountEvent(event.commentId(), event.likeCount()));
+
+            if (!event.liked() || comment.getWriterId().equals(event.likerId())) {
+                return;
+            }
+            try {
+                notificationFacade.notify(
+                        comment.getWriterId(), event.likerId(), NotificationType.LIKE,
+                        NotificationTargetType.COMMENT, event.commentId(),
+                        event.likerNickname() + "님이 회원님의 댓글을 좋아합니다.");
+            } catch (Exception e) {
+                // 알림 저장 실패는 무시 - 다음 접속 시 목록 조회로 확인 가능
+            }
+        });
     }
 
     // 원댓글만 페이징하고, 그 페이지에 뜬 원댓글들의 대댓글은 전부(페이징 없이) 붙여서 내려준다.
@@ -94,17 +167,7 @@ public class CommentService {
         List<Long> allCommentIds = Stream.concat(roots.getContent().stream(), replies.stream())
                 .map(Comment::getId)
                 .toList();
-        List<Like> likes = allCommentIds.isEmpty()
-                ? List.of()
-                : likeRepository.findByTargetTypeAndTargetIdIn(LikeTargetType.COMMENT, allCommentIds);
-        Map<Long, Long> likeCounts = likes.stream()
-                .collect(Collectors.groupingBy(Like::getTargetId, Collectors.counting()));
-        Set<Long> likedByViewer = viewerId == null
-                ? Set.of()
-                : likes.stream()
-                        .filter(like -> like.getUserId().equals(viewerId))
-                        .map(Like::getTargetId)
-                        .collect(Collectors.toSet());
+        LikeReader.LikeSummary likeSummary = likeReader.summarize(LikeTargetType.COMMENT, allCommentIds, viewerId);
 
         return roots.map(root -> {
             List<CommentResponse> replyResponses = repliesByParentId
@@ -113,17 +176,23 @@ public class CommentService {
                     .map(reply -> CommentResponse.of(
                             reply,
                             nicknames.get(reply.getWriterId()),
-                            likeCounts.getOrDefault(reply.getId(), 0L),
-                            likedByViewer.contains(reply.getId()),
+                            likeSummary.countOf(reply.getId()),
+                            likeSummary.likedByViewer(reply.getId()),
                             List.of()))
                     .toList();
             return CommentResponse.of(
                     root,
                     nicknames.get(root.getWriterId()),
-                    likeCounts.getOrDefault(root.getId(), 0L),
-                    likedByViewer.contains(root.getId()),
+                    likeSummary.countOf(root.getId()),
+                    likeSummary.likedByViewer(root.getId()),
                     replyResponses);
         });
+    }
+
+    @Transactional(readOnly = true)
+    public CommentCountResponse getCommentCount(Long postId) {
+        long count = commentRepository.countByPostId(postId);
+        return new CommentCountResponse(count);
     }
 
     @Transactional
@@ -131,7 +200,11 @@ public class CommentService {
         Comment comment = getOwnedActiveComment(commentId, userId);
         comment.changeContent(request.content());
         String nickname = userFacade.findNicknameById(userId);
-        return CommentResponse.of(comment, nickname, 0L, false, List.of());
+        long likeCount = likeReader.countByTarget(LikeTargetType.COMMENT, commentId);
+        boolean likedByMe = likeReader.isLikedByUser(userId, LikeTargetType.COMMENT, commentId);
+        CommentResponse response = CommentResponse.of(comment, nickname, likeCount, likedByMe, List.of());
+        broadcast(comment.getPostId(), "comment-updated", response);
+        return response;
     }
 
     // 삭제된(DELETED) 원댓글에도 새 대댓글이 계속 달릴 수 있으므로(스레드 맥락 유지),
