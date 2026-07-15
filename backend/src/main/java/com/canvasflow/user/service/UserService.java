@@ -151,6 +151,19 @@ public class UserService implements UserFacade {
     }
 
     /**
+     * 여러 유저의 프로필을 한 번에 조회한다 (N+1 방지용, 예: 댓글 목록에서 작성자 프로필 일괄 조회).
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, UserProfileView> findProfilesByIds(Collection<Long> userIds) {
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        u -> new UserProfileView(u.getId(), u.getNickname(), u.getProfileImageUrl(), u.getBio())
+                ));
+    }
+
+    /**
      * 다른 모듈(mypage 등)에 프로필을 보여줄 때 사용한다. email은 포함하지 않는다.
      */
     @Override

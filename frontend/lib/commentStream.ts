@@ -6,6 +6,7 @@ export interface CommentStreamItem {
   parentId: number | null;
   writerId: number;
   writerNickname?: string;
+  writerProfileImageUrl?: string;
   content: string;
   deleted: boolean;
   createdAt: string;

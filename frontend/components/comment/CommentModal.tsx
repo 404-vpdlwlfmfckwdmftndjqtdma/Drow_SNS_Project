@@ -170,37 +170,24 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
     onDelete: deleteComment,
   };
 
+  const initials = (() => {
+    // 로그인 유저 아바타 이니셜 — userId만 있으면 "나" 표시
+    return "나";
+  })();
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
-          <span className={styles.title}>댓글</span>
+          <span className={styles.title}>
+            댓글<span className={styles.count}>{comments.length}</span>
+          </span>
           <button className={styles.closeBtn} onClick={onClose} aria-label="닫기">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         <div className={styles.body}>
-          <div className={styles.row}>
-            <input
-              className={styles.input}
-              placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요"}
-              value={rootContent}
-              onChange={(e) => setRootContent(e.target.value)}
-              disabled={userId == null}
-            />
-            <button
-              className={styles.submit}
-              disabled={userId == null}
-              onClick={() => {
-                createComment(rootContent);
-                setRootContent("");
-              }}
-            >
-              등록
-            </button>
-          </div>
-
           {loading ? (
             <p className={styles.empty}>불러오는 중...</p>
           ) : comments.length === 0 ? (
@@ -210,6 +197,35 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
               <CommentRow key={c.id} comment={c} depth={0} currentUserId={userId} actions={actions} />
             ))
           )}
+        </div>
+
+        <div className={styles.composer}>
+          <div className={styles.composerAvatar}>{initials}</div>
+          <input
+            className={styles.input}
+            placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요…"}
+            value={rootContent}
+            onChange={(e) => setRootContent(e.target.value)}
+            disabled={userId == null}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                createComment(rootContent);
+                setRootContent("");
+              }
+            }}
+          />
+          <button
+            className={styles.submit}
+            disabled={userId == null || !rootContent.trim()}
+            onClick={() => {
+              createComment(rootContent);
+              setRootContent("");
+            }}
+            aria-label="등록"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>send</span>
+          </button>
         </div>
       </div>
     </div>

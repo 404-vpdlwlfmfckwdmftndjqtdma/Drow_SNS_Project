@@ -26,5 +26,7 @@ public interface UserFacade {
 
     Map<Long, String> findNicknamesByIds(Collection<Long> userIds);
 
+    Map<Long, UserProfileView> findProfilesByIds(Collection<Long> userIds);
+
     UserProfileView getProfileView(Long userId);
 }

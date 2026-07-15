@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,117 +15,309 @@
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface-container-lowest);
-  border-radius: var(--radius-md);
+  background: #ffffff;
+  border-radius: 20px;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-sm) var(--space-md);
-  border-bottom: 1px solid var(--color-outline-variant);
+  padding: 14px 16px 12px;
+  border-bottom: 0.5px solid var(--color-outline-variant);
+  background: #ffffff;
+  flex-shrink: 0;
 }
 
 .title {
-  font-weight: 600;
-  color: var(--color-on-surface);
+  font-size: 15px;
+  font-weight: 500;
+  color: #111;
+}
+
+.count {
+  font-size: 13px;
+  font-weight: 400;
+  color: #999;
+  margin-left: 4px;
 }
 
 .closeBtn {
   border: none;
   background: none;
   cursor: pointer;
-  color: var(--color-on-surface-variant);
+  color: #555;
+  display: flex;
+  align-items: center;
+  padding: 0;
 }
 
 .body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #ffffff;
 }
 
-.row {
+.composer {
   display: flex;
-  gap: var(--space-xs);
   align-items: center;
-  margin-bottom: var(--space-sm);
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 0.5px solid var(--color-outline-variant);
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.composerAvatar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #ede8fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b38d4;
 }
 
 .input {
   flex: 1;
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-outline);
-  border-radius: var(--radius);
-  background: var(--color-surface-container);
-  color: var(--color-on-surface);
+  padding: 8px 14px;
+  border: 0.5px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-low);
+  color: #111;
+  font-size: 14px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
 }
 
 .submit {
-  padding: var(--space-xs) var(--space-sm);
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: var(--radius);
+  border-radius: 50%;
   background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 600;
+  color: #ffffff;
   cursor: pointer;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submit:disabled {
+  background: var(--color-outline);
+  cursor: not-allowed;
 }
 
 .empty {
-  color: var(--color-on-surface-variant);
+  color: #999;
   font-size: 14px;
   text-align: center;
   padding: var(--space-md) 0;
 }
 
+/* 댓글 행 */
 .comment {
-  border-left: 2px solid var(--color-outline-variant);
-  padding: var(--space-xs) 0 var(--space-xs) var(--space-sm);
-  margin-bottom: var(--space-sm);
+  display: flex;
+  gap: 10px;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.commentBody {
+  flex: 1;
+  min-width: 0;
 }
 
 .meta {
-  font-size: 11px;
-  color: var(--color-on-surface-variant);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .nickname {
-  color: var(--color-on-surface-variant);
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
 }
 
 .nicknameMine {
+  font-size: 13px;
+  font-weight: 500;
   color: var(--color-primary);
-  font-weight: 700;
+}
+
+.timestamp {
+  font-size: 11px;
+  color: #999;
 }
 
 .content {
-  margin: var(--space-xs) 0;
-  color: var(--color-on-surface);
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #111;
+  line-height: 1.55;
+}
+
+.contentDeleted {
+  margin: 0;
+  font-size: 14px;
+  color: #aaa;
+  line-height: 1.55;
+  font-style: italic;
 }
 
 .actions {
   display: flex;
-  gap: var(--space-sm);
-  font-size: 12px;
+  align-items: center;
+  gap: 12px;
 }
 
 .actions button {
   cursor: pointer;
   border: none;
   background: none;
-  color: var(--color-on-surface-variant);
+  color: #999;
   padding: 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.actions button:hover {
+  color: #555;
 }
 
 .likeBtn {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
 }
 
-.likeBtn:has(:global(.filled)) {
-  color: var(--color-error);
+.likeBtn.liked {
+  color: var(--color-primary) !important;
+}
+
+/* 대댓글 영역 */
+.replies {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.replyRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.replyConnector {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.replyContent {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.replyAvatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.replyBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.replyMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.replyNickname {
+  font-size: 12px;
+  font-weight: 500;
+  color: #111;
+}
+
+.replyNicknameMine {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.replyTimestamp {
+  font-size: 11px;
+  color: #999;
+}
+
+.replyText {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #111;
+  line-height: 1.5;
+}
+
+/* 수정 폼 */
+.editRow {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin-top: 4px;
+}
+
+.cancelBtn {
+  font-size: 12px;
+  color: #999;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* 대댓글 입력 폼 */
+.replyForm {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin-top: 10px;
+  margin-left: 22px;
 }

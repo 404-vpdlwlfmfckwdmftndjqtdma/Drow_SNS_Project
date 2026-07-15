@@ -16,6 +16,7 @@ public record CommentResponse(
         Long parentId,
         Long writerId,
         String writerNickname,
+        String writerProfileImageUrl,
         String content,
         boolean deleted,
         LocalDateTime createdAt,
@@ -24,14 +25,16 @@ public record CommentResponse(
         List<CommentResponse> replies
 ) {
     public static CommentResponse of(
-            Comment comment, String writerNickname, long likeCount, boolean likedByMe, List<CommentResponse> replies) {
+            Comment comment, String writerNickname, String writerProfileImageUrl,
+            long likeCount, boolean likedByMe, List<CommentResponse> replies) {
         return new CommentResponse(
                 comment.getId(),
                 comment.getPostId(),
                 comment.getParentId(),
                 comment.getWriterId(),
                 writerNickname,
-                comment.isDeleted() ? null : comment.getContent(), // 삭제된 댓글은 본문을 내려보내지 않음
+                writerProfileImageUrl,
+                comment.isDeleted() ? null : comment.getContent(),
                 comment.isDeleted(),
                 comment.getCreatedAt(),
                 likeCount,

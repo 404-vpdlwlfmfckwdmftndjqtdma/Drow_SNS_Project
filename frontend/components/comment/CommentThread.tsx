@@ -161,37 +161,48 @@ export default function CommentThread({ postId, userId }: CommentThreadProps) {
   };
 
   return (
-    <div className={styles.body}>
-      <div className={styles.row}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "16px 0" }}>
+        {loading ? (
+          <p className={styles.empty}>불러오는 중...</p>
+        ) : comments.length === 0 ? (
+          <p className={styles.empty}>아직 댓글이 없습니다.</p>
+        ) : (
+          comments.map((c) => (
+            <CommentRow key={c.id} comment={c} depth={0} currentUserId={userId} actions={actions} />
+          ))
+        )}
+      </div>
+
+      <div className={styles.composer} style={{ borderRadius: 0, margin: "0 -16px", padding: "12px 16px" }}>
+        <div className={styles.composerAvatar}>나</div>
         <input
           className={styles.input}
-          placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요"}
+          placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요…"}
           value={rootContent}
           onChange={(e) => setRootContent(e.target.value)}
           disabled={userId == null}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              createComment(rootContent);
+              setRootContent("");
+            }
+          }}
         />
         <button
           className={styles.submit}
-          disabled={userId == null}
+          disabled={userId == null || !rootContent.trim()}
           onClick={() => {
             createComment(rootContent);
             setRootContent("");
           }}
           type="button"
+          aria-label="등록"
         >
-          등록
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>send</span>
         </button>
       </div>
-
-      {loading ? (
-        <p className={styles.empty}>불러오는 중...</p>
-      ) : comments.length === 0 ? (
-        <p className={styles.empty}>아직 댓글이 없습니다.</p>
-      ) : (
-        comments.map((c) => (
-          <CommentRow key={c.id} comment={c} depth={0} currentUserId={userId} actions={actions} />
-        ))
-      )}
     </div>
   );
 }

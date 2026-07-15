@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+import Link from "next/link";
 import styles from "./CommentModal.module.css";
 import { formatCommentDateTime } from "./dateTime";
 
@@ -9,6 +11,7 @@ export interface CommentItem {
   parentId: number | null;
   writerId: number;
   writerNickname?: string;
+  writerProfileImageUrl?: string;
   content: string;
   deleted: boolean;
   createdAt: string;
@@ -38,71 +41,192 @@ interface CommentRowProps {
   actions: CommentActions;
 }
 
-// 댓글 한 줄(+ 대댓글) 렌더링. 좋아요 개수 실시간 갱신은 댓글마다 SSE 연결을 열지 않고
-// CommentModal이 이미 구독 중인 게시글 댓글 채널(comment-like-count 이벤트)로 받아 내려온다
-// (브라우저는 오리진당 동시 연결 수 제한이 있어서 댓글 수만큼 연결을 열면 안 된다).
+const AVATAR_PALETTES = [
+  { bg: "#ede8fb", color: "#6b38d4" },
+  { bg: "#e6edf9", color: "#0058be" },
+  { bg: "#fff3e0", color: "#994100" },
+  { bg: "#e1f5ee", color: "#0f6e56" },
+  { bg: "#fbeaf0", color: "#993556" },
+];
+
+function getAvatarStyle(writerId: number) {
+  return AVATAR_PALETTES[writerId % AVATAR_PALETTES.length];
+}
+
+function getInitials(nickname?: string, writerId?: number): string {
+  if (nickname && nickname.length >= 2) return nickname.slice(0, 2);
+  if (nickname) return nickname[0];
+  return `U${writerId ?? "?"}`;
+}
+
+function Avatar({ profileImageUrl, initials, style, className }: {
+  profileImageUrl?: string;
+  initials: string;
+  style: React.CSSProperties;
+  className: string;
+}) {
+  if (profileImageUrl) {
+    return (
+      <img
+        src={profileImageUrl}
+        alt={initials}
+        className={className}
+        style={{ ...style, objectFit: "cover" }}
+      />
+    );
+  }
+  return <div className={className} style={style}>{initials}</div>;
+}
+
 export default function CommentRow({ comment: c, depth, currentUserId, actions }: CommentRowProps) {
   const replyDraft = actions.replyDrafts[c.id] ?? "";
   const editDraft = actions.editDrafts[c.id];
   const isMine = currentUserId != null && c.writerId === currentUserId;
   const displayName = c.writerNickname ?? `유저 ${c.writerId}`;
   const createdAtLabel = formatCommentDateTime(c.createdAt);
+  const avatarStyle = getAvatarStyle(c.writerId);
+  const initials = getInitials(c.writerNickname, c.writerId);
+  const profileHref = isMine ? "/mypage" : `/users/${c.writerId}`;
+
+  if (depth > 0) {
+    return (
+      <div className={styles.replyRow}>
+        <svg className={styles.replyConnector} width="22" height="36" aria-hidden="true">
+          <line x1="10" y1="0" x2="10" y2="22" stroke="#d0d0d0" strokeWidth="1.5" />
+          <line x1="10" y1="22" x2="22" y2="22" stroke="#d0d0d0" strokeWidth="1.5" />
+        </svg>
+        <div className={styles.replyContent}>
+          <Link href={profileHref}>
+            <Avatar
+              profileImageUrl={c.writerProfileImageUrl}
+              initials={initials}
+              className={styles.replyAvatar}
+              style={{ background: avatarStyle.bg, color: avatarStyle.color }}
+            />
+          </Link>
+          <div className={styles.replyBody}>
+            <div className={styles.replyMeta}>
+              <Link href={profileHref} className={isMine ? styles.replyNicknameMine : styles.replyNickname}>
+                {displayName}
+              </Link>
+              <span className={styles.replyTimestamp}>{createdAtLabel}</span>
+            </div>
+
+            {editDraft === undefined ? (
+              <p className={styles.replyText}>{c.deleted ? "삭제된 댓글입니다." : c.content}</p>
+            ) : (
+              <div className={styles.editRow}>
+                <input
+                  className={styles.input}
+                  value={editDraft}
+                  onChange={(e) => actions.onEditChange(c.id, e.target.value)}
+                />
+                <button className={styles.submit} onClick={() => actions.onSubmitEdit(c.id)}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
+                </button>
+                <button className={styles.cancelBtn} onClick={() => actions.onCancelEdit(c.id)}>취소</button>
+              </div>
+            )}
+
+            {!c.deleted && (
+              <div className={styles.actions}>
+                <button
+                  className={`${styles.likeBtn}${c.likedByMe ? ` ${styles.liked}` : ""}`}
+                  onClick={() => actions.onToggleLike(c)}
+                >
+                  <span className={`material-symbols-outlined${c.likedByMe ? " filled" : ""}`} style={{ fontSize: 13 }}>
+                    favorite
+                  </span>
+                  {c.likeCount}
+                </button>
+                {isMine && editDraft === undefined && (
+                  <button onClick={() => actions.onStartEdit(c)}>수정</button>
+                )}
+                {isMine && <button onClick={() => actions.onDelete(c.id)}>삭제</button>}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.comment} style={{ marginLeft: depth * 24 }}>
-      <div className={styles.meta}>
-        <span className={isMine ? styles.nicknameMine : styles.nickname}>{displayName}</span> · {c.deleted ? "[삭제됨]" : createdAtLabel}
-      </div>
+    <div className={styles.comment}>
+      <Link href={profileHref}>
+        <Avatar
+          profileImageUrl={c.writerProfileImageUrl}
+          initials={initials}
+          className={styles.avatar}
+          style={{ background: avatarStyle.bg, color: avatarStyle.color }}
+        />
+      </Link>
 
-      {editDraft === undefined ? (
-        <p className={styles.content}>{c.deleted ? "삭제된 댓글입니다" : c.content}</p>
-      ) : (
-        <div className={styles.row}>
-          <input
-            className={styles.input}
-            value={editDraft}
-            onChange={(e) => actions.onEditChange(c.id, e.target.value)}
-          />
-          <button className={styles.submit} onClick={() => actions.onSubmitEdit(c.id)}>
-            저장
-          </button>
-          <button onClick={() => actions.onCancelEdit(c.id)}>취소</button>
+      <div className={styles.commentBody}>
+        <div className={styles.meta}>
+          <Link href={profileHref} className={isMine ? styles.nicknameMine : styles.nickname}>{displayName}</Link>
+          <span className={styles.timestamp}>{c.deleted ? "" : createdAtLabel}</span>
         </div>
-      )}
 
-      <div className={styles.actions}>
+        {editDraft === undefined ? (
+          <p className={c.deleted ? styles.contentDeleted : styles.content}>
+            {c.deleted ? "삭제된 댓글입니다." : c.content}
+          </p>
+        ) : (
+          <div className={styles.editRow}>
+            <input
+              className={styles.input}
+              value={editDraft}
+              onChange={(e) => actions.onEditChange(c.id, e.target.value)}
+            />
+            <button className={styles.submit} onClick={() => actions.onSubmitEdit(c.id)}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
+            </button>
+            <button className={styles.cancelBtn} onClick={() => actions.onCancelEdit(c.id)}>취소</button>
+          </div>
+        )}
+
         {!c.deleted && (
-          <button className={styles.likeBtn} onClick={() => actions.onToggleLike(c)}>
-            <span className={`material-symbols-outlined${c.likedByMe ? " filled" : ""}`} style={{ fontSize: 16 }}>
-              favorite
-            </span>
-            {c.likeCount}
-          </button>
+          <div className={styles.actions}>
+            <button
+              className={`${styles.likeBtn}${c.likedByMe ? ` ${styles.liked}` : ""}`}
+              onClick={() => actions.onToggleLike(c)}
+            >
+              <span className={`material-symbols-outlined${c.likedByMe ? " filled" : ""}`} style={{ fontSize: 14 }}>
+                favorite
+              </span>
+              {c.likeCount}
+            </button>
+            <button onClick={() => actions.onStartReply(c.id)}>답글</button>
+            {isMine && editDraft === undefined && (
+              <button onClick={() => actions.onStartEdit(c)}>수정</button>
+            )}
+            {isMine && <button onClick={() => actions.onDelete(c.id)}>삭제</button>}
+          </div>
         )}
-        {depth === 0 && <button onClick={() => actions.onStartReply(c.id)}>답글</button>}
-        {isMine && !c.deleted && editDraft === undefined && (
-          <button onClick={() => actions.onStartEdit(c)}>수정</button>
+
+        {c.replies?.length > 0 && (
+          <div className={styles.replies}>
+            {c.replies.map((r) => (
+              <CommentRow key={r.id} comment={r} depth={depth + 1} currentUserId={currentUserId} actions={actions} />
+            ))}
+          </div>
         )}
-        {isMine && !c.deleted && <button onClick={() => actions.onDelete(c.id)}>삭제</button>}
+
+        {c.id in actions.replyDrafts && (
+          <div className={styles.replyForm}>
+            <input
+              className={styles.input}
+              placeholder="대댓글 입력"
+              value={replyDraft}
+              onChange={(e) => actions.onReplyChange(c.id, e.target.value)}
+            />
+            <button className={styles.submit} onClick={() => actions.onSubmitReply(c.id)}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>send</span>
+            </button>
+          </div>
+        )}
       </div>
-
-      {c.id in actions.replyDrafts && depth === 0 && (
-        <div className={styles.row}>
-          <input
-            className={styles.input}
-            placeholder="대댓글 입력"
-            value={replyDraft}
-            onChange={(e) => actions.onReplyChange(c.id, e.target.value)}
-          />
-          <button className={styles.submit} onClick={() => actions.onSubmitReply(c.id)}>
-            등록
-          </button>
-        </div>
-      )}
-
-      {c.replies?.map((r) => (
-        <CommentRow key={r.id} comment={r} depth={depth + 1} currentUserId={currentUserId} actions={actions} />
-      ))}
     </div>
   );
 }

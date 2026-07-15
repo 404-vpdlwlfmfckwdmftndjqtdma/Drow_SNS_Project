@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import com.canvasflow.user.UserProfileView;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -86,7 +87,8 @@ public class CommentService {
 
         notifyCommentCreated(userId, writerNickname, postId, parent, comment);
 
-        CommentResponse response = CommentResponse.of(comment, writerNickname, 0L, false, List.of());
+        String writerProfileImageUrl = userFacade.getProfileView(userId).profileImageUrl();
+        CommentResponse response = CommentResponse.of(comment, writerNickname, writerProfileImageUrl, 0L, false, List.of());
         broadcast(postId, "comment-created", response);
         postStreamService.publishCommentCreated(
             response.postId(),
@@ -94,6 +96,7 @@ public class CommentService {
             response.parentId(),
             response.writerId(),
             response.writerNickname(),
+            response.writerProfileImageUrl(),
             response.content(),
             response.deleted(),
             response.createdAt(),
@@ -178,7 +181,7 @@ public class CommentService {
 
         Map<Long, List<Comment>> repliesByParentId = replies.stream()
                 .collect(Collectors.groupingBy(Comment::getParentId));
-        Map<Long, String> nicknames = fetchNicknames(roots.getContent(), replies);
+        Map<Long, UserProfileView> profiles = fetchProfiles(roots.getContent(), replies);
 
         List<Long> allCommentIds = Stream.concat(roots.getContent().stream(), replies.stream())
                 .map(Comment::getId)
@@ -186,19 +189,25 @@ public class CommentService {
         LikeReader.LikeSummary likeSummary = likeReader.summarize(LikeTargetType.COMMENT, allCommentIds, viewerId);
 
         return roots.map(root -> {
+            UserProfileView rootProfile = profiles.get(root.getWriterId());
             List<CommentResponse> replyResponses = repliesByParentId
                     .getOrDefault(root.getId(), List.of())
                     .stream()
-                    .map(reply -> CommentResponse.of(
-                            reply,
-                            nicknames.get(reply.getWriterId()),
-                            likeSummary.countOf(reply.getId()),
-                            likeSummary.likedByViewer(reply.getId()),
-                            List.of()))
+                    .map(reply -> {
+                        UserProfileView replyProfile = profiles.get(reply.getWriterId());
+                        return CommentResponse.of(
+                                reply,
+                                replyProfile != null ? replyProfile.nickname() : null,
+                                replyProfile != null ? replyProfile.profileImageUrl() : null,
+                                likeSummary.countOf(reply.getId()),
+                                likeSummary.likedByViewer(reply.getId()),
+                                List.of());
+                    })
                     .toList();
             return CommentResponse.of(
                     root,
-                    nicknames.get(root.getWriterId()),
+                    rootProfile != null ? rootProfile.nickname() : null,
+                    rootProfile != null ? rootProfile.profileImageUrl() : null,
                     likeSummary.countOf(root.getId()),
                     likeSummary.likedByViewer(root.getId()),
                     replyResponses);
@@ -215,10 +224,10 @@ public class CommentService {
     public CommentResponse update(Long commentId, Long userId, CommentUpdateRequest request) {
         Comment comment = getOwnedActiveComment(commentId, userId);
         comment.changeContent(request.content());
-        String nickname = userFacade.findNicknameById(userId);
+        UserProfileView profile = userFacade.getProfileView(userId);
         long likeCount = likeReader.countByTarget(LikeTargetType.COMMENT, commentId);
         boolean likedByMe = likeReader.isLikedByUser(userId, LikeTargetType.COMMENT, commentId);
-        CommentResponse response = CommentResponse.of(comment, nickname, likeCount, likedByMe, List.of());
+        CommentResponse response = CommentResponse.of(comment, profile.nickname(), profile.profileImageUrl(), likeCount, likedByMe, List.of());
         broadcast(comment.getPostId(), "comment-updated", response);
         postStreamService.publishCommentUpdated(
             response.postId(),
@@ -226,6 +235,7 @@ public class CommentService {
             response.parentId(),
             response.writerId(),
             response.writerNickname(),
+            response.writerProfileImageUrl(),
             response.content(),
             response.deleted(),
             response.createdAt(),
@@ -309,11 +319,11 @@ public class CommentService {
         return comment;
     }
 
-    private Map<Long, String> fetchNicknames(List<Comment> roots, List<Comment> replies) {
+    private Map<Long, UserProfileView> fetchProfiles(List<Comment> roots, List<Comment> replies) {
         List<Long> writerIds = Stream.concat(roots.stream(), replies.stream())
                 .map(Comment::getWriterId)
                 .distinct()
                 .toList();
-        return userFacade.findNicknamesByIds(writerIds);
+        return userFacade.findProfilesByIds(writerIds);
     }
 }
