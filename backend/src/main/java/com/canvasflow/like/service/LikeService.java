@@ -16,6 +16,7 @@ import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,8 +51,12 @@ public class LikeService {
         if (likeRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId)) {
             throw new CanvasflowException(ErrorCode.ALREADY_LIKED);
         }
-        String likerNickname = userFacade.getNicknameOrThrow(userId);
-        likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());
+        try {
+            likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청 레이스(중복 좋아요 insert) 시 DB unique 제약 예외를 도메인 에러로 변환한다.
+            throw new CanvasflowException(ErrorCode.ALREADY_LIKED);
+        }
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
         notifyAndPublish(userId, targetType, targetId, true, likeCount);
         broadcastCount(targetType, targetId, likeCount);
