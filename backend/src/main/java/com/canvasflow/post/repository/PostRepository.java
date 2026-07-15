@@ -27,6 +27,36 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
         """)
     List<PostEntity> findVisiblePosts(@Param("viewerId") Long viewerId);
 
+    @Query(value = """
+            SELECT p.* FROM posts p
+            WHERE p.deleted_at IS NULL
+                AND (p.visibility <> 'PRIVATE' OR p.user_id = :userId)
+                AND EXISTS (
+                            SELECT 1
+                            FROM likes l
+                            WHERE l.user_id = :userId
+                                AND l.target_type = 'POST'
+                                AND l.target_id = p.post_id
+                )
+            ORDER BY p.created_at DESC
+            """, nativeQuery = true)
+    List<PostEntity> findVisiblePostsLikedByUser(@Param("userId") Long userId);
+
+    @Query(value = """
+            SELECT p.* FROM posts p
+            WHERE p.deleted_at IS NULL
+                AND (p.visibility <> 'PRIVATE' OR p.user_id = :userId)
+                AND EXISTS (
+                            SELECT 1
+                            FROM comments c
+                            WHERE c.post_id = p.post_id
+                                AND c.writer_id = :userId
+                                AND c.deleted_at IS NULL
+                )
+            ORDER BY p.created_at DESC
+            """, nativeQuery = true)
+    List<PostEntity> findVisiblePostsCommentedByUser(@Param("userId") Long userId);
+
     // mypage 모듈(PostReader.countByAuthorId)에서 마이페이지 "창작물" 통계용으로 추가함 - post 담당자 확인 부탁드립니다.
     // 삭제(soft delete)된 글은 제외하고 센다. visibility(PRIVATE 등)는 구분하지 않고 전부 포함 - 본인/타인 마이페이지 모두
     // "이 사람이 쓴 글 총개수"라는 의미로 쓰기 위함이다(공개된 글만 셀지는 추후 논의 필요).

@@ -2,8 +2,8 @@ import type { AppNotification } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-// 브라우저 EventSource는 커스텀 헤더(X-User-Id)를 못 보내므로 쿼리 파라미터로 사용자를 식별한다.
-// (백엔드 NotificationController.subscribe 참고 - JWT 붙으면 다 같이 토큰 기반으로 전환 예정)
+// 브라우저 EventSource는 커스텀 헤더(Authorization 포함)를 못 보내므로 쿼리 파라미터로 사용자를 식별한다.
+// (목록/읽음 API는 토큰 기반, subscribe만 쿼리 파라미터 유지)
 // 연결이 끊기면 EventSource가 알아서 재연결을 시도한다 (기본 재시도 간격 ~3초).
 export function subscribeToNotifications(
   userId: number,

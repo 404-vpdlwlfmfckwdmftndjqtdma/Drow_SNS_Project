@@ -3,17 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
-import CommentForm from "@/components/comment/CommentForm";
-import CommentList from "@/components/comment/CommentList";
-import type { ApiResponse, User } from "@/types";
+import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
+import CommentThread from "@/components/comment/CommentThread";
+import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
-
-interface CommentItem {
-  id: number;
-  content: string;
-  writerId: number;
-  writerNickname?: string;
-}
 
 // 백엔드 PostViewDto 와 1:1로 맞춘 응답 타입
 interface PostDetailResponse {
@@ -45,13 +38,18 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mediaIndex, setMediaIndex] = useState(0);
-  const [comments, setComments] = useState<CommentItem[]>([]);
 
   useEffect(() => {
-    api
-      .get<ApiResponse<User>>("/api/v1/users/me")
-      .then((res) => setCurrentUserId(res.data.data.id))
-      .catch(() => setCurrentUserId(null));
+    const syncCurrentUser = () => setCurrentUserId(getCurrentUserId());
+    syncCurrentUser();
+
+    window.addEventListener(AUTH_CHANGE_EVENT, syncCurrentUser);
+    window.addEventListener("storage", syncCurrentUser);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGE_EVENT, syncCurrentUser);
+      window.removeEventListener("storage", syncCurrentUser);
+    };
   }, []);
 
   useEffect(() => {
@@ -61,22 +59,6 @@ export default function PostDetailPage() {
       .then((res) => setPost(res.data.data))
       .catch(() => setError("게시글을 불러오지 못했습니다."))
       .finally(() => setLoading(false));
-  }, [postId]);
-
-  const fetchComments = async () => {
-    try {
-      const res = await api.get<ApiResponse<{ content: CommentItem[] }>>(`/api/v1/posts/${postId}/comments`, {
-        params: { size: 50 },
-      });
-      setComments(res.data.data.content);
-    } catch {
-      setError("댓글을 불러오지 못했습니다.");
-    }
-  };
-
-  useEffect(() => {
-    if (!postId) return;
-    fetchComments();
   }, [postId]);
 
   const handleDelete = async () => {
@@ -176,8 +158,7 @@ export default function PostDetailPage() {
 
       <section className={styles.commentSection}>
         <h2 className={styles.commentTitle}>댓글</h2>
-        <CommentForm postId={post.postId} onSubmitted={fetchComments} />
-        <CommentList comments={comments} />
+        <CommentThread postId={post.postId} userId={currentUserId} />
       </section>
     </div>
   );

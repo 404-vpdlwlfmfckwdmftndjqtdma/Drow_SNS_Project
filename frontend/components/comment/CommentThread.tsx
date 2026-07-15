@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { type CommentDeletedEvent, type CommentLikeCountEvent } from "@/lib/commentStream";
+import { type CommentDeletedEvent } from "@/lib/commentStream";
 import { subscribeToPostFeed } from "@/lib/postFeedStream";
 import CommentRow, { type CommentActions, type CommentItem } from "./CommentRow";
 import styles from "./CommentModal.module.css";
@@ -21,15 +21,14 @@ interface PageEnvelope<T> {
   size: number;
 }
 
-interface CommentModalProps {
+interface CommentThreadProps {
   postId: number;
   userId: number | null;
-  onClose: () => void;
 }
 
-// [comment 모듈 - 팝업 콘텐츠] CommentButton 이 열어주는 실제 댓글 CRUD UI.
-// 생성/수정/삭제는 이 게시글을 보고 있는 모두에게 SSE로 실시간 브로드캐스트된다 (내 화면도 이 채널로만 갱신됨).
-export default function CommentModal({ postId, userId, onClose }: CommentModalProps) {
+// 상세페이지용 인라인 댓글 스레드 UI.
+// 댓글 모달과 동일한 실시간/CRUD 로직을 사용하되 오버레이 없이 본문 안에서 렌더링한다.
+export default function CommentThread({ postId, userId }: CommentThreadProps) {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [rootContent, setRootContent] = useState("");
   const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
@@ -50,14 +49,6 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
     });
   }, [postId]);
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
   async function fetchComments() {
     setLoading(true);
     try {
@@ -73,7 +64,6 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
     }
   }
 
-  // 생성/수정/삭제는 서버가 SSE로 브로드캐스트해주므로 여기서 직접 상태를 갱신하지 않는다 (성공 시 각자 fetch 필요 없음).
   async function createComment(content: string, parentId?: number) {
     if (!content.trim()) return;
     if (userId == null) {
@@ -171,47 +161,37 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <span className={styles.title}>댓글</span>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="닫기">
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        <div className={styles.body}>
-          <div className={styles.row}>
-            <input
-              className={styles.input}
-              placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요"}
-              value={rootContent}
-              onChange={(e) => setRootContent(e.target.value)}
-              disabled={userId == null}
-            />
-            <button
-              className={styles.submit}
-              disabled={userId == null}
-              onClick={() => {
-                createComment(rootContent);
-                setRootContent("");
-              }}
-            >
-              등록
-            </button>
-          </div>
-
-          {loading ? (
-            <p className={styles.empty}>불러오는 중...</p>
-          ) : comments.length === 0 ? (
-            <p className={styles.empty}>아직 댓글이 없습니다.</p>
-          ) : (
-            comments.map((c) => (
-              <CommentRow key={c.id} comment={c} depth={0} currentUserId={userId} actions={actions} />
-            ))
-          )}
-        </div>
+    <div className={styles.body}>
+      <div className={styles.row}>
+        <input
+          className={styles.input}
+          placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요"}
+          value={rootContent}
+          onChange={(e) => setRootContent(e.target.value)}
+          disabled={userId == null}
+        />
+        <button
+          className={styles.submit}
+          disabled={userId == null}
+          onClick={() => {
+            createComment(rootContent);
+            setRootContent("");
+          }}
+          type="button"
+        >
+          등록
+        </button>
       </div>
+
+      {loading ? (
+        <p className={styles.empty}>불러오는 중...</p>
+      ) : comments.length === 0 ? (
+        <p className={styles.empty}>아직 댓글이 없습니다.</p>
+      ) : (
+        comments.map((c) => (
+          <CommentRow key={c.id} comment={c} depth={0} currentUserId={userId} actions={actions} />
+        ))
+      )}
     </div>
   );
 }
@@ -253,7 +233,6 @@ function applyDeleted(list: CommentItem[], event: CommentDeletedEvent): CommentI
   );
 }
 
-// likedByMe가 undefined면(다른 사람 좋아요로 인한 개수 브로드캐스트) 기존 값을 유지하고 likeCount만 갱신한다.
 function applyLike(list: CommentItem[], id: number, likedByMe: boolean | undefined, likeCount: number): CommentItem[] {
   return list.map((c) =>
     c.id === id

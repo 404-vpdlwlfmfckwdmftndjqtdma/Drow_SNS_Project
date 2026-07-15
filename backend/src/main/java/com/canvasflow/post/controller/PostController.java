@@ -27,7 +27,6 @@ public class PostController {
 
     //게시글 등록
     @PostMapping
-
     public ResponseEntity<ApiResponse<Long>> createPost(@AuthenticationPrincipal AuthMember authMember,
                                                         @RequestBody PostRequestDto postRequestDto) {
         if (authMember == null) {
@@ -40,9 +39,11 @@ public class PostController {
     //게시글 목록
     @GetMapping
     public ResponseEntity<ApiResponse<List<PostViewDto>>> getAllPosts(
-            @AuthenticationPrincipal AuthMember authMember) {
-        Long viewerId = authMember != null ? authMember.userId() : null;
-        return ResponseEntity.ok(ApiResponse.ok(postService.getAllPosts(viewerId)));
+            @RequestHeader(value = "X-User-Id", required = false) Long viewerId,
+            @AuthenticationPrincipal AuthMember authMember,
+            @RequestParam(value = "activity", required = false) String activity) {
+        Long resolvedViewerId = authMember != null ? authMember.userId() : viewerId;
+        return ResponseEntity.ok(ApiResponse.ok(postService.getAllPosts(resolvedViewerId, activity)));
     }
 
     //게시글 상세

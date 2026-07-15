@@ -11,7 +11,6 @@ import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostRepository;
 import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,9 +69,23 @@ public class PostService {
     // viewerId: 지금 목록을 보고 있는 사람. 로그인 안 했으면 컨트롤러에서 null로 넘어올 수 있음
     // repository 쿼리 단계에서 delete, PRIVATE 둘 다 걸러준다
     @Transactional(readOnly = true)
-    public List<PostViewDto> getAllPosts(Long viewerId) {
+    public List<PostViewDto> getAllPosts(Long viewerId, String activity) {
 
-        List<PostEntity> posts = postRepository.findVisiblePosts(viewerId);
+        List<PostEntity> posts = switch (activity == null ? "" : activity.toLowerCase()) {
+            case "likedbyme" -> {
+                if (viewerId == null) {
+                    throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
+                }
+                yield postRepository.findVisiblePostsLikedByUser(viewerId);
+            }
+            case "commentedbyme" -> {
+                if (viewerId == null) {
+                    throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
+                }
+                yield postRepository.findVisiblePostsCommentedByUser(viewerId);
+            }
+            default -> postRepository.findVisiblePosts(viewerId);
+        };
 
         List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
         Map<Long, List<PostRequestDto.MediaItem>> mediaByPostId = postIds.isEmpty()
