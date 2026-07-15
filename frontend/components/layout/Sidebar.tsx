@@ -80,13 +80,17 @@ export default function Sidebar() {
         {loggedIn ? (
           <>
             <button className={styles.profileChip} type="button" onClick={() => setMenuOpen((v) => !v)}>
-              {/* TODO: 로그인한 사용자 프로필 이미지로 교체 */}
-              <span className={styles.profileAvatar}>
-                <span className="material-symbols-outlined">person</span>
+              {/* 그라데이션 스토리 링 + 원형 아바타. TODO: 로그인한 사용자 프로필 이미지로 교체 */}
+              <span className={styles.avatarRing}>
+                <span className={styles.profileAvatar}>
+                  <span className="material-symbols-outlined">person</span>
+                </span>
               </span>
               <span className={styles.profileName}>내 프로필</span>
-              <span className={`material-symbols-outlined ${styles.profileChevron}`}>
-                {menuOpen ? "expand_less" : "expand_more"}
+              <span
+                className={`material-symbols-outlined ${styles.profileChevron} ${menuOpen ? styles.profileChevronOpen : ""}`}
+              >
+                expand_more
               </span>
             </button>
             {menuOpen && (
