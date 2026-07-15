@@ -19,14 +19,14 @@ public class PurchaseReader {
     private final PostPurchaseRepository postPurchaseRepository;
 
     public boolean hasPurchased(Long buyerId, Long postId) {
-        return postPurchaseRepository.existsByBuyerIdAndPostIdAndStatus(
-                buyerId, postId, PostPurchase.Status.COMPLETED);
+        return postPurchaseRepository.existsByBuyerIdAndPostId(
+                buyerId, postId);
     }
 
     /** 목록용: 여러 게시물 중 구매한 것만 postId Set으로 */
     public Set<Long> findPurchasedPostIds(Long buyerId, List<Long> postIds) {
         return postPurchaseRepository
-                .findByBuyerIdAndPostIdInAndStatus(buyerId, postIds, PostPurchase.Status.COMPLETED)
+                .findByBuyerIdAndPostIdIn(buyerId, postIds)
                 .stream()
                 .map(PostPurchase::getPostId)
                 .collect(Collectors.toSet());

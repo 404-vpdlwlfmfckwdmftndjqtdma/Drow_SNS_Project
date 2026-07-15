@@ -1,5 +1,6 @@
 package com.canvasflow.purchase.controller;
 
+import com.canvasflow.purchase.dto.PurchaseRequest;
 import com.canvasflow.purchase.dto.PurchaseResponse;
 import com.canvasflow.purchase.service.PurchaseService;
 import lombok.RequiredArgsConstructor;
@@ -7,10 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,10 +24,10 @@ public class PurchaseController {
     @PostMapping("/api/posts/{postId}/purchase")
     public ResponseEntity<PurchaseResponse> purchase(
             /* @AuthenticationPrincipal CustomUserDetails user, */
-            @PathVariable Long postId) {
+            @PathVariable Long postId,
+            @RequestBody PurchaseRequest request) {
         Long loginUserId = 1L; // TODO: user.getId()
-        PurchaseResponse response = purchaseService.purchase(loginUserId, postId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(purchaseService.purchase(loginUserId, postId, request));
     }
 
     /** 내 구매 내역 */
