@@ -1,12 +1,8 @@
 package com.canvasflow.subscription.service;
 
 import com.canvasflow.purchase.PurchaseReader;
-import com.canvasflow.purchase.repository.PostPurchaseRepository;
 import com.canvasflow.subscription.entity.Subscription;
-import com.canvasflow.subscription.entity.SubscriptionStatus;
-import com.canvasflow.subscription.entity.SubscriptionTargetType;
 import com.canvasflow.subscription.repository.SubscriptionRepository;
-import com.canvasflow.global.common.ContentVisibility;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
