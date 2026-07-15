@@ -4,6 +4,12 @@
   gap: var(--space-xs);
   border: none;
   background: none;
+  padding: 6px 8px;
+  border-radius: 999px;
   color: var(--color-on-surface-variant);
   cursor: pointer;
+}
+
+.trigger:hover {
+  background: var(--color-surface-container-high);
 }

@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
+import CommentButton from "@/components/comment/CommentButton";
+import PostLikeButton from "@/components/post/PostLikeButton";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
@@ -11,6 +14,8 @@ interface PostListItem {
   postId: number;
   userId: number;
   content: string;
+  likeCount?: number;
+  commentCount?: number;
   visibility: string;
   tags: string[];
   media: { url: string; mediaType: "IMAGE" | "VIDEO" }[];
@@ -25,6 +30,20 @@ export default function PostListPage() {
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [error, setError] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const syncCurrentUser = () => setCurrentUserId(getCurrentUserId());
+    syncCurrentUser();
+
+    window.addEventListener(AUTH_CHANGE_EVENT, syncCurrentUser);
+    window.addEventListener("storage", syncCurrentUser);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGE_EVENT, syncCurrentUser);
+      window.removeEventListener("storage", syncCurrentUser);
+    };
+  }, []);
 
   useEffect(() => {
     api
@@ -67,7 +86,8 @@ export default function PostListPage() {
             : post.content;
 
           return (
-            <Link className={styles.card} href={`/posts/${post.postId}`} key={post.postId}>
+            <article className={styles.card} key={post.postId}>
+              <Link className={styles.cardMain} href={`/posts/${post.postId}`}>
               {/* 작성자 프로필/닉네임: 아직 nickname 조회 인터페이스 연동 전이라 userId로 임시 표시 */}
               <div className={styles.cardHeader}>
                 <div className={styles.avatar} />
@@ -109,14 +129,23 @@ export default function PostListPage() {
                   ))}
                 </div>
 
-                {/* 좋아요/댓글은 자리만 잡아둠 — 나중에 값/클릭 연결 */}
-                <div className={styles.actionRow}>
-                  <span className="material-symbols-outlined">favorite</span>
-                  <span className="material-symbols-outlined">mode_comment</span>
-                  <span className={styles.viewCount}>조회 {post.viewCount}</span>
-                </div>
               </div>
-            </Link>
+              </Link>
+
+              <div className={styles.actionRow}>
+                <PostLikeButton
+                  postId={post.postId}
+                  userId={currentUserId}
+                  initialLikeCount={post.likeCount ?? 0}
+                />
+                <CommentButton
+                  postId={post.postId}
+                  userId={currentUserId}
+                  initialCommentCount={post.commentCount}
+                />
+                <span className={styles.viewCount}>조회 {post.viewCount}</span>
+              </div>
+            </article>
           );
         })}
       </div>

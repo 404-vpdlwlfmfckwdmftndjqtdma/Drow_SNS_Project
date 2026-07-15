@@ -18,6 +18,7 @@ import com.canvasflow.notification.NotificationFacade;
 import com.canvasflow.notification.NotificationTargetType;
 import com.canvasflow.notification.NotificationType;
 import com.canvasflow.post.PostReader;
+import com.canvasflow.post.stream.PostStreamService;
 import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -56,6 +57,7 @@ public class CommentService {
     private final PostReader postReader;
     private final NotificationFacade notificationFacade;
     private final CommentEmitterRepository commentEmitterRepository;
+    private final PostStreamService postStreamService;
     private final UserFacade userFacade;
 
     @Transactional
@@ -86,6 +88,8 @@ public class CommentService {
 
         CommentResponse response = CommentResponse.of(comment, writerNickname, 0L, false, List.of());
         broadcast(postId, "comment-created", response);
+        postStreamService.publishCommentCreated(response);
+        postStreamService.publishPostCommentCount(postId, commentRepository.countByPostId(postId));
         return response;
     }
 
@@ -130,8 +134,9 @@ public class CommentService {
     @EventListener
     public void handleCommentLiked(TargetLikedEvent event) {
         commentRepository.findById(event.commentId()).ifPresent(comment -> {
-            broadcast(comment.getPostId(), "comment-like-count",
-                    new CommentLikeCountEvent(event.commentId(), event.likeCount()));
+            CommentLikeCountEvent likeCountEvent = new CommentLikeCountEvent(event.commentId(), event.likeCount());
+            broadcast(comment.getPostId(), "comment-like-count", likeCountEvent);
+            postStreamService.publishCommentLikeCount(comment.getPostId(), likeCountEvent);
 
             if (!event.liked() || comment.getWriterId().equals(event.likerId())) {
                 return;
@@ -204,6 +209,7 @@ public class CommentService {
         boolean likedByMe = likeReader.isLikedByUser(userId, LikeTargetType.COMMENT, commentId);
         CommentResponse response = CommentResponse.of(comment, nickname, likeCount, likedByMe, List.of());
         broadcast(comment.getPostId(), "comment-updated", response);
+        postStreamService.publishCommentUpdated(response);
         return response;
     }
 
@@ -224,7 +230,10 @@ public class CommentService {
         } else {
             comment.softDelete(); // 대댓글이 달려있으면 상태만 변경 (자식이 부모를 잃지 않게)
         }
-        broadcast(postId, "comment-deleted", new CommentDeletedEvent(commentId, hardDeleted));
+        CommentDeletedEvent deletedEvent = new CommentDeletedEvent(commentId, hardDeleted);
+        broadcast(postId, "comment-deleted", deletedEvent);
+        postStreamService.publishCommentDeleted(postId, deletedEvent);
+        postStreamService.publishPostCommentCount(postId, commentRepository.countByPostId(postId));
     }
 
     public SseEmitter subscribe(Long postId) {

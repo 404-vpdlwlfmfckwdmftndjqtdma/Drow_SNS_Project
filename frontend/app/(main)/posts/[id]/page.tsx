@@ -3,17 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
-import CommentForm from "@/components/comment/CommentForm";
-import CommentList from "@/components/comment/CommentList";
+import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
+import CommentThread from "@/components/comment/CommentThread";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
-
-interface CommentItem {
-  id: number;
-  content: string;
-  writerId: number;
-  writerNickname?: string;
-}
 
 // 백엔드 PostViewDto 와 1:1로 맞춘 응답 타입
 interface PostDetailResponse {
@@ -34,9 +27,6 @@ const VISIBILITY_LABEL: Record<string, string> = {
   PRIVATE: "나만 보기",
 };
 
-// TODO: 로그인(JWT) 붙으면 실제 로그인한 사용자 id로 교체
-const CURRENT_USER_ID = 1;
-
 // 게시글 상세. 구독 잠금(LOCKED) 열람 제한은 아직 서버에 연동 전이라(subscription 도메인 연동 대기 중)
 // 지금은 공개 범위 뱃지만 보여주고, 실제 블러/잠금 UI는 나중에 붙인다.
 export default function PostDetailPage() {
@@ -47,41 +37,37 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mediaIndex, setMediaIndex] = useState(0);
-  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const syncCurrentUser = () => setCurrentUserId(getCurrentUserId());
+    syncCurrentUser();
+
+    window.addEventListener(AUTH_CHANGE_EVENT, syncCurrentUser);
+    window.addEventListener("storage", syncCurrentUser);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGE_EVENT, syncCurrentUser);
+      window.removeEventListener("storage", syncCurrentUser);
+    };
+  }, []);
 
   useEffect(() => {
     setMediaIndex(0);
     api
       .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`, {
-        headers: { "X-User-Id": CURRENT_USER_ID },
+        headers: currentUserId == null ? undefined : { "X-User-Id": String(currentUserId) },
       })
       .then((res) => setPost(res.data.data))
       .catch(() => setError("게시글을 불러오지 못했습니다."))
       .finally(() => setLoading(false));
-  }, [postId]);
-
-  const fetchComments = async () => {
-    try {
-      const res = await api.get<ApiResponse<{ content: CommentItem[] }>>(`/api/v1/posts/${postId}/comments`, {
-        params: { size: 50 },
-        headers: { "X-User-Id": CURRENT_USER_ID },
-      });
-      setComments(res.data.data.content);
-    } catch {
-      setError("댓글을 불러오지 못했습니다.");
-    }
-  };
-
-  useEffect(() => {
-    if (!postId) return;
-    fetchComments();
-  }, [postId]);
+  }, [postId, currentUserId]);
 
   const handleDelete = async () => {
     if (!confirm("이 게시글을 삭제하시겠어요?")) return;
     try {
       await api.delete(`/api/v1/posts/${postId}`, {
-        headers: { "X-User-Id": CURRENT_USER_ID },
+        headers: currentUserId == null ? undefined : { "X-User-Id": String(currentUserId) },
       });
       router.push("/posts");
     } catch {
@@ -97,7 +83,7 @@ export default function PostDetailPage() {
     return <div className={styles.container}>{error || "게시글을 찾을 수 없습니다."}</div>;
   }
 
-  const isOwner = post.userId === CURRENT_USER_ID;
+  const isOwner = currentUserId != null && post.userId === currentUserId;
 
   return (
     <div className={styles.container}>
@@ -174,8 +160,7 @@ export default function PostDetailPage() {
 
       <section className={styles.commentSection}>
         <h2 className={styles.commentTitle}>댓글</h2>
-        <CommentForm postId={post.postId} onSubmitted={fetchComments} />
-        <CommentList comments={comments} />
+        <CommentThread postId={post.postId} userId={currentUserId} />
       </section>
     </div>
   );

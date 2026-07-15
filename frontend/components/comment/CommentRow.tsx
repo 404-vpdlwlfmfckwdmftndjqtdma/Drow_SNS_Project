@@ -33,15 +33,17 @@ export interface CommentActions {
 interface CommentRowProps {
   comment: CommentItem;
   depth: number;
+  currentUserId: number | null;
   actions: CommentActions;
 }
 
 // 댓글 한 줄(+ 대댓글) 렌더링. 좋아요 개수 실시간 갱신은 댓글마다 SSE 연결을 열지 않고
 // CommentModal이 이미 구독 중인 게시글 댓글 채널(comment-like-count 이벤트)로 받아 내려온다
 // (브라우저는 오리진당 동시 연결 수 제한이 있어서 댓글 수만큼 연결을 열면 안 된다).
-export default function CommentRow({ comment: c, depth, actions }: CommentRowProps) {
+export default function CommentRow({ comment: c, depth, currentUserId, actions }: CommentRowProps) {
   const replyDraft = actions.replyDrafts[c.id] ?? "";
   const editDraft = actions.editDrafts[c.id];
+  const isMine = currentUserId != null && c.writerId === currentUserId;
 
   return (
     <div className={styles.comment} style={{ marginLeft: depth * 24 }}>
@@ -75,10 +77,10 @@ export default function CommentRow({ comment: c, depth, actions }: CommentRowPro
           </button>
         )}
         {depth === 0 && <button onClick={() => actions.onStartReply(c.id)}>답글</button>}
-        {!c.deleted && editDraft === undefined && (
+        {isMine && !c.deleted && editDraft === undefined && (
           <button onClick={() => actions.onStartEdit(c)}>수정</button>
         )}
-        <button onClick={() => actions.onDelete(c.id)}>삭제</button>
+        {isMine && !c.deleted && <button onClick={() => actions.onDelete(c.id)}>삭제</button>}
       </div>
 
       {c.id in actions.replyDrafts && depth === 0 && (
@@ -96,7 +98,7 @@ export default function CommentRow({ comment: c, depth, actions }: CommentRowPro
       )}
 
       {c.replies?.map((r) => (
-        <CommentRow key={r.id} comment={r} depth={depth + 1} actions={actions} />
+        <CommentRow key={r.id} comment={r} depth={depth + 1} currentUserId={currentUserId} actions={actions} />
       ))}
     </div>
   );

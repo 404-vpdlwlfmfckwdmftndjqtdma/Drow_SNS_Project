@@ -10,6 +10,7 @@ import com.canvasflow.notification.NotificationFacade;
 import com.canvasflow.notification.NotificationTargetType;
 import com.canvasflow.notification.NotificationType;
 import com.canvasflow.post.PostReader;
+import com.canvasflow.post.stream.PostStreamService;
 import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
@@ -40,6 +41,7 @@ public class LikeService {
     private final PostReader postReader;
     private final NotificationFacade notificationFacade;
     private final LikeEmitterRepository likeEmitterRepository;
+    private final PostStreamService postStreamService;
     private final UserFacade userFacade;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -53,6 +55,9 @@ public class LikeService {
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
         notifyAndPublish(userId, targetType, targetId, true, likeCount);
         broadcastCount(targetType, targetId, likeCount);
+        if (targetType == LikeTargetType.POST) {
+            postStreamService.publishPostLikeCount(targetId, likeCount);
+        }
         return new LikeResponse(true, likeCount);
     }
 
@@ -64,6 +69,9 @@ public class LikeService {
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
         notifyAndPublish(userId, targetType, targetId, false, likeCount);
         broadcastCount(targetType, targetId, likeCount);
+        if (targetType == LikeTargetType.POST) {
+            postStreamService.publishPostLikeCount(targetId, likeCount);
+        }
         return new LikeResponse(false, likeCount);
     }
 
