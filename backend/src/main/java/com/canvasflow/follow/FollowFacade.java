@@ -11,4 +11,10 @@ public interface FollowFacade {
     void follow(Long followerId, Long followingId);
 
     void unfollow(Long followerId, Long followingId);
+
+    boolean isFollowing(Long followerId, Long followingId);
+
+    long countFollowing(Long userId);
+
+    long countFollowers(Long userId);
 }
