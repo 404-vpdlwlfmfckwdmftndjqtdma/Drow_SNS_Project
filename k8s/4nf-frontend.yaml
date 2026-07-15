@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: 4nf-frontend
-          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-frontend:47487e6e830d7707cbf231b1aafae99af55ee784
+          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-frontend:7e3bfc88109245d2aaf22541c559d1ef7a405e8c
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
