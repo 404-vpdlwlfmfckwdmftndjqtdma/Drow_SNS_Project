@@ -3,6 +3,7 @@ package com.canvasflow.follow.dto;
 public record FollowUserResponse(
         Long userId,
         String nickname,
-        String profileImageUrl
+        String profileImageUrl,
+        String bio
 ) {
 }
