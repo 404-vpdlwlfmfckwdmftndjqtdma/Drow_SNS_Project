@@ -29,6 +29,7 @@ interface PostLikeButtonProps {
 export default function PostLikeButton({ postId, userId, initialLikeCount = 0 }: PostLikeButtonProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     setLikeCount(initialLikeCount);
@@ -62,8 +63,12 @@ export default function PostLikeButton({ postId, userId, initialLikeCount = 0 }:
       alert("좋아요는 로그인 후 사용할 수 있습니다.");
       return;
     }
+    if (pending) {
+      return;
+    }
 
     try {
+      setPending(true);
       const res = await api.request<ApiEnvelope<LikeResult>>({
         method: liked ? "delete" : "post",
         url: `/api/v1/likes/POST/${postId}`,
@@ -72,11 +77,13 @@ export default function PostLikeButton({ postId, userId, initialLikeCount = 0 }:
       setLikeCount(res.data.data.likeCount);
     } catch {
       alert("좋아요 처리에 실패했습니다.");
+    } finally {
+      setPending(false);
     }
   }
 
   return (
-    <button type="button" className={styles.likeBtn} onClick={toggleLike}>
+    <button type="button" className={styles.likeBtn} onClick={toggleLike} disabled={pending}>
       <span className={`material-symbols-outlined${liked ? " filled" : ""}`} style={{ fontSize: 20 }}>
         favorite
       </span>
