@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import CompactChannelList from "@/components/channel/list/CompactChannelList";
+import CompactChannelList, { type CompactChannelItem } from "@/components/channel/list/CompactChannelList";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
@@ -19,8 +19,19 @@ interface MyPageSummary {
   subscriptionCount: number;
 }
 
+// FollowUserResponse 와 1:1로 맞춘 응답 타입 (channels/page.tsx와 동일).
+interface FollowingUser {
+  userId: number;
+  nickname: string;
+  profileImageUrl?: string;
+  bio?: string;
+}
+
+const CHANNEL_PANEL_LIMIT = 5;
+
 // 마이페이지: 프로필(닉네임/소개/이미지/팔로워·팔로잉·창작물 수는 실제 연동) + 게시글 썸네일 포트폴리오
-//            + 우측 채널 미리보기 패널(CompactChannelList, 채널 담당자 작업, 1200px 이상에서만 노출).
+//            + 우측 채널 미리보기 패널(CompactChannelList, 1200px 이상에서만 노출).
+// 채널 미리보기 패널은 GET /api/v1/follows/following(최신 팔로우순 정렬)을 그대로 받아 앞에서 5개만 잘라서 넘긴다.
 // 팔로워 목록/진행중 협업 사이드바, 그림/문서/숏폼 탭은 제거하고 그만큼 썸네일 영역을 넓게 쓴다.
 // 프로필 수정 버튼은 이름 오른쪽 끝에 붙여서 아래 포트폴리오 영역과 간격을 둔다.
 // GET /api/v1/mypage 로 연동 - 팔로워/팔로잉/창작물(postCount)은 FollowFacade/PostReader 기반 실수치.
@@ -29,6 +40,7 @@ interface MyPageSummary {
 export default function MyPage() {
   const router = useRouter();
   const [me, setMe] = useState<MyPageSummary | null>(null);
+  const [channelPreview, setChannelPreview] = useState<CompactChannelItem[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -37,6 +49,21 @@ export default function MyPage() {
         setMe(res.data.data);
       } catch {
         // 비로그인 등으로 실패하면 프로필 영역은 빈 상태로 둔다.
+      }
+    })();
+
+    (async () => {
+      try {
+        const res = await api.get<ApiResponse<FollowingUser[]>>("/api/v1/follows/following");
+        const mapped: CompactChannelItem[] = res.data.data.slice(0, CHANNEL_PANEL_LIMIT).map((user) => ({
+          id: user.userId,
+          name: user.nickname,
+          description: user.bio,
+          profileImageUrl: user.profileImageUrl,
+        }));
+        setChannelPreview(mapped);
+      } catch {
+        // 비로그인 등으로 실패하면 빈 목록으로 둔다 (더미로 되돌아가지 않도록 [] 유지).
       }
     })();
   }, []);
@@ -136,7 +163,7 @@ export default function MyPage() {
       </div>
 
       <aside className={styles.channelPanel}>
-        <CompactChannelList />
+        <CompactChannelList channels={channelPreview} />
       </aside>
     </div>
   );

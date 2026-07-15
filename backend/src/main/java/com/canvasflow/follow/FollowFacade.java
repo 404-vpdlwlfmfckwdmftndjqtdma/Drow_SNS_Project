@@ -1,5 +1,9 @@
 package com.canvasflow.follow;
 
+import com.canvasflow.follow.dto.FollowUserResponse;
+
+import java.util.List;
+
 /**
  * follow 모듈이 다른 모듈에 노출하는 기능을 모은 파사드 인터페이스.
  * com.canvasflow.follow는 이 모듈의 기본 패키지라 Spring Modulith가 자동으로 노출해준다.
@@ -17,4 +21,7 @@ public interface FollowFacade {
     long countFollowing(Long userId);
 
     long countFollowers(Long userId);
+
+    /** 내가 팔로우하고 있는 사람 목록 (채널 "전체 보기" 화면용). */
+    List<FollowUserResponse> getFollowingList(Long userId);
 }
