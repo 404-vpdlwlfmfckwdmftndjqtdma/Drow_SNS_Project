@@ -31,7 +31,7 @@
   flex-direction: column;
   gap: var(--space-xs);
   padding: 0 var(--space-base);
-  margin-top: var(--space-sm); /* 12px */
+  margin-top: var(--space-lg);
 }
 
 .navItem {
@@ -57,35 +57,159 @@
   font-weight: 700;
 }
 
-.footer {
-  margin-top: auto;
-  padding: var(--space-base);
+/* 로고와 네비 사이의 프로필 영역 (비로그인: 로그인 버튼 / 로그인: 프로필 칩 + 풀다운) */
+.profileArea {
+  position: relative;
+  margin: 0 var(--space-base) var(--space-md) ;
 }
 
-.logoutItem {
-  composes: navItem;
+.profileChip {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 6px var(--space-sm) 6px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
-.logoutItem:hover {
+.profileChip:hover {
+  background: var(--color-surface-container-low);
+  border-color: var(--color-surface-container-high);
+}
+
+/* 인스타그램 스토리 스타일 그라데이션 링 */
+.avatarRing {
+  display: flex;
+  padding: 2.5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  flex-shrink: 0;
+}
+
+.profileAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2.5px solid var(--color-surface);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.profileAvatar > span {
+  font-size: 24px;
+}
+
+.profileCopy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.profileName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.profileMeta {
+  color: var(--color-on-surface-variant);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.profileChevron {
+  font-size: 20px;
+  color: var(--color-on-surface-variant);
+  transition: transform 0.18s ease;
+}
+
+.profileChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* 프로필 칩 클릭 시 칩 오른쪽 아래로 뜨는 플로팅 메뉴 (사이드바 네비와 겹치지 않음) */
+.profileMenu {
+  position: absolute;
+  top: calc(100% - 6px);
+  /* 사이드바(256px) 오른쪽 경계 바깥으로 완전히 빠져나가도록 오프셋 */
+  left: calc(100% + 30px);
+  min-width: 184px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-xs);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-container-high);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  animation: profileMenuIn 0.16s ease;
+  transform-origin: top left;
+}
+
+@keyframes profileMenuIn {
+  from {
+    opacity: 0;
+    transform: translate(-4px, -4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.profileMenuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 10px var(--space-sm);
+  border-radius: var(--radius-sm);
+  color: var(--color-on-surface-variant);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+
+.profileMenuItem:hover {
+  background: var(--color-surface-container-high);
+}
+
+.profileMenuItem > span[class*="material-symbols"] {
+  font-size: 20px;
+}
+
+.profileMenuDanger {
+  composes: profileMenuItem;
+}
+
+.profileMenuDanger:hover {
   background: rgba(186, 26, 26, 0.1);
   color: var(--color-error);
 }
 
-.loginItem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-base);
-  padding: var(--space-sm);
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  transition: opacity 0.15s ease;
+.loginChip {
+  border-color: rgba(107, 56, 212, 0.16);
+  background: linear-gradient(135deg, rgba(107, 56, 212, 0.09), rgba(0, 88, 190, 0.06));
+  box-shadow: 0 6px 18px rgba(107, 56, 212, 0.08);
 }
 
-.loginItem:hover {
-  opacity: 0.88;
+.loginChip:hover {
+  border-color: rgba(107, 56, 212, 0.32);
+  background: linear-gradient(135deg, rgba(107, 56, 212, 0.14), rgba(0, 88, 190, 0.1));
+  box-shadow: 0 8px 22px rgba(107, 56, 212, 0.13);
+  transform: translateY(-1px);
 }

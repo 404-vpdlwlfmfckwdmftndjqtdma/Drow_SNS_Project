@@ -72,4 +72,8 @@ public class PostEntity extends BaseTimeEntity {
     public void delete(){
         this.deletedAt = LocalDateTime.now();
     }
+
+    public void increaseViewCount(){
+        this.viewCount++;
+    }
 }

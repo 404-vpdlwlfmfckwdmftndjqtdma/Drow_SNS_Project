@@ -26,7 +26,6 @@ export default function NewPostPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // TODO: 로그인(JWT) 붙으면 X-User-Id 대신 Authorization 토큰 기반으로 전환
   const handleSubmit = async () => {
     if (!content.trim() && media.length === 0) {
       alert("내용을 입력하거나 파일을 첨부해주세요.");
@@ -39,11 +38,12 @@ export default function NewPostPage() {
 
     setSubmitting(true);
     try {
-      await api.post(
-        "/api/v1/posts",
-        { content, visibility: VISIBILITY_MAP[visibility], tags, media },
-        { headers: { "X-User-Id": 1 } }
-      );
+      await api.post("/api/v1/posts", {
+        content,
+        visibility: VISIBILITY_MAP[visibility],
+        tags,
+        media,
+      });
       router.push("/posts");
     } catch {
       alert("게시글 등록에 실패했습니다.");

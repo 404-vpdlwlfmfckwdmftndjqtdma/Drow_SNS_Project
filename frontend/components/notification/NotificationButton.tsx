@@ -8,7 +8,7 @@ import type { AppNotification, ApiResponse, PageResponse } from "@/types";
 import styles from "./NotificationButton.module.css";
 
 interface NotificationButtonProps {
-  userId: number; // TODO: JWT 로그인 붙으면 X-User-Id 대신 Authorization 토큰 기반으로 전환
+  userId: number;
 }
 
 /**
@@ -35,13 +35,11 @@ export default function NotificationButton({ userId }: NotificationButtonProps) 
 
   async function fetchInitial() {
     try {
-      const headers = { "X-User-Id": String(userId) };
       const [listRes, countRes] = await Promise.all([
         api.get<ApiResponse<PageResponse<AppNotification>>>("/api/v1/notifications", {
           params: { size: 20 },
-          headers,
         }),
-        api.get<ApiResponse<number>>("/api/v1/notifications/unread-count", { headers }),
+        api.get<ApiResponse<number>>("/api/v1/notifications/unread-count"),
       ]);
       setNotifications(listRes.data.data.content);
       setUnreadCount(countRes.data.data);
@@ -53,9 +51,7 @@ export default function NotificationButton({ userId }: NotificationButtonProps) 
   async function markAsRead(notification: AppNotification) {
     if (notification.isRead) return;
     try {
-      await api.patch(`/api/v1/notifications/${notification.id}/read`, null, {
-        headers: { "X-User-Id": String(userId) },
-      });
+      await api.patch(`/api/v1/notifications/${notification.id}/read`);
       setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n)));
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch {

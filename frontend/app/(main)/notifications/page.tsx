@@ -8,8 +8,8 @@ import type { AppNotification, ApiResponse, PageResponse } from "@/types";
 import styles from "./page.module.css";
 
 // 알림 목록 + 읽음 처리 + SSE 실시간 수신.
-// auth 도메인 JWT 로그인이 아직 안 된 상태라 다른 도메인들과 동일하게 X-User-Id 헤더(구독은 쿼리 파라미터)로
-// 사용자를 직접 지정한다 (userId 입력창에 DB에 실제 존재하는 user id 입력).
+// 목록/읽음 API는 Authorization 토큰 기반으로 동작하고,
+// 구독 API는 EventSource 제약으로 userId 쿼리 파라미터를 사용한다.
 export default function NotificationsPage() {
   const [userId, setUserId] = useState(1);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -36,7 +36,6 @@ export default function NotificationsPage() {
     try {
       const res = await api.get<ApiResponse<PageResponse<AppNotification>>>("/api/v1/notifications", {
         params: { size: 50 },
-        headers: { "X-User-Id": String(userId) },
       });
       setNotifications(res.data.data.content);
     } catch {
@@ -47,9 +46,7 @@ export default function NotificationsPage() {
   async function markAsRead(notification: AppNotification) {
     if (notification.isRead) return;
     try {
-      await api.patch(`/api/v1/notifications/${notification.id}/read`, null, {
-        headers: { "X-User-Id": String(userId) },
-      });
+      await api.patch(`/api/v1/notifications/${notification.id}/read`);
       setNotifications((prev) =>
         prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
       );
@@ -63,7 +60,7 @@ export default function NotificationsPage() {
       <h1 className={styles.title}>알림</h1>
 
       <div className={styles.row}>
-        <label>userId (X-User-Id)</label>
+        <label>userId (SSE subscribe query)</label>
         <input
           className={styles.input}
           type="number"

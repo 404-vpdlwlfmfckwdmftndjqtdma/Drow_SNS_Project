@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { subscribeToComments, type CommentDeletedEvent, type CommentLikeCountEvent } from "@/lib/commentStream";
+import { type CommentDeletedEvent, type CommentLikeCountEvent } from "@/lib/commentStream";
+import { subscribeToPostFeed } from "@/lib/postFeedStream";
 import CommentRow, { type CommentActions, type CommentItem } from "./CommentRow";
 import styles from "./CommentModal.module.css";
 
@@ -22,7 +23,7 @@ interface PageEnvelope<T> {
 
 interface CommentModalProps {
   postId: number;
-  userId: number; // TODO: JWT 로그인 붙으면 X-User-Id 대신 Authorization 토큰 기반으로 전환
+  userId: number | null;
   onClose: () => void;
 }
 
@@ -41,11 +42,11 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
   }, [postId]);
 
   useEffect(() => {
-    return subscribeToComments(postId, {
-      onCreated: (comment) => setComments((prev) => insertComment(prev, comment)),
-      onUpdated: (comment) => setComments((prev) => mergeUpdated(prev, comment)),
-      onDeleted: (event) => setComments((prev) => applyDeleted(prev, event)),
-      onLikeCount: (event) => setComments((prev) => applyLike(prev, event.commentId, undefined, event.likeCount)),
+    return subscribeToPostFeed(postId, {
+      onCommentCreated: (comment) => setComments((prev) => insertComment(prev, comment)),
+      onCommentUpdated: (comment) => setComments((prev) => mergeUpdated(prev, comment)),
+      onCommentDeleted: (event) => setComments((prev) => applyDeleted(prev, event)),
+      onCommentLikeCount: (event) => setComments((prev) => applyLike(prev, event.commentId, undefined, event.likeCount)),
     });
   }, [postId]);
 
@@ -57,16 +58,12 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  function authHeaders() {
-    return { "X-User-Id": String(userId) };
-  }
-
   async function fetchComments() {
     setLoading(true);
     try {
       const res = await api.get<ApiEnvelope<PageEnvelope<CommentItem>>>(
         `/api/v1/posts/${postId}/comments`,
-        { params: { size: 50 }, headers: authHeaders() }
+        { params: { size: 50 } }
       );
       setComments(res.data.data.content);
     } catch {
@@ -79,12 +76,13 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
   // 생성/수정/삭제는 서버가 SSE로 브로드캐스트해주므로 여기서 직접 상태를 갱신하지 않는다 (성공 시 각자 fetch 필요 없음).
   async function createComment(content: string, parentId?: number) {
     if (!content.trim()) return;
+    if (userId == null) {
+      alert("댓글 작성은 로그인 후 사용할 수 있습니다.");
+      return;
+    }
+
     try {
-      await api.post(
-        `/api/v1/posts/${postId}/comments`,
-        { content, parentId },
-        { headers: authHeaders() }
-      );
+      await api.post(`/api/v1/posts/${postId}/comments`, { content, parentId });
     } catch {
       alert("댓글 등록에 실패했습니다.");
     }
@@ -92,27 +90,41 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
 
   async function updateComment(id: number, content: string) {
     if (!content.trim()) return;
+    if (userId == null) {
+      alert("댓글 수정은 로그인 후 사용할 수 있습니다.");
+      return;
+    }
+
     try {
-      await api.put(`/api/v1/comments/${id}`, { content }, { headers: authHeaders() });
+      await api.put(`/api/v1/comments/${id}`, { content });
     } catch {
       alert("댓글 수정에 실패했습니다.");
     }
   }
 
   async function deleteComment(id: number) {
+    if (userId == null) {
+      alert("댓글 삭제는 로그인 후 사용할 수 있습니다.");
+      return;
+    }
+
     try {
-      await api.delete(`/api/v1/comments/${id}`, { headers: authHeaders() });
+      await api.delete(`/api/v1/comments/${id}`);
     } catch {
       alert("댓글 삭제에 실패했습니다.");
     }
   }
 
   async function toggleLike(c: CommentItem) {
+    if (userId == null) {
+      alert("좋아요는 로그인 후 사용할 수 있습니다.");
+      return;
+    }
+
     try {
       const res = await api.request<ApiEnvelope<{ liked: boolean; likeCount: number }>>({
         method: c.likedByMe ? "delete" : "post",
         url: `/api/v1/likes/COMMENT/${c.id}`,
-        headers: authHeaders(),
       });
       const { liked, likeCount } = res.data.data;
       setComments((prev) => applyLike(prev, c.id, liked, likeCount));
@@ -172,12 +184,14 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
           <div className={styles.row}>
             <input
               className={styles.input}
-              placeholder="댓글을 입력하세요"
+              placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요"}
               value={rootContent}
               onChange={(e) => setRootContent(e.target.value)}
+              disabled={userId == null}
             />
             <button
               className={styles.submit}
+              disabled={userId == null}
               onClick={() => {
                 createComment(rootContent);
                 setRootContent("");
@@ -192,7 +206,9 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
           ) : comments.length === 0 ? (
             <p className={styles.empty}>아직 댓글이 없습니다.</p>
           ) : (
-            comments.map((c) => <CommentRow key={c.id} comment={c} depth={0} actions={actions} />)
+            comments.map((c) => (
+              <CommentRow key={c.id} comment={c} depth={0} currentUserId={userId} actions={actions} />
+            ))
           )}
         </div>
       </div>

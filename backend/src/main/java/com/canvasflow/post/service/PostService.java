@@ -9,8 +9,8 @@ import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.entity.PostMediaEntity;
 import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostRepository;
+import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +32,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostMediaRepository postMediaRepository;
+    private final UserFacade userFacade;
 
 
     //글 작성
@@ -68,9 +69,23 @@ public class PostService {
     // viewerId: 지금 목록을 보고 있는 사람. 로그인 안 했으면 컨트롤러에서 null로 넘어올 수 있음
     // repository 쿼리 단계에서 delete, PRIVATE 둘 다 걸러준다
     @Transactional(readOnly = true)
-    public List<PostViewDto> getAllPosts(Long viewerId) {
+    public List<PostViewDto> getAllPosts(Long viewerId, String activity) {
 
-        List<PostEntity> posts = postRepository.findVisiblePosts(viewerId);
+        List<PostEntity> posts = switch (activity == null ? "" : activity.toLowerCase()) {
+            case "likedbyme" -> {
+                if (viewerId == null) {
+                    throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
+                }
+                yield postRepository.findVisiblePostsLikedByUser(viewerId);
+            }
+            case "commentedbyme" -> {
+                if (viewerId == null) {
+                    throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
+                }
+                yield postRepository.findVisiblePostsCommentedByUser(viewerId);
+            }
+            default -> postRepository.findVisiblePosts(viewerId);
+        };
 
         List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
         Map<Long, List<PostRequestDto.MediaItem>> mediaByPostId = postIds.isEmpty()
@@ -85,6 +100,10 @@ public class PostService {
                                 )
                         ));
 
+        // 작성자별 닉네임도 media처럼 배치로 한 번에 조회 (글마다 따로 조회하면 N+1)
+        List<Long> authorIds = posts.stream().map(PostEntity::getUserId).distinct().toList();
+        Map<Long, String> nicknameByUserId = userFacade.findNicknamesByIds(authorIds);
+
         return posts.stream()
                 .map(post -> new PostViewDto(
                         post.getUserId(),
@@ -95,14 +114,15 @@ public class PostService {
                         mediaByPostId.getOrDefault(post.getPostId(), List.of()),
                         post.getViewCount(),
                         post.getCreatedAt(),
-                        post.getUpdatedAt()
+                        post.getUpdatedAt(),
+                        nicknameByUserId.get(post.getUserId())
                 ))
                 .toList();
     }
 
 
     //글 상세 페이지
-    @Transactional(readOnly = true)
+    @Transactional
     public PostViewDto getDetail(Long viewerId, Long postId){
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.POST_NOT_FOUND));
@@ -114,6 +134,8 @@ public class PostService {
         if(post.getVisibility() == ContentVisibility.PRIVATE && !post.getUserId().equals(viewerId)){
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
         }
+
+        post.increaseViewCount();
 
         List<PostRequestDto.MediaItem> mediaItems = postMediaRepository
                 .findByPostIdInOrderByPostIdAscSortOrderAsc(List.of(postId)).stream()
@@ -129,7 +151,8 @@ public class PostService {
                 mediaItems,
                 post.getViewCount(),
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                userFacade.findNicknameById(post.getUserId())
         );
     }
 
@@ -190,6 +213,9 @@ public class PostService {
 
         post.delete();
     }
+
+    //조회수
+
 
 
 

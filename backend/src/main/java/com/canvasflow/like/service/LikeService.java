@@ -9,12 +9,14 @@ import com.canvasflow.like.sse.LikeEmitterRepository;
 import com.canvasflow.notification.NotificationFacade;
 import com.canvasflow.notification.NotificationTargetType;
 import com.canvasflow.notification.NotificationType;
+import com.canvasflow.global.stream.PostStreamService;
 import com.canvasflow.post.PostReader;
 import com.canvasflow.user.UserFacade;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,7 @@ public class LikeService {
     private final PostReader postReader;
     private final NotificationFacade notificationFacade;
     private final LikeEmitterRepository likeEmitterRepository;
+    private final PostStreamService postStreamService;
     private final UserFacade userFacade;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -48,11 +51,18 @@ public class LikeService {
         if (likeRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId)) {
             throw new CanvasflowException(ErrorCode.ALREADY_LIKED);
         }
-        String likerNickname = userFacade.getNicknameOrThrow(userId);
-        likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());
+        try {
+            likeRepository.save(Like.builder().userId(userId).targetType(targetType).targetId(targetId).build());
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청 레이스(중복 좋아요 insert) 시 DB unique 제약 예외를 도메인 에러로 변환한다.
+            throw new CanvasflowException(ErrorCode.ALREADY_LIKED);
+        }
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
         notifyAndPublish(userId, targetType, targetId, true, likeCount);
         broadcastCount(targetType, targetId, likeCount);
+        if (targetType == LikeTargetType.POST) {
+            postStreamService.publishPostLikeCount(targetId, likeCount);
+        }
         return new LikeResponse(true, likeCount);
     }
 
@@ -64,6 +74,9 @@ public class LikeService {
         long likeCount = likeRepository.countByTargetTypeAndTargetId(targetType, targetId);
         notifyAndPublish(userId, targetType, targetId, false, likeCount);
         broadcastCount(targetType, targetId, likeCount);
+        if (targetType == LikeTargetType.POST) {
+            postStreamService.publishPostLikeCount(targetId, likeCount);
+        }
         return new LikeResponse(false, likeCount);
     }
 

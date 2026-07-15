@@ -14,6 +14,35 @@
 .title {
   font-size: 24px;
   font-weight: 700;
+  margin: 0;
+}
+
+.writeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px var(--space-md);
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--shadow-floating);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.writeButton .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.writeButton:hover {
+  background: #5b2fb8;
+}
+
+.writeButton:active {
+  transform: scale(0.97);
 }
 
 .filters {
@@ -31,7 +60,6 @@
 }
 
 .card {
-  display: block;
   width: 100%;
   max-width: 800px;
   background: var(--color-surface-container-lowest);
@@ -41,6 +69,12 @@
   color: inherit;
   text-decoration: none;
   overflow: hidden;
+}
+
+.cardMain {
+  display: block;
+  color: inherit;
+  text-decoration: none;
 }
 
 /* 홈 피드(app/(main)/page.tsx) 카드 헤더랑 같은 스타일 - 프로필/닉네임 자리 */
@@ -91,6 +125,48 @@
   object-fit: cover;
 }
 
+/* 사진 여러 장: 인스타처럼 한 카드 안에서 그리드로 분할 */
+.thumbnailGrid {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.grid2 {
+  grid-template-rows: 1fr;
+}
+
+.grid3 .gridCell:first-child {
+  grid-row: span 2;
+}
+
+.gridCell {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-container);
+}
+
+.gridCell img,
+.gridCell video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gridMoreOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
 .body {
   padding: var(--space-md);
   display: flex;
@@ -104,7 +180,8 @@
   align-items: center;
   gap: var(--space-md);
   margin-top: var(--space-xs);
-  padding-top: var(--space-sm);
+  min-height: 52px;
+  padding: var(--space-sm) var(--space-md);
   border-top: 1px solid var(--color-outline-variant);
   color: var(--color-on-surface-variant);
 }

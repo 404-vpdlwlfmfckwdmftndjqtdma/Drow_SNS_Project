@@ -52,9 +52,7 @@ export default function EditPostPage() {
   // 저장할 때 "지우고 다시 채우기" 방식에서 기존 사진이 안 날아감.
   useEffect(() => {
     api
-      .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`, {
-        headers: { "X-User-Id": 1 },
-      })
+      .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`)
       .then((res) => {
         const post = res.data.data;
         setContent(post.content ?? "");
@@ -66,7 +64,6 @@ export default function EditPostPage() {
       .finally(() => setLoading(false));
   }, [postId]);
 
-  // TODO: 로그인(JWT) 붙으면 X-User-Id 대신 Authorization 토큰 기반으로 전환
   const handleSubmit = async () => {
     if (!content.trim() && media.length === 0) {
       alert("내용을 입력하거나 파일을 첨부해주세요.");
@@ -79,11 +76,12 @@ export default function EditPostPage() {
 
     setSubmitting(true);
     try {
-      await api.put(
-        `/api/v1/posts/${postId}`,
-        { content, visibility: VISIBILITY_MAP[visibility], tags, media },
-        { headers: { "X-User-Id": 1 } }
-      );
+      await api.put(`/api/v1/posts/${postId}`, {
+        content,
+        visibility: VISIBILITY_MAP[visibility],
+        tags,
+        media,
+      });
       router.push(`/posts/${postId}`);
     } catch {
       alert("게시글 수정에 실패했습니다.");

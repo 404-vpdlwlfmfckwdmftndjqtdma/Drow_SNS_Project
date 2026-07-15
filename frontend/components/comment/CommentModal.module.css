@@ -91,6 +91,16 @@
   color: var(--color-on-surface-variant);
 }
 
+.nickname {
+  color: var(--color-on-surface-variant);
+  font-weight: 600;
+}
+
+.nicknameMine {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
 .content {
   margin: var(--space-xs) 0;
   color: var(--color-on-surface);

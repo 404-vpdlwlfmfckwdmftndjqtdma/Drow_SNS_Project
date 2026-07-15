@@ -4,9 +4,15 @@
   gap: 4px;
   border: none;
   background: none;
+  padding: 6px 8px;
+  border-radius: 999px;
   color: var(--color-on-surface-variant);
   cursor: pointer;
   font-size: 14px;
+}
+
+.likeBtn:hover {
+  background: var(--color-surface-container-high);
 }
 
 .likeBtn:has(:global(.filled)) {
