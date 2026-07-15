@@ -1,5 +1,6 @@
 package com.canvasflow.subscription.service;
 
+import com.canvasflow.payment.PaymentGateway;
 import com.canvasflow.subscription.dto.SubscribeRequest;
 import com.canvasflow.subscription.dto.SubscriptionResponse;
 import com.canvasflow.subscription.entity.Subscription;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Service
 public class SubscriptionService {
@@ -23,6 +26,7 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionTierRepository tierRepository;
     private final UserFacade userFacade;
+    private final PaymentGateway paymentGateway;
     // TODO: ChannelRepository 추가 (채널 존재 검증용)
 
     @Transactional
@@ -37,10 +41,31 @@ public class SubscriptionService {
 
         SubscriptionTier tier = resolveTier(request.tierId());
 
-        return subscriptionRepository
-                .findBySubscriberIdAndChannelId(subscriberId, channelId)
-                .map(existing -> reactivateOrThrow(existing, tier))
-                .orElseGet(() -> createSubscription(subscriberId, channelId, tier));
+        // 1) 기존 구독 조회
+        Optional<Subscription> existing = subscriptionRepository
+                .findBySubscriberIdAndChannelId(subscriberId, channelId);
+
+        if (existing.isPresent() && existing.get().isBenefitActive()) {
+            throw new CanvasflowException(ErrorCode.ALREADY_SUBSCRIBED);
+        }
+
+        // 2) 구독 검증. 유료 등급이면 결재 승인 (금액은 서버의 tier 가격 - 조작 불가)
+        boolean paid = tier != null && tier.getMonthlyPrice().signum() > 0;
+        if (paid) {
+            if (request.paymentKey() == null || request.orderId() == null) {
+                throw new CanvasflowException(ErrorCode.PAYMENT_REQUIRED);
+            }
+            paymentGateway.confirm(request.paymentKey(), request.orderId(),tier.getMonthlyPrice().longValueExact());
+        }
+
+        // 3) 저장 or 재시작
+        if (existing.isPresent()) {
+            Subscription sub = existing.get();
+            if (paid) sub.startPaidPeriod(tier);
+            else sub.reactivate(tier);  // 무료 구독 복귀
+            return sub.getId();
+        }
+        return createSubscription(subscriberId, channelId, tier, paid);
     }
 
     /** tierId가 null이면 무료 구독, 있으면 존재하는 등급인지 확인 */
@@ -58,12 +83,13 @@ public class SubscriptionService {
         return existing.getId();
     }
 
-    private Long createSubscription(Long subscriberId, Long channelId, SubscriptionTier tier) {
+    private Long createSubscription(Long subscriberId, Long channelId, SubscriptionTier tier, boolean paid) {
         Subscription subscription = Subscription.builder()
                 .subscriberId(subscriberId)
                 .channelId(channelId)
                 .tier(tier)   // 엔티티 생성자에서 채널-등급 일치 검증됨
                 .build();
+        if (paid) subscription.startPaidPeriod(tier);
 
         // TODO: NotificationService 연동 - 채널 주인에게 "새 구독자" 알림
         return subscriptionRepository.save(subscription).getId();

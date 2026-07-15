@@ -49,6 +49,11 @@ public enum ErrorCode {
     PURCHASE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "PUR_002", "단건 구매가 불가능한 게시물입니다."),
     PURCHASE_SELF_POST(HttpStatus.BAD_REQUEST, "PUR_003", "본인의 게시물은 구매할 수 없습니다."),
 
+    // Payment
+    PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "PAY_001", "이미 처리된 결제입니다."),
+    PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_REQUEST, "PAY_002", "결제 승인에 실패했습니다."),
+    PAYMENT_REQUIRED(HttpStatus.BAD_REQUEST, "PAY_003", "결제 정보가 필요합니다."),
+
     // Comment / Like
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_001", "댓글을 찾을 수 없습니다."),
     ALREADY_LIKED(HttpStatus.CONFLICT, "LIKE_001", "이미 좋아요를 눌렀습니다."),
