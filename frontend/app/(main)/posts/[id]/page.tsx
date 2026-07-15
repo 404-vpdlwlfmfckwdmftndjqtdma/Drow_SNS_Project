@@ -12,6 +12,7 @@ import styles from "./page.module.css";
 interface PostDetailResponse {
   postId: number;
   userId: number;
+  nickname: string;
   content: string;
   visibility: "PUBLIC" | "PRIVATE" | "LOCKED";
   tags: string[];
@@ -88,7 +89,7 @@ export default function PostDetailPage() {
           <div className={styles.header}>
             <div className={styles.avatar} />
             <div className={styles.headerText}>
-              <p className={styles.authorName}>작성자 #{post.userId}</p>
+              <p className={styles.authorName}>{post.nickname ?? `작성자 #${post.userId}`}</p>
               <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
             </div>
             <span className={styles.visibilityTag}>{VISIBILITY_LABEL[post.visibility]}</span>
