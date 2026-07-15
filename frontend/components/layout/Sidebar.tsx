@@ -9,10 +9,10 @@ import Logo from "@/components/common/Logo";
 import styles from "./Sidebar.module.css";
 
 const NAV_ITEMS = [
-  { href: "/posts", label: "피드", icon: "grid_view" },
-  { href: "/mypage", label: "마이페이지", icon: "account_circle" },
-  { href: "/mypage/follow", label: "친구", icon: "group" },
-  { href: "/channels", label: "채널", icon: "hub" },
+  { href: "/posts", label: "피드", icon: "grid_view", requiresAuth: false },
+  { href: "/mypage", label: "마이페이지", icon: "account_circle", requiresAuth: true },
+  { href: "/mypage/follow", label: "친구", icon: "group", requiresAuth: true },
+  { href: "/channels", label: "채널", icon: "hub", requiresAuth: false },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -63,7 +63,19 @@ export default function Sidebar() {
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           return (
-            <Link key={item.href} href={item.href} className={active ? styles.navItemActive : styles.navItem}>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={active ? styles.navItemActive : styles.navItem}
+              onClick={(e) => {
+                // 로그인 안 된 상태로 마이페이지/친구처럼 로그인이 필요한 메뉴를 누르면
+                // 해당 화면으로 갔다가 빈 화면을 보여주는 대신 바로 로그인 화면으로 보낸다.
+                if (item.requiresAuth && !loggedIn) {
+                  e.preventDefault();
+                  router.push("/login");
+                }
+              }}
+            >
               <span className="material-symbols-outlined">{item.icon}</span>
               <span>{item.label}</span>
             </Link>
