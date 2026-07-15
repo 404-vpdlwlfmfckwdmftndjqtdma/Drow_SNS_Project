@@ -13,3 +13,19 @@
   border-radius: var(--radius);
   font-size: 14px;
 }
+
+.meta {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+
+.nickname {
+  color: var(--color-on-surface-variant);
+  font-weight: 600;
+}
+
+.nicknameMine {
+  color: var(--color-primary);
+  font-weight: 700;
+}

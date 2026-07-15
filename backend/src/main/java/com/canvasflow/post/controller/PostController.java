@@ -1,6 +1,7 @@
 package com.canvasflow.post.controller;
 
 import com.canvasflow.global.response.ApiResponse;
+import com.canvasflow.global.security.AuthMember;
 import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.dto.PostViewDto;
 import com.canvasflow.post.entity.PostEntity;
@@ -8,6 +9,7 @@ import com.canvasflow.post.service.PostService;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,8 +34,11 @@ public class PostController {
     //게시글 목록
     @GetMapping
     public ResponseEntity<ApiResponse<List<PostViewDto>>> getAllPosts(
-            @RequestHeader(value = "X-User-Id", required = false) Long viewerId) {
-        return ResponseEntity.ok(ApiResponse.ok(postService.getAllPosts(viewerId)));
+            @RequestHeader(value = "X-User-Id", required = false) Long viewerId,
+            @AuthenticationPrincipal AuthMember authMember,
+            @RequestParam(value = "activity", required = false) String activity) {
+        Long resolvedViewerId = authMember != null ? authMember.userId() : viewerId;
+        return ResponseEntity.ok(ApiResponse.ok(postService.getAllPosts(resolvedViewerId, activity)));
     }
 
     //게시글 상세
