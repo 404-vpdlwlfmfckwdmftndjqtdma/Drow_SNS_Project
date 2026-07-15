@@ -209,6 +209,9 @@ select {
   direction: ltr;
   -webkit-font-feature-settings: "liga";
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  /* 폰트 로드 전에도 아이콘 자리(1em 정사각)를 고정해 레이아웃 밀림 방지 */
+  width: 1em;
+  overflow: hidden;
 }
 .material-symbols-outlined.filled {
   font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
