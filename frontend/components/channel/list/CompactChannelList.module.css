@@ -1,0 +1,114 @@
+.panel {
+  padding: var(--space-md);
+  border: 1px solid var(--color-surface-container-high);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-card);
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.eyebrow {
+  margin: 0 0 2px;
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.moreLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-on-surface-variant);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.moreLink:hover {
+  color: var(--color-primary);
+}
+
+.moreLink > span {
+  font-size: 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.channelItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.channelItem:hover {
+  background: var(--color-surface-container-low);
+  transform: translateX(2px);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-container-high);
+  background-position: center;
+  background-size: cover;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name,
+.description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name {
+  color: var(--color-on-surface);
+  font-size: 14px;
+}
+
+.description {
+  color: var(--color-on-surface-variant);
+  font-size: 11px;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+  font-size: 18px;
+}

@@ -31,7 +31,7 @@
   flex-direction: column;
   gap: var(--space-xs);
   padding: 0 var(--space-base);
-  margin-top: var(--space-sm); /* 12px */
+  margin-top: var(--space-lg);
 }
 
 .navItem {
@@ -60,7 +60,7 @@
 /* 로고와 네비 사이의 프로필 영역 (비로그인: 로그인 버튼 / 로그인: 프로필 칩 + 풀다운) */
 .profileArea {
   position: relative;
-  margin: 0 var(--space-base) var(--space-sm);
+  margin: 0 var(--space-base) var(--space-md) ;
 }
 
 .profileChip {
@@ -69,12 +69,17 @@
   align-items: center;
   gap: var(--space-sm);
   padding: 6px var(--space-sm) 6px 6px;
+  border: 1px solid transparent;
   border-radius: var(--radius-full);
-  transition: background-color 0.15s ease;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .profileChip:hover {
   background: var(--color-surface-container-low);
+  border-color: var(--color-surface-container-high);
 }
 
 /* 인스타그램 스토리 스타일 그라데이션 링 */
@@ -103,12 +108,26 @@
   font-size: 24px;
 }
 
-.profileName {
+.profileCopy {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   text-align: left;
+}
+
+.profileName {
   font-size: 15px;
   font-weight: 700;
   color: var(--color-on-surface);
+}
+
+.profileMeta {
+  color: var(--color-on-surface-variant);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .profileChevron {
@@ -182,20 +201,15 @@
   color: var(--color-error);
 }
 
-.loginItem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-base);
-  padding: var(--space-sm);
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  transition: opacity 0.15s ease;
+.loginChip {
+  border-color: rgba(107, 56, 212, 0.16);
+  background: linear-gradient(135deg, rgba(107, 56, 212, 0.09), rgba(0, 88, 190, 0.06));
+  box-shadow: 0 6px 18px rgba(107, 56, 212, 0.08);
 }
 
-.loginItem:hover {
-  opacity: 0.88;
+.loginChip:hover {
+  border-color: rgba(107, 56, 212, 0.32);
+  background: linear-gradient(135deg, rgba(107, 56, 212, 0.14), rgba(0, 88, 190, 0.1));
+  box-shadow: 0 8px 22px rgba(107, 56, 212, 0.13);
+  transform: translateY(-1px);
 }

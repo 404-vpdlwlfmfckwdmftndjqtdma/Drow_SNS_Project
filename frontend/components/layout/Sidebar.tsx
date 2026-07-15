@@ -8,20 +8,19 @@ import { logout } from "@/lib/authActions";
 import Logo from "@/components/common/Logo";
 import styles from "./Sidebar.module.css";
 
-const NAV_ITEMS = [
-  { href: "/posts", label: "피드", icon: "grid_view", requiresAuth: false },
-  { href: "/mypage", label: "마이페이지", icon: "account_circle", requiresAuth: true },
-  { href: "/mypage/follow", label: "친구", icon: "group", requiresAuth: true },
-  { href: "/channels", label: "채널", icon: "hub", requiresAuth: false },
+const ACCOUNT_NAV_ITEMS = [
+  { href: "/mypage/likes", label: "좋아요", icon: "favorite", requiresAuth: true },
+  { href: "/mypage/comments", label: "댓글", icon: "chat_bubble", requiresAuth: true },
+  { href: "/payment", label: "결제", icon: "credit_card", requiresAuth: true },
 ];
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/posts") return pathname === "/posts" || pathname.startsWith("/posts/");
-  if (href.startsWith("/channels")) return pathname === "/channels" || pathname.startsWith("/channels/");
+  if (href === "/payment") return pathname === "/payment" || pathname.startsWith("/payment/");
   return pathname === href;
 }
 
-// 데스크톱 좌측 레일 네비게이션. 로고 + 프로필(로그인 토글) + 4개 메뉴.
+// 데스크톱 좌측 레일 네비게이션. 기본 화면에서는 메뉴를 비우고,
+// 내 프로필/결제 영역에서만 계정 관련 메뉴를 보여준다.
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -70,6 +69,9 @@ export default function Sidebar() {
     router.push("/posts");
   };
 
+  const isAccountSection = pathname.startsWith("/mypage") || pathname.startsWith("/payment");
+  const navItems = isAccountSection ? ACCOUNT_NAV_ITEMS : [];
+
   return (
     <aside className={`${styles.sidebar} ${fontsReady ? styles.sidebarReady : ""} glass`}>
       <Link href="/posts" className={styles.logo}>
@@ -86,7 +88,10 @@ export default function Sidebar() {
                   <span className="material-symbols-outlined">person</span>
                 </span>
               </span>
-              <span className={styles.profileName}>내 프로필</span>
+              <span className={styles.profileCopy}>
+                <span className={styles.profileName}>내 프로필</span>
+                <span className={styles.profileMeta}>계정 메뉴</span>
+              </span>
               <span
                 className={`material-symbols-outlined ${styles.profileChevron} ${menuOpen ? styles.profileChevronOpen : ""}`}
               >
@@ -95,10 +100,9 @@ export default function Sidebar() {
             </button>
             {menuOpen && (
               <div className={styles.profileMenu}>
-                {/* TODO: 실제 결제/구독 페이지가 생기면 교체 (지금은 결제 테스트 페이지) */}
-                <Link href="/test" className={styles.profileMenuItem} onClick={() => setMenuOpen(false)}>
-                  <span className="material-symbols-outlined">credit_card</span>
-                  <span>결제</span>
+                <Link href="/mypage" className={styles.profileMenuItem} onClick={() => setMenuOpen(false)}>
+                  <span className="material-symbols-outlined">account_circle</span>
+                  <span>내 프로필</span>
                 </Link>
                 <button className={styles.profileMenuDanger} type="button" onClick={handleLogout}>
                   <span className="material-symbols-outlined">logout</span>
@@ -108,15 +112,23 @@ export default function Sidebar() {
             )}
           </>
         ) : (
-          <Link href="/login" className={styles.loginItem}>
-            <span className="material-symbols-outlined">login</span>
-            <span>로그인</span>
+          <Link href="/login" className={`${styles.profileChip} ${styles.loginChip}`}>
+            <span className={styles.avatarRing}>
+              <span className={styles.profileAvatar}>
+                <span className="material-symbols-outlined">person</span>
+              </span>
+            </span>
+            <span className={styles.profileCopy}>
+              <span className={styles.profileName}>로그인</span>
+              <span className={styles.profileMeta}>계정을 연결하세요</span>
+            </span>
+            <span className={`material-symbols-outlined ${styles.profileChevron}`}>arrow_forward</span>
           </Link>
         )}
       </div>
 
       <nav className={styles.nav}>
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           return (
             <Link
@@ -124,7 +136,7 @@ export default function Sidebar() {
               href={item.href}
               className={active ? styles.navItemActive : styles.navItem}
               onClick={(e) => {
-                // 로그인 안 된 상태로 마이페이지/친구처럼 로그인이 필요한 메뉴를 누르면
+                // 로그인 안 된 상태로 계정 메뉴를 누르면
                 // 해당 화면으로 갔다가 빈 화면을 보여주는 대신 바로 로그인 화면으로 보낸다.
                 if (item.requiresAuth && !loggedIn) {
                   e.preventDefault();
@@ -138,6 +150,7 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
     </aside>
   );
 }
