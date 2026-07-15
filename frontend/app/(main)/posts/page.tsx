@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { isLoggedIn } from "@/lib/auth";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
@@ -21,7 +23,40 @@ interface PostListItem {
 // 이 글자수 넘어가면 "더보기"로 접어서 보여줌 (카드 하나 높이가 들쭉날쭉해지는 것 방지)
 const CONTENT_PREVIEW_LIMIT = 120;
 
+// 썸네일 그리드에 한 번에 보여줄 최대 장수. 이거보다 많으면 마지막 칸에 "+N" 오버레이.
+const MAX_THUMBNAIL_GRID_ITEMS = 4;
+
+function Thumbnail({ media }: { media: PostListItem["media"] }) {
+  if (media.length === 0) return null;
+
+  if (media.length === 1) {
+    const item = media[0];
+    return (
+      <div className={styles.thumbnail}>
+        {item.mediaType === "VIDEO" ? <video src={item.url} muted /> : <img src={item.url} alt="" />}
+      </div>
+    );
+  }
+
+  const visible = media.slice(0, MAX_THUMBNAIL_GRID_ITEMS);
+  const extraCount = media.length - visible.length;
+
+  return (
+    <div className={`${styles.thumbnail} ${styles.thumbnailGrid} ${styles[`grid${visible.length}`]}`}>
+      {visible.map((item, i) => (
+        <div className={styles.gridCell} key={i}>
+          {item.mediaType === "VIDEO" ? <video src={item.url} muted /> : <img src={item.url} alt="" />}
+          {i === visible.length - 1 && extraCount > 0 && (
+            <div className={styles.gridMoreOverlay}>+{extraCount}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PostListPage() {
+  const router = useRouter();
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [error, setError] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -51,7 +86,20 @@ export default function PostListPage() {
   return (
     <main className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>게시글</h1>
+        <h1 className={styles.title}>피드</h1>
+        <Link
+          href="/posts/new"
+          className={styles.writeButton}
+          onClick={(event) => {
+            if (!isLoggedIn()) {
+              event.preventDefault();
+              router.push("/login");
+            }
+          }}
+        >
+          <span className="material-symbols-outlined">upload</span>
+          업로드
+        </Link>
       </div>
 
       <div className={styles.filters}>{/* TODO: 콘텐츠 타입/채널/태그 필터, 정렬 셀렉트 */}</div>
@@ -77,15 +125,7 @@ export default function PostListPage() {
                 </div>
               </div>
 
-              {post.media.length > 0 && (
-                <div className={styles.thumbnail}>
-                  {post.media[0].mediaType === "VIDEO" ? (
-                    <video src={post.media[0].url} muted />
-                  ) : (
-                    <img src={post.media[0].url} alt="" />
-                  )}
-                </div>
-              )}
+              <Thumbnail media={post.media} />
 
               <div className={styles.body}>
                 <p className={styles.content}>
