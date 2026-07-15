@@ -34,10 +34,10 @@ export default function PostDetailPage() {
   const { id: postId } = useParams<{ id: string }>();
 
   const [post, setPost] = useState<PostDetailResponse | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mediaIndex, setMediaIndex] = useState(0);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useEffect(() => {
     const syncCurrentUser = () => setCurrentUserId(getCurrentUserId());
@@ -55,20 +55,16 @@ export default function PostDetailPage() {
   useEffect(() => {
     setMediaIndex(0);
     api
-      .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`, {
-        headers: currentUserId == null ? undefined : { "X-User-Id": String(currentUserId) },
-      })
+      .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`)
       .then((res) => setPost(res.data.data))
       .catch(() => setError("게시글을 불러오지 못했습니다."))
       .finally(() => setLoading(false));
-  }, [postId, currentUserId]);
+  }, [postId]);
 
   const handleDelete = async () => {
     if (!confirm("이 게시글을 삭제하시겠어요?")) return;
     try {
-      await api.delete(`/api/v1/posts/${postId}`, {
-        headers: currentUserId == null ? undefined : { "X-User-Id": String(currentUserId) },
-      });
+      await api.delete(`/api/v1/posts/${postId}`);
       router.push("/posts");
     } catch {
       alert("삭제에 실패했습니다.");
@@ -83,16 +79,18 @@ export default function PostDetailPage() {
     return <div className={styles.container}>{error || "게시글을 찾을 수 없습니다."}</div>;
   }
 
-  const isOwner = currentUserId != null && post.userId === currentUserId;
+  const isOwner = currentUserId !== null && post.userId === currentUserId;
 
   return (
     <div className={styles.container}>
       <article className={styles.card}>
         <div className={styles.cardInner}>
           <div className={styles.header}>
-            <p className={styles.byline}>
-              작성자 #{post.userId} · {new Date(post.createdAt).toLocaleString()}
-            </p>
+            <div className={styles.avatar} />
+            <div className={styles.headerText}>
+              <p className={styles.authorName}>작성자 #{post.userId}</p>
+              <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
+            </div>
             <span className={styles.visibilityTag}>{VISIBILITY_LABEL[post.visibility]}</span>
           </div>
 
@@ -100,7 +98,7 @@ export default function PostDetailPage() {
             <section className={styles.mediaCarousel}>
               <div className={styles.mediaItem}>
                 {post.media[mediaIndex].mediaType === "VIDEO" ? (
-                  <video src={post.media[mediaIndex].url} controls />
+                  <video src={post.media[mediaIndex].url} controls controlsList="nodownload" />
                 ) : (
                   <img src={post.media[mediaIndex].url} alt="" />
                 )}

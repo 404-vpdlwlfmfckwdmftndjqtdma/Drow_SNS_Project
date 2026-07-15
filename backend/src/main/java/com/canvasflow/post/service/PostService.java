@@ -9,6 +9,7 @@ import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.entity.PostMediaEntity;
 import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostRepository;
+import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostMediaRepository postMediaRepository;
+    private final UserFacade userFacade;
 
 
     //글 작성
@@ -98,6 +100,10 @@ public class PostService {
                                 )
                         ));
 
+        // 작성자별 닉네임도 media처럼 배치로 한 번에 조회 (글마다 따로 조회하면 N+1)
+        List<Long> authorIds = posts.stream().map(PostEntity::getUserId).distinct().toList();
+        Map<Long, String> nicknameByUserId = userFacade.findNicknamesByIds(authorIds);
+
         return posts.stream()
                 .map(post -> new PostViewDto(
                         post.getUserId(),
@@ -108,14 +114,15 @@ public class PostService {
                         mediaByPostId.getOrDefault(post.getPostId(), List.of()),
                         post.getViewCount(),
                         post.getCreatedAt(),
-                        post.getUpdatedAt()
+                        post.getUpdatedAt(),
+                        nicknameByUserId.get(post.getUserId())
                 ))
                 .toList();
     }
 
 
     //글 상세 페이지
-    @Transactional(readOnly = true)
+    @Transactional
     public PostViewDto getDetail(Long viewerId, Long postId){
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.POST_NOT_FOUND));
@@ -127,6 +134,8 @@ public class PostService {
         if(post.getVisibility() == ContentVisibility.PRIVATE && !post.getUserId().equals(viewerId)){
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
         }
+
+        post.increaseViewCount();
 
         List<PostRequestDto.MediaItem> mediaItems = postMediaRepository
                 .findByPostIdInOrderByPostIdAscSortOrderAsc(List.of(postId)).stream()
@@ -142,7 +151,8 @@ public class PostService {
                 mediaItems,
                 post.getViewCount(),
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                userFacade.findNicknameById(post.getUserId())
         );
     }
 
@@ -203,6 +213,9 @@ public class PostService {
 
         post.delete();
     }
+
+    //조회수
+
 
 
 
