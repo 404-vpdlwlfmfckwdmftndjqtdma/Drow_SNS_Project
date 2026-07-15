@@ -1,7 +1,11 @@
-import type { Comment } from "@/types";
 import styles from "./CommentList.module.css";
 
-export default function CommentList({ comments }: { comments: Comment[] }) {
+interface CommentListItem {
+  id: number;
+  content: string;
+}
+
+export default function CommentList({ comments }: { comments: CommentListItem[] }) {
   return (
     <ul className={styles.list}>
       {comments.map((c) => (
