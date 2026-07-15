@@ -1,9 +1,11 @@
 package com.canvasflow.user.controller;
 
+import com.canvasflow.user.UserProfileView;
 import com.canvasflow.user.dto.UpdateBioRequest;
 import com.canvasflow.user.dto.UpdateNicknameRequest;
 import com.canvasflow.user.dto.UpdateProfileImageRequest;
 import com.canvasflow.user.dto.UserResponse;
+import java.util.List;
 import com.canvasflow.user.service.UserService;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
@@ -54,6 +56,12 @@ public class UserController {
             @Valid @RequestBody UpdateBioRequest request) {
         requireLogin(authMember);
         return ResponseEntity.ok(ApiResponse.ok(userService.updateBio(authMember.userId(), request)));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<UserProfileView>>> searchUsers(
+            @RequestParam("nickname") String nickname) {
+        return ResponseEntity.ok(ApiResponse.ok(userService.searchByNickname(nickname)));
     }
 
     @GetMapping("/{userId}")

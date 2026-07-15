@@ -1,6 +1,7 @@
 package com.canvasflow.user;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,4 +30,6 @@ public interface UserFacade {
     Map<Long, UserProfileView> findProfilesByIds(Collection<Long> userIds);
 
     UserProfileView getProfileView(Long userId);
+
+    List<UserProfileView> searchByNickname(String keyword);
 }

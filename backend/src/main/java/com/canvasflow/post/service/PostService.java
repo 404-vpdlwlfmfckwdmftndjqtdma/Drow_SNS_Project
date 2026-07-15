@@ -197,6 +197,28 @@ public class PostService {
 
     }
 
+    @Transactional(readOnly = true)
+    public List<PostViewDto> searchByTag(String tag) {
+        List<PostEntity> posts = postRepository.findByTag(tag);
+        List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
+        Map<Long, List<PostRequestDto.MediaItem>> mediaByPostId = postIds.isEmpty()
+                ? Map.of()
+                : postMediaRepository.findByPostIdInOrderByPostIdAscSortOrderAsc(postIds).stream()
+                        .collect(Collectors.groupingBy(
+                                PostMediaEntity::getPostId,
+                                Collectors.mapping(m -> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()), Collectors.toList())
+                        ));
+        List<Long> authorIds = posts.stream().map(PostEntity::getUserId).distinct().toList();
+        Map<Long, String> nicknameByUserId = userFacade.findNicknamesByIds(authorIds);
+        return posts.stream()
+                .map(post -> new PostViewDto(
+                        post.getUserId(), post.getPostId(), post.getContent(), post.getVisibility(),
+                        List.copyOf(post.getTags()), mediaByPostId.getOrDefault(post.getPostId(), List.of()),
+                        post.getViewCount(), post.getCreatedAt(), post.getUpdatedAt(),
+                        nicknameByUserId.get(post.getUserId())))
+                .toList();
+    }
+
     //삭제
     @Transactional
     public void deletePost(Long userId, Long postId){

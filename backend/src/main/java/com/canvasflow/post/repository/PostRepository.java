@@ -61,4 +61,17 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     // 삭제(soft delete)된 글은 제외하고 센다. visibility(PRIVATE 등)는 구분하지 않고 전부 포함 - 본인/타인 마이페이지 모두
     // "이 사람이 쓴 글 총개수"라는 의미로 쓰기 위함이다(공개된 글만 셀지는 추후 논의 필요).
     long countByUserIdAndDeletedAtIsNull(Long userId);
+
+    @Query(value = """
+            SELECT p.* FROM posts p
+            WHERE p.deleted_at IS NULL
+              AND p.visibility <> 'PRIVATE'
+              AND EXISTS (
+                  SELECT 1 FROM post_tags pt
+                  WHERE pt.post_id = p.post_id
+                    AND pt.tag = :tag
+              )
+            ORDER BY p.created_at DESC
+            """, nativeQuery = true)
+    List<PostEntity> findByTag(@Param("tag") String tag);
 }

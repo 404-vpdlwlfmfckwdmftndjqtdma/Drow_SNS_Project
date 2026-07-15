@@ -46,6 +46,12 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.ok(postService.getAllPosts(resolvedViewerId, activity)));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<PostViewDto>>> searchPosts(
+            @RequestParam(value = "tag") String tag) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.searchByTag(tag)));
+    }
+
     //게시글 상세
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostViewDto>> getPost(

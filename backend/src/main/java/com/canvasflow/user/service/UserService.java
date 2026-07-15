@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -171,6 +172,14 @@ public class UserService implements UserFacade {
     public UserProfileView getProfileView(Long userId) {
         User user = getUserOrThrow(userId);
         return new UserProfileView(user.getId(), user.getNickname(), user.getProfileImageUrl(), user.getBio());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserProfileView> searchByNickname(String keyword) {
+        return userRepository.findByNicknameContainingIgnoreCaseOrderByNicknameAsc(keyword).stream()
+                .map(u -> new UserProfileView(u.getId(), u.getNickname(), u.getProfileImageUrl(), u.getBio()))
+                .toList();
     }
 
     private User getUserOrThrow(Long userId) {
