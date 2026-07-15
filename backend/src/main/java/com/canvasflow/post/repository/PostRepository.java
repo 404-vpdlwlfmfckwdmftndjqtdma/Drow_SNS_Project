@@ -57,5 +57,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
             """, nativeQuery = true)
     List<PostEntity> findVisiblePostsCommentedByUser(@Param("userId") Long userId);
 
-
+    // mypage 모듈(PostReader.countByAuthorId)에서 마이페이지 "창작물" 통계용으로 추가함 - post 담당자 확인 부탁드립니다.
+    // 삭제(soft delete)된 글은 제외하고 센다. visibility(PRIVATE 등)는 구분하지 않고 전부 포함 - 본인/타인 마이페이지 모두
+    // "이 사람이 쓴 글 총개수"라는 의미로 쓰기 위함이다(공개된 글만 셀지는 추후 논의 필요).
+    long countByUserIdAndDeletedAtIsNull(Long userId);
 }

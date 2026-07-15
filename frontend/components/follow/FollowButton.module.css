@@ -1,0 +1,76 @@
+.primaryBtn {
+  background: var(--gradient-brand);
+  color: #fff;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-floating);
+}
+
+.glassBtn {
+  composes: primaryBtn;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  color: var(--color-on-surface);
+  box-shadow: none;
+}
+
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: var(--space-md);
+}
+
+.confirmPanel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-floating);
+}
+
+.confirmText {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 var(--space-lg);
+}
+
+.confirmActions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.confirmCancelBtn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  background: transparent;
+  color: var(--color-on-surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmDeleteBtn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}

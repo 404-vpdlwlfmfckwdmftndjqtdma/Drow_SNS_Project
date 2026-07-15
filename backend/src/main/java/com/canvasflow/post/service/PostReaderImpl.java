@@ -28,4 +28,9 @@ public class PostReaderImpl implements PostReader {
                 .map(post -> new PostInfo(post.getUserId()));
     }
 
+    // mypage 모듈이 마이페이지 "창작물" 통계용으로 추가함 - post 담당자 확인 부탁드립니다.
+    @Override
+    public long countByAuthorId(Long userId) {
+        return postRepository.countByUserIdAndDeletedAtIsNull(userId);
+    }
 }
