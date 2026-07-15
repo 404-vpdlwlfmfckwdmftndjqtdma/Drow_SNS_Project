@@ -11,6 +11,7 @@ import com.canvasflow.comment.repository.CommentRepository;
 import com.canvasflow.comment.sse.CommentEmitterRepository;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
+import com.canvasflow.global.stream.PostStreamService;
 import com.canvasflow.like.LikeReader;
 import com.canvasflow.like.LikeTargetType;
 import com.canvasflow.like.TargetLikedEvent;
@@ -18,7 +19,6 @@ import com.canvasflow.notification.NotificationFacade;
 import com.canvasflow.notification.NotificationTargetType;
 import com.canvasflow.notification.NotificationType;
 import com.canvasflow.post.PostReader;
-import com.canvasflow.post.stream.PostStreamService;
 import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -88,7 +88,18 @@ public class CommentService {
 
         CommentResponse response = CommentResponse.of(comment, writerNickname, 0L, false, List.of());
         broadcast(postId, "comment-created", response);
-        postStreamService.publishCommentCreated(response);
+        postStreamService.publishCommentCreated(
+            response.postId(),
+            response.id(),
+            response.parentId(),
+            response.writerId(),
+            response.writerNickname(),
+            response.content(),
+            response.deleted(),
+            response.createdAt(),
+            response.likeCount(),
+            response.likedByMe()
+        );
         postStreamService.publishPostCommentCount(postId, commentRepository.countByPostId(postId));
         return response;
     }
@@ -136,7 +147,7 @@ public class CommentService {
         commentRepository.findById(event.commentId()).ifPresent(comment -> {
             CommentLikeCountEvent likeCountEvent = new CommentLikeCountEvent(event.commentId(), event.likeCount());
             broadcast(comment.getPostId(), "comment-like-count", likeCountEvent);
-            postStreamService.publishCommentLikeCount(comment.getPostId(), likeCountEvent);
+            postStreamService.publishCommentLikeCount(comment.getPostId(), likeCountEvent.commentId(), likeCountEvent.likeCount());
 
             if (!event.liked() || comment.getWriterId().equals(event.likerId())) {
                 return;
@@ -209,7 +220,18 @@ public class CommentService {
         boolean likedByMe = likeReader.isLikedByUser(userId, LikeTargetType.COMMENT, commentId);
         CommentResponse response = CommentResponse.of(comment, nickname, likeCount, likedByMe, List.of());
         broadcast(comment.getPostId(), "comment-updated", response);
-        postStreamService.publishCommentUpdated(response);
+        postStreamService.publishCommentUpdated(
+            response.postId(),
+            response.id(),
+            response.parentId(),
+            response.writerId(),
+            response.writerNickname(),
+            response.content(),
+            response.deleted(),
+            response.createdAt(),
+            response.likeCount(),
+            response.likedByMe()
+        );
         return response;
     }
 
@@ -232,7 +254,7 @@ public class CommentService {
         }
         CommentDeletedEvent deletedEvent = new CommentDeletedEvent(commentId, hardDeleted);
         broadcast(postId, "comment-deleted", deletedEvent);
-        postStreamService.publishCommentDeleted(postId, deletedEvent);
+        postStreamService.publishCommentDeleted(postId, deletedEvent.id(), deletedEvent.hardDeleted());
         postStreamService.publishPostCommentCount(postId, commentRepository.countByPostId(postId));
     }
 

@@ -1,14 +1,13 @@
-package com.canvasflow.post.stream;
+package com.canvasflow.global.stream;
 
-import com.canvasflow.comment.dto.CommentDeletedEvent;
-import com.canvasflow.comment.dto.CommentLikeCountEvent;
-import com.canvasflow.comment.dto.CommentResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -24,7 +23,6 @@ public class PostStreamService {
 
     private final PostStreamEmitterRepository postStreamEmitterRepository;
 
-    // 한 연결에서 여러 postId를 구독하므로, emitter마다 구독 postId 집합을 저장한다.
     public SseEmitter subscribe(Set<Long> postIds) {
         SseEmitter emitter = new SseEmitter(SUBSCRIBE_TIMEOUT_MS);
         postStreamEmitterRepository.save(emitter, postIds);
@@ -41,7 +39,6 @@ public class PostStreamService {
         return emitter;
     }
 
-    // postId를 키로 해당 게시글을 구독 중인 emitter에만 fan-out 한다.
     public void publishPostLikeCount(Long postId, long likeCount) {
         PostStreamEvent payload = PostStreamEvent.postLikeCount(postId, likeCount);
         for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(postId)) {
@@ -53,7 +50,6 @@ public class PostStreamService {
         }
     }
 
-    // 피드 카드의 댓글 수 배지를 갱신하는 이벤트.
     public void publishPostCommentCount(Long postId, long commentCount) {
         PostStreamEvent payload = PostStreamEvent.postCommentCount(postId, commentCount);
         for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(postId)) {
@@ -65,31 +61,78 @@ public class PostStreamService {
         }
     }
 
-    // 댓글 모달에서 목록 상태를 바로 반영할 수 있도록 댓글 본문 이벤트도 같은 채널로 보낸다.
-    public void publishCommentCreated(CommentResponse comment) {
-        for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(comment.postId())) {
+    public void publishCommentCreated(
+            Long postId,
+            Long id,
+            Long parentId,
+            Long writerId,
+            String writerNickname,
+            String content,
+            boolean deleted,
+            LocalDateTime createdAt,
+            long likeCount,
+            boolean likedByMe
+    ) {
+        PostCommentEvent payload = new PostCommentEvent(
+                id,
+                postId,
+                parentId,
+                writerId,
+                writerNickname,
+                content,
+                deleted,
+                createdAt,
+                likeCount,
+                likedByMe,
+                List.of()
+        );
+
+        for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(postId)) {
             try {
-                emitter.send(SseEmitter.event().name("comment-created").data(comment));
+                emitter.send(SseEmitter.event().name("comment-created").data(payload));
             } catch (IOException e) {
                 postStreamEmitterRepository.remove(emitter);
             }
         }
     }
 
-    // 수정 이벤트도 postId 구독자에게만 전달.
-    public void publishCommentUpdated(CommentResponse comment) {
-        for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(comment.postId())) {
+    public void publishCommentUpdated(
+            Long postId,
+            Long id,
+            Long parentId,
+            Long writerId,
+            String writerNickname,
+            String content,
+            boolean deleted,
+            LocalDateTime createdAt,
+            long likeCount,
+            boolean likedByMe
+    ) {
+        PostCommentEvent payload = new PostCommentEvent(
+                id,
+                postId,
+                parentId,
+                writerId,
+                writerNickname,
+                content,
+                deleted,
+                createdAt,
+                likeCount,
+                likedByMe,
+                List.of()
+        );
+
+        for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(postId)) {
             try {
-                emitter.send(SseEmitter.event().name("comment-updated").data(comment));
+                emitter.send(SseEmitter.event().name("comment-updated").data(payload));
             } catch (IOException e) {
                 postStreamEmitterRepository.remove(emitter);
             }
         }
     }
 
-    // 삭제/좋아요카운트 payload에는 postId를 포함해 클라이언트가 안전하게 라우팅하도록 한다.
-    public void publishCommentDeleted(Long postId, CommentDeletedEvent event) {
-        PostScopedCommentDeletedEvent payload = new PostScopedCommentDeletedEvent(postId, event.id(), event.hardDeleted());
+    public void publishCommentDeleted(Long postId, Long id, boolean hardDeleted) {
+        PostScopedCommentDeletedEvent payload = new PostScopedCommentDeletedEvent(postId, id, hardDeleted);
         for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(postId)) {
             try {
                 emitter.send(SseEmitter.event().name("comment-deleted").data(payload));
@@ -99,9 +142,8 @@ public class PostStreamService {
         }
     }
 
-    // 댓글 좋아요 수 변경 이벤트.
-    public void publishCommentLikeCount(Long postId, CommentLikeCountEvent event) {
-        PostScopedCommentLikeCountEvent payload = new PostScopedCommentLikeCountEvent(postId, event.commentId(), event.likeCount());
+    public void publishCommentLikeCount(Long postId, Long commentId, long likeCount) {
+        PostScopedCommentLikeCountEvent payload = new PostScopedCommentLikeCountEvent(postId, commentId, likeCount);
         for (SseEmitter emitter : postStreamEmitterRepository.findByPostId(postId)) {
             try {
                 emitter.send(SseEmitter.event().name("comment-like-count").data(payload));
@@ -111,7 +153,6 @@ public class PostStreamService {
         }
     }
 
-    // 중간 프록시 유휴 타임아웃 방지를 위한 heartbeat.
     @Scheduled(fixedRate = HEARTBEAT_INTERVAL_MS)
     public void sendHeartbeat() {
         for (SseEmitter emitter : postStreamEmitterRepository.findAll()) {
@@ -121,6 +162,21 @@ public class PostStreamService {
                 emitter.complete();
             }
         }
+    }
+
+    public record PostCommentEvent(
+            Long id,
+            Long postId,
+            Long parentId,
+            Long writerId,
+            String writerNickname,
+            String content,
+            boolean deleted,
+            LocalDateTime createdAt,
+            long likeCount,
+            boolean likedByMe,
+            List<PostCommentEvent> replies
+    ) {
     }
 
     public record PostScopedCommentDeletedEvent(
@@ -133,7 +189,7 @@ public class PostStreamService {
     public record PostScopedCommentLikeCountEvent(
             Long postId,
             Long commentId,
-            Long likeCount
+            long likeCount
     ) {
     }
 }

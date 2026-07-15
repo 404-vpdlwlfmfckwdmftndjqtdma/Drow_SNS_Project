@@ -1,4 +1,4 @@
-package com.canvasflow.post.stream;
+package com.canvasflow.global.stream;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;

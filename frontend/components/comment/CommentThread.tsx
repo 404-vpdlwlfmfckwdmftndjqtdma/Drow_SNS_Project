@@ -49,16 +49,12 @@ export default function CommentThread({ postId, userId }: CommentThreadProps) {
     });
   }, [postId]);
 
-  function authHeaders() {
-    return userId == null ? undefined : { "X-User-Id": String(userId) };
-  }
-
   async function fetchComments() {
     setLoading(true);
     try {
       const res = await api.get<ApiEnvelope<PageEnvelope<CommentItem>>>(
         `/api/v1/posts/${postId}/comments`,
-        { params: { size: 50 }, headers: authHeaders() }
+        { params: { size: 50 } }
       );
       setComments(res.data.data.content);
     } catch {
@@ -76,11 +72,7 @@ export default function CommentThread({ postId, userId }: CommentThreadProps) {
     }
 
     try {
-      await api.post(
-        `/api/v1/posts/${postId}/comments`,
-        { content, parentId },
-        { headers: authHeaders() }
-      );
+      await api.post(`/api/v1/posts/${postId}/comments`, { content, parentId });
     } catch {
       alert("댓글 등록에 실패했습니다.");
     }
@@ -94,7 +86,7 @@ export default function CommentThread({ postId, userId }: CommentThreadProps) {
     }
 
     try {
-      await api.put(`/api/v1/comments/${id}`, { content }, { headers: authHeaders() });
+      await api.put(`/api/v1/comments/${id}`, { content });
     } catch {
       alert("댓글 수정에 실패했습니다.");
     }
@@ -107,7 +99,7 @@ export default function CommentThread({ postId, userId }: CommentThreadProps) {
     }
 
     try {
-      await api.delete(`/api/v1/comments/${id}`, { headers: authHeaders() });
+      await api.delete(`/api/v1/comments/${id}`);
     } catch {
       alert("댓글 삭제에 실패했습니다.");
     }
@@ -123,7 +115,6 @@ export default function CommentThread({ postId, userId }: CommentThreadProps) {
       const res = await api.request<ApiEnvelope<{ liked: boolean; likeCount: number }>>({
         method: c.likedByMe ? "delete" : "post",
         url: `/api/v1/likes/COMMENT/${c.id}`,
-        headers: authHeaders(),
       });
       const { liked, likeCount } = res.data.data;
       setComments((prev) => applyLike(prev, c.id, liked, likeCount));

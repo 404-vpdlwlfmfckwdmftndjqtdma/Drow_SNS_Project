@@ -44,11 +44,12 @@ export default function CommentRow({ comment: c, depth, currentUserId, actions }
   const replyDraft = actions.replyDrafts[c.id] ?? "";
   const editDraft = actions.editDrafts[c.id];
   const isMine = currentUserId != null && c.writerId === currentUserId;
+  const displayName = c.writerNickname ?? `유저 ${c.writerId}`;
 
   return (
     <div className={styles.comment} style={{ marginLeft: depth * 24 }}>
       <div className={styles.meta}>
-        {c.writerNickname ?? `유저 ${c.writerId}`} · {c.deleted ? "[삭제됨]" : c.createdAt}
+        <span className={isMine ? styles.nicknameMine : styles.nickname}>{displayName}</span> · {c.deleted ? "[삭제됨]" : c.createdAt}
       </div>
 
       {editDraft === undefined ? (

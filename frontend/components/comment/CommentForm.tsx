@@ -26,11 +26,7 @@ export default function CommentForm({ postId, userId, onSubmitted }: CommentForm
 
     setSubmitting(true);
     try {
-      await api.post(
-        `/api/v1/posts/${postId}/comments`,
-        { content: trimmed, parentId: null },
-        { headers: { "X-User-Id": String(userId) } }
-      );
+      await api.post(`/api/v1/posts/${postId}/comments`, { content: trimmed, parentId: null });
       setContent("");
       onSubmitted?.();
     } catch {

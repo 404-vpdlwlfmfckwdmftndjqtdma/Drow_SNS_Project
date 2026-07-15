@@ -41,9 +41,7 @@ export default function PostLikeButton({ postId, userId, initialLikeCount = 0 }:
     }
 
     api
-      .get<ApiEnvelope<LikeResult>>(`/api/v1/likes/POST/${postId}`, {
-        headers: { "X-User-Id": String(userId) },
-      })
+      .get<ApiEnvelope<LikeResult>>(`/api/v1/likes/POST/${postId}`)
       .then((res) => {
         setLiked(res.data.data.liked);
         setLikeCount(res.data.data.likeCount);
@@ -69,7 +67,6 @@ export default function PostLikeButton({ postId, userId, initialLikeCount = 0 }:
       const res = await api.request<ApiEnvelope<LikeResult>>({
         method: liked ? "delete" : "post",
         url: `/api/v1/likes/POST/${postId}`,
-        headers: { "X-User-Id": String(userId) },
       });
       setLiked(res.data.data.liked);
       setLikeCount(res.data.data.likeCount);

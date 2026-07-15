@@ -1,4 +1,4 @@
-package com.canvasflow.post.stream;
+package com.canvasflow.global.stream;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -19,7 +19,6 @@ public class PostStreamController {
 
     private final PostStreamService postStreamService;
 
-    // EventSource는 커스텀 헤더를 못 쓰므로 postIds를 쿼리로 받는다.
     @GetMapping(value = "/api/v1/posts/stream/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@RequestParam Set<Long> postIds) {
         return postStreamService.subscribe(postIds);
