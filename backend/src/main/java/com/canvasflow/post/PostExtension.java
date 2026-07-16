@@ -26,10 +26,12 @@ public interface PostExtension {
 
     /**
      * 게시글 조회 시 본문 텍스트를 가공할 기회. 기본은 그대로 통과.
+     * authorId(작성자)/viewerId(지금 보는 사람)를 같이 받아서, 작성자 본인/구매자/구독자면
+     * 원문을 그대로 돌려주는 식의 판단을 모듈이 직접 할 수 있게 한다.
      * 예) 텍스트 블러는 자기 테이블의 구간을 읽어 ● 로 치환한 텍스트를 반환한다.
      * 여러 기능이 있으면 순서대로 통과하며 가공된다(파이프라인).
      */
-    default String render(Long postId, String text) {
+    default String render(Long postId, Long authorId, Long viewerId, String text) {
         return text;
     }
 
@@ -40,7 +42,7 @@ public interface PostExtension {
      * 게시글 조회 시 미디어 목록을 가공할 기회. 기본은 그대로 통과.
      * 예) 이미지 블러는 지정된 사진의 url을 블러 처리된 버전으로 바꿔치기한다.
      */
-    default List<MediaItem> renderMedia(Long postId, List<MediaItem> media) {
+    default List<MediaItem> renderMedia(Long postId, Long authorId, Long viewerId, List<MediaItem> media) {
         return media;
     }
 }

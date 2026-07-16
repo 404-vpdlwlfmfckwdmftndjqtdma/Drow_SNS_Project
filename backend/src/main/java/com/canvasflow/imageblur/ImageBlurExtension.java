@@ -4,6 +4,8 @@ import com.canvasflow.global.media.MediaType;
 import com.canvasflow.imageblur.internal.ImageBlurRepository;
 import com.canvasflow.imageblur.internal.ImageBlurTarget;
 import com.canvasflow.post.PostExtension;
+import com.canvasflow.purchase.PurchaseReader;
+import com.canvasflow.subscription.SubscriptionReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +23,9 @@ import java.util.stream.Collectors;
 public class ImageBlurExtension implements PostExtension {
 
     private final ImageBlurRepository imageBlurRepository;
+    private final PurchaseReader purchaseReader;
+    private final SubscriptionReader subscriptionReader;
+
 
     @Override
     public String key() {
@@ -43,7 +48,11 @@ public class ImageBlurExtension implements PostExtension {
     }
 
     @Override
-    public List<PostExtension.MediaItem> renderMedia(Long postId, List<PostExtension.MediaItem> media){
+    public List<PostExtension.MediaItem> renderMedia(Long postId, Long authorId, Long viewerId, List<PostExtension.MediaItem> media){
+        if (viewerId != null && viewerId.equals(authorId)) return media;              // 작성자 본인
+        if (purchaseReader.hasPurchased(viewerId, postId)) return media;             // 단건구매
+        if (subscriptionReader.isSubscribed(viewerId, authorId)) return media;       // 구독중
+
         Set<Integer> blurred = imageBlurRepository.findByPostId(postId).stream()
                 .map(ImageBlurTarget::getMediaIndex)
                 .collect(Collectors.toSet());
