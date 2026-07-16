@@ -14,6 +14,7 @@ public record MyPageResponse(
         long postCount,
         long followingCount,
         long followerCount,
-        long subscriptionCount
+        long subscriptionCount,
+        long viewCount
 ) {
 }

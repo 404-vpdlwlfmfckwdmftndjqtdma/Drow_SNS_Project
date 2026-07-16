@@ -1,5 +1,6 @@
 package com.canvasflow.mypage.controller;
 
+import com.canvasflow.mypage.dto.MyPagePostResponse;
 import com.canvasflow.mypage.dto.MyPageResponse;
 import com.canvasflow.mypage.service.MyPageService;
 import com.canvasflow.global.exception.CanvasflowException;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 마이페이지 요약(프로필 + 게시글/팔로우/구독 카운트).
@@ -42,5 +45,20 @@ public class MyPageController {
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<MyPageResponse>> getSummaryByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.ok(myPageService.getSummary(userId)));
+    }
+
+    /** 내 포트폴리오 그리드용 게시글 목록 (프론트 PortfolioGrid). */
+    @GetMapping("/posts")
+    public ResponseEntity<ApiResponse<List<MyPagePostResponse>>> getMyPosts(@AuthenticationPrincipal AuthMember authMember) {
+        if (authMember == null) {
+            throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
+        }
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.getPosts(authMember.userId())));
+    }
+
+    /** 타인 프로필 포트폴리오 그리드용 게시글 목록. 로그인 여부와 무관하게 누구나 조회 가능. */
+    @GetMapping("/{userId}/posts")
+    public ResponseEntity<ApiResponse<List<MyPagePostResponse>>> getPostsByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.getPosts(userId)));
     }
 }
