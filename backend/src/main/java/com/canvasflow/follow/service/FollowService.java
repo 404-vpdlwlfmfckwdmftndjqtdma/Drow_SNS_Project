@@ -1,14 +1,18 @@
 package com.canvasflow.follow.service;
 
 import com.canvasflow.follow.FollowFacade;
+import com.canvasflow.follow.dto.FollowUserResponse;
 import com.canvasflow.follow.entity.Follow;
 import com.canvasflow.follow.repository.FollowRepository;
 import com.canvasflow.user.UserFacade;
+import com.canvasflow.user.UserProfileView;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * 담당: 팔로우/언팔로우.
@@ -69,5 +73,21 @@ public class FollowService implements FollowFacade {
         return followRepository.countByFollowingId(userId);
     }
 
-    // TODO: getFollowingList / getFollowerList (Page<FollowUserResponse> 반환) 구현
+    /**
+     * 내가 팔로우하고 있는 사람 목록 (채널 "전체 보기" 화면 + 우측 채널 미리보기 패널 공용).
+     * 최근에 팔로우한 사람이 먼저 나오도록 정렬한다 - 미리보기 패널은 이 순서 그대로 앞에서 N개만 잘라서 쓰면 된다.
+     * 목록 규모가 크지 않은 지금 단계에서는 follow 건마다 UserFacade를 호출하는 방식으로 두고,
+     * 나중에 목록이 커지면 UserFacade에 id 목록 기반 벌크 조회를 추가해 N+1을 없애면 된다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<FollowUserResponse> getFollowingList(Long userId) {
+        return followRepository.findByFollowerIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(follow -> {
+                    UserProfileView profile = userFacade.getProfileView(follow.getFollowingId());
+                    return new FollowUserResponse(profile.id(), profile.nickname(), profile.profileImageUrl(), profile.bio());
+                })
+                .toList();
+    }
 }

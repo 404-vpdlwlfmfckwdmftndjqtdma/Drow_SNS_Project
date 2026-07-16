@@ -84,6 +84,63 @@
   color: var(--color-on-surface-variant);
 }
 
+.blurButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-surface-container-high);
+  background: var(--color-surface-container-low);
+  color: var(--color-on-surface-variant);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.blurButton:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.blurButton .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.blurList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  list-style: none;
+  margin: var(--space-sm) 0 0;
+  padding: 0;
+}
+
+.blurList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-low);
+  font-size: 13px;
+}
+
+.blurList li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blurList li button {
+  border: none;
+  background: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .tagsInput {
   width: 100%;
   padding: var(--space-sm) var(--space-lg);

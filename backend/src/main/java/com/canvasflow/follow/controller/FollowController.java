@@ -1,5 +1,6 @@
 package com.canvasflow.follow.controller;
 
+import com.canvasflow.follow.dto.FollowUserResponse;
 import com.canvasflow.follow.service.FollowService;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
@@ -9,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 다른 도메인 컨트롤러(UserController)와 동일하게 X-User-Id 헤더 대신
@@ -50,7 +53,13 @@ public class FollowController {
         return ResponseEntity.ok(ApiResponse.ok(following));
     }
 
-    // TODO: GET /me/following, GET /me/followers 엔드포인트 추가
+    // 내가 팔로우하고 있는 사람 목록 (채널 "전체 보기" 화면용). 남의 팔로잉 목록은 아직 필요하지 않아 본인 것만 제공한다.
+    @GetMapping("/following")
+    public ResponseEntity<ApiResponse<List<FollowUserResponse>>> getFollowingList(
+            @AuthenticationPrincipal AuthMember authMember) {
+        requireLogin(authMember);
+        return ResponseEntity.ok(ApiResponse.ok(followService.getFollowingList(authMember.userId())));
+    }
 
     private void requireLogin(AuthMember authMember) {
         if (authMember == null) {

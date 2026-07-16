@@ -14,6 +14,7 @@ import styles from "./page.module.css";
 interface PostListItem {
   postId: number;
   userId: number;
+  nickname: string;
   content: string;
   likeCount?: number;
   commentCount?: number;
@@ -135,11 +136,10 @@ export default function PostListPage() {
           return (
             <article className={styles.card} key={post.postId}>
               <Link className={styles.cardMain} href={`/posts/${post.postId}`}>
-              {/* 작성자 프로필/닉네임: 아직 nickname 조회 인터페이스 연동 전이라 userId로 임시 표시 */}
               <div className={styles.cardHeader}>
                 <div className={styles.avatar} />
                 <div>
-                  <p className={styles.authorName}>작성자 #{post.userId}</p>
+                  <p className={styles.authorName}>{post.nickname ?? `작성자 #${post.userId}`}</p>
                   <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
                 </div>
               </div>

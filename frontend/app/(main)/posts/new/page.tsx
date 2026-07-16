@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import MediaUploader, { type MediaItem } from "@/components/post/MediaUploader";
+import type { BlurRange } from "@/types";
 import styles from "./page.module.css";
 
 type Visibility = "public" | "subscribers" | "private";
@@ -20,11 +21,30 @@ const CONTENT_MAX_LENGTH = 800;
 
 export default function NewPostPage() {
   const router = useRouter();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [media, setMedia] = useState<MediaItem[]>([]);
+  const [blurRanges, setBlurRanges] = useState<BlurRange[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // 선택 영역 -> 블러 처리 목록에 추가. textarea의 selectionStart/End가 곧 글자 위치(인덱스)라
+  // 백엔드 TextBlurRange가 원하는 {start, end} 그대로 쓸 수 있다.
+  const handleAddBlurRange = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const { selectionStart: start, selectionEnd: end } = textarea;
+    if (start === end) {
+      alert("블러 처리할 텍스트를 먼저 드래그해서 선택해주세요.");
+      return;
+    }
+    setBlurRanges((prev) => [...prev, { start, end }]);
+  };
+
+  const handleRemoveBlurRange = (index: number) => {
+    setBlurRanges((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     if (!content.trim() && media.length === 0) {
@@ -43,6 +63,7 @@ export default function NewPostPage() {
         visibility: VISIBILITY_MAP[visibility],
         tags,
         media,
+        extensions: blurRanges.length > 0 ? { textBlur: { ranges: blurRanges } } : undefined,
       });
       router.push("/posts");
     } catch {
@@ -60,6 +81,7 @@ export default function NewPostPage() {
             <MediaUploader value={media} onChange={setMedia} />
 
             <textarea
+              ref={textareaRef}
               maxLength={CONTENT_MAX_LENGTH}
               onChange={(event) => setContent(event.target.value)}
               placeholder="무슨 생각을 하고 계신가요? 내용을 입력하세요..."
@@ -75,6 +97,24 @@ export default function NewPostPage() {
               value={tagsInput}
             />
           </div>
+
+          <button className={styles.blurButton} onClick={handleAddBlurRange} type="button">
+            <span className="material-symbols-outlined">visibility_off</span>
+            선택한 텍스트 블러 처리
+          </button>
+
+          {blurRanges.length > 0 && (
+            <ul className={styles.blurList}>
+              {blurRanges.map((range, index) => (
+                <li key={`${range.start}-${range.end}-${index}`}>
+                  <span>“{content.slice(range.start, range.end)}”</span>
+                  <button onClick={() => handleRemoveBlurRange(index)} type="button">
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div>

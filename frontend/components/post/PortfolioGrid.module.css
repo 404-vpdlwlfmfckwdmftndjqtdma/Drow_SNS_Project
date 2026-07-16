@@ -1,0 +1,115 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cardWide {
+  grid-column: span 2;
+  aspect-ratio: 16 / 9;
+}
+
+.media {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-surface-container-high);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-on-surface-variant);
+}
+
+.playOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.textCard {
+  width: 100%;
+  height: 100%;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  justify-content: center;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  margin: 0;
+  color: var(--color-on-surface);
+}
+
+.snippet {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  text-align: center;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  color: var(--color-on-surface-variant);
+}
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--color-on-surface);
+  margin: var(--space-xs) 0 0;
+}
+
+.emptyBody {
+  font-size: 14px;
+  margin: 0;
+}
+
+.emptyBtn {
+  margin-top: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: var(--gradient-brand);
+  color: #fff;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow-floating);
+}
