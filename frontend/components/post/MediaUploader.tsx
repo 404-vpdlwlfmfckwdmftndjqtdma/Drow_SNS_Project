@@ -17,11 +17,20 @@ interface MediaUploaderProps {
   value: MediaItem[];
   onChange: (media: MediaItem[]) => void;
   accept?: string;
+  // 사진 블러 처리 선택 UI (넘기지 않으면 표시 안 함 - 예: 수정 화면에서는 미지원)
+  blurredIndexes?: Set<number>;
+  onToggleBlur?: (index: number) => void;
 }
 
 // 게시글 작성/수정 시 이미지·영상 다중 첨부 UI.
 // lib/image.ts 의 uploadMediaBatch 사용. 확장자/용량(50MB) 검증은 서버에서도 재검증됨.
-export default function MediaUploader({ value, onChange, accept = "image/*,video/*" }: MediaUploaderProps) {
+export default function MediaUploader({
+  value,
+  onChange,
+  accept = "image/*,video/*",
+  blurredIndexes,
+  onToggleBlur,
+}: MediaUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -83,6 +92,17 @@ export default function MediaUploader({ value, onChange, accept = "image/*,video
               <button type="button" className={styles.removeButton} onClick={() => handleRemove(index)}>
                 ✕
               </button>
+              {onToggleBlur && item.mediaType === "IMAGE" && (
+                <button
+                  type="button"
+                  className={styles.blurToggle}
+                  data-active={blurredIndexes?.has(index) ? "true" : undefined}
+                  onClick={() => onToggleBlur(index)}
+                >
+                  <span className="material-symbols-outlined">visibility_off</span>
+                  블러
+                </button>
+              )}
             </div>
           ))}
         </div>

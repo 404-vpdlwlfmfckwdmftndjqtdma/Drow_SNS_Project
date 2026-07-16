@@ -48,7 +48,7 @@ public class TextBlurExtension implements PostExtension {
     }
 
     @Override
-    public String render(Long postId, String text) {
+    public String render(Long postId, Long authorId, Long viewerId, String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }

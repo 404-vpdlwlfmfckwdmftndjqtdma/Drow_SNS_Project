@@ -7,12 +7,11 @@ import MediaUploader, { type MediaItem } from "@/components/post/MediaUploader";
 import type { BlurRange } from "@/types";
 import styles from "./page.module.css";
 
-type Visibility = "public" | "subscribers" | "private";
+type Visibility = "public" | "subscribers";
 
-// 프론트 표시용 값 -> 백엔드 ContentVisibility(PUBLIC/PRIVATE/LOCKED) 매핑
+// 프론트 표시용 값 -> 백엔드 ContentVisibility(PUBLIC/LOCKED) 매핑
 const VISIBILITY_MAP: Record<Visibility, string> = {
   public: "PUBLIC",
-  private: "PRIVATE",
   subscribers: "LOCKED",
 };
 
@@ -27,7 +26,28 @@ export default function NewPostPage() {
   const [tagsInput, setTagsInput] = useState("");
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [blurRanges, setBlurRanges] = useState<BlurRange[]>([]);
+  const [blurredImageIndexes, setBlurredImageIndexes] = useState<Set<number>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+
+  // 사진이 지워지면 뒤 사진들 인덱스가 앞으로 밀리므로, 안전하게 블러 선택을 초기화한다.
+  const handleMediaChange = (next: MediaItem[]) => {
+    if (next.length < media.length) {
+      setBlurredImageIndexes(new Set());
+    }
+    setMedia(next);
+  };
+
+  const handleToggleImageBlur = (index: number) => {
+    setBlurredImageIndexes((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   // 선택 영역 -> 블러 처리 목록에 추가. textarea의 selectionStart/End가 곧 글자 위치(인덱스)라
   // 백엔드 TextBlurRange가 원하는 {start, end} 그대로 쓸 수 있다.
@@ -56,6 +76,14 @@ export default function NewPostPage() {
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
 
+    const extensions: Record<string, unknown> = {};
+    if (blurRanges.length > 0) {
+      extensions.textBlur = { ranges: blurRanges };
+    }
+    if (blurredImageIndexes.size > 0) {
+      extensions.imageBlur = { targetIndexes: Array.from(blurredImageIndexes) };
+    }
+
     setSubmitting(true);
     try {
       await api.post("/api/v1/posts", {
@@ -63,7 +91,7 @@ export default function NewPostPage() {
         visibility: VISIBILITY_MAP[visibility],
         tags,
         media,
-        extensions: blurRanges.length > 0 ? { textBlur: { ranges: blurRanges } } : undefined,
+        extensions: Object.keys(extensions).length > 0 ? extensions : undefined,
       });
       router.push("/posts");
     } catch {
@@ -78,7 +106,12 @@ export default function NewPostPage() {
       <div data-layout="post-form">
         <div>
           <div data-panel="editor">
-            <MediaUploader value={media} onChange={setMedia} />
+            <MediaUploader
+              value={media}
+              onChange={handleMediaChange}
+              blurredIndexes={blurredImageIndexes}
+              onToggleBlur={handleToggleImageBlur}
+            />
 
             <textarea
               ref={textareaRef}
@@ -137,14 +170,6 @@ export default function NewPostPage() {
               <div>
                 <p>구독자 전용</p>
                 <p>선택한 등급의 구독자만 가능.</p>
-              </div>
-            </label>
-
-            <label>
-              <input type="radio" name="visibility" checked={visibility === "private"} onChange={() => setVisibility("private")} />
-              <div>
-                <p>나만 보기</p>
-                <p>비공개로 저장됩니다.</p>
               </div>
             </label>
 
