@@ -1,20 +1,89 @@
 .container {
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: var(--space-md) var(--container-margin);
+  padding: var(--space-xl) var(--container-margin) var(--space-md);
+}
+
+/* ── 검색 헤더 영역 ── */
+.hero {
+  margin-bottom: var(--space-xl);
 }
 
 .title {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: var(--space-md);
+  font-size: 28px;
+  font-weight: 800;
   color: var(--color-on-surface);
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
 }
 
+.subtitle {
+  font-size: 14px;
+  color: var(--color-on-surface-variant);
+  margin-bottom: var(--space-lg);
+}
+
+/* ── 검색창 ── */
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--color-surface-container);
+  border: 1.5px solid var(--color-outline);
+  border-radius: var(--radius-full);
+  padding: 4px 4px 4px 20px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.searchBar:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(107, 56, 212, 0.12);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: var(--color-on-surface);
+  padding: 8px 0;
+}
+
+.input::placeholder {
+  color: var(--color-on-surface-variant);
+}
+
+.searchBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.searchBtn:hover {
+  opacity: 0.88;
+  transform: scale(1.04);
+}
+
+.searchBtn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* ── 탭 ── */
 .tabs {
   display: flex;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-md);
+  gap: 0;
+  border-bottom: 1.5px solid var(--color-surface-container-high);
+  margin-bottom: var(--space-lg);
 }
 
 .tab,
@@ -22,27 +91,28 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
+  padding: 8px 18px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
   border: none;
+  border-radius: var(--radius-full);
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .tab {
-  background: var(--color-surface-container);
+  background: transparent;
   color: var(--color-on-surface-variant);
 }
 
 .tab:hover {
-  background: var(--color-surface-container-high);
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
 }
 
 .tabActive {
-  background: var(--color-primary-container);
-  color: var(--color-on-primary-container);
+  background: var(--color-primary);
+  color: #ffffff;
 }
 
 .tab .material-symbols-outlined,
@@ -50,63 +120,55 @@
   font-size: 18px;
 }
 
-.searchBar {
-  display: flex;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-lg);
-}
-
-.input {
-  flex: 1;
-  padding: 10px var(--space-md);
-  border: 1.5px solid var(--color-outline);
-  border-radius: var(--radius-full);
-  background: var(--color-surface-container);
-  color: var(--color-on-surface);
-  font-size: 15px;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.input:focus {
-  border-color: var(--color-primary);
-}
-
-.searchBtn {
-  display: flex;
+.tabCount {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 0.15s ease;
-}
-
-.searchBtn:hover {
-  opacity: 0.88;
-}
-
-.searchBtn .material-symbols-outlined {
-  font-size: 20px;
-}
-
-.empty {
+  min-width: 20px;
+  padding: 0 5px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: var(--color-surface-container-highest);
   color: var(--color-on-surface-variant);
-  font-size: 14px;
-  text-align: center;
-  padding: var(--space-xl) 0;
 }
 
-/* 태그 검색 결과 */
+.tabActive .tabCount {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* ── 결과 없음 / 초기 상태 ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) 0;
+  color: var(--color-on-surface-variant);
+}
+
+.emptyIcon {
+  font-size: 48px;
+  opacity: 0.3;
+}
+
+.emptyText {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.emptyHint {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* ── 태그 검색 결과: 게시글 리스트 ── */
 .postList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 2px;
 }
 
 .postCard {
@@ -114,18 +176,18 @@
   gap: var(--space-md);
   padding: var(--space-md);
   border-radius: var(--radius-md);
-  background: var(--color-surface-container-low);
-  transition: background-color 0.15s ease;
+  transition: background-color 0.12s ease;
+  text-decoration: none;
 }
 
 .postCard:hover {
-  background: var(--color-surface-container);
+  background: var(--color-surface-container-low);
 }
 
 .postThumbnail {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-sm);
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
   background: var(--color-surface-container-high);
@@ -143,18 +205,20 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 4px;
 }
 
 .postNickname {
   font-size: 13px;
   font-weight: 700;
-  color: var(--color-on-surface);
+  color: var(--color-on-surface-variant);
 }
 
 .postContent {
   font-size: 14px;
-  color: var(--color-on-surface-variant);
+  font-weight: 500;
+  color: var(--color-on-surface);
   line-height: 1.5;
   overflow: hidden;
   display: -webkit-box;
@@ -165,48 +229,63 @@
 .postTags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   margin-top: 2px;
 }
 
 .tag {
   font-size: 12px;
   color: var(--color-primary);
+  font-weight: 600;
+  background: rgba(107, 56, 212, 0.08);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.resultCount {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+  margin-bottom: var(--space-sm);
   font-weight: 500;
 }
 
-/* 사용자 검색 결과 */
+/* ── 사용자 검색 결과 ── */
 .userList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 2px;
 }
 
 .userCard {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: var(--space-md);
+  padding: 12px var(--space-md);
   border-radius: var(--radius-md);
-  background: var(--color-surface-container-low);
-  transition: background-color 0.15s ease;
+  transition: background-color 0.12s ease;
+  text-decoration: none;
 }
 
 .userCard:hover {
-  background: var(--color-surface-container);
+  background: var(--color-surface-container-low);
 }
 
 .userAvatar {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
 }
 
 .userName {
@@ -218,8 +297,14 @@
 .userBio {
   font-size: 13px;
   color: var(--color-on-surface-variant);
-  margin-top: 2px;
+  margin-top: 3px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.userArrow {
+  font-size: 20px;
+  color: var(--color-on-surface-variant);
+  opacity: 0.5;
 }

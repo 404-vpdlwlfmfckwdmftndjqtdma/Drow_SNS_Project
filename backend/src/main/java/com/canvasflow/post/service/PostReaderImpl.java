@@ -1,12 +1,19 @@
 package com.canvasflow.post.service;
 
 import com.canvasflow.post.PostReader;
+import com.canvasflow.post.PostSearchView;
+import com.canvasflow.post.entity.PostMediaEntity;
+import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostRepository;
+import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -14,6 +21,8 @@ import java.util.Optional;
 public class PostReaderImpl implements PostReader {
 
     private final PostRepository postRepository;
+    private final PostMediaRepository postMediaRepository;
+    private final UserFacade userFacade;
 
     @Override
     public Optional<PostPurchaseInfo> getPurchaseInfo(Long postId) {
@@ -32,5 +41,37 @@ public class PostReaderImpl implements PostReader {
     @Override
     public long countByAuthorId(Long userId) {
         return postRepository.countByUserIdAndDeletedAtIsNull(userId);
+    }
+
+    @Override
+    public List<PostSearchView> findByTag(String tag) {
+        var posts = postRepository.findByTag(tag);
+        if (posts.isEmpty()) return List.of();
+
+        List<Long> postIds = posts.stream().map(p -> p.getPostId()).toList();
+        Map<Long, List<PostSearchView.MediaItem>> mediaByPostId = postMediaRepository
+                .findByPostIdInOrderByPostIdAscSortOrderAsc(postIds).stream()
+                .collect(Collectors.groupingBy(
+                        PostMediaEntity::getPostId,
+                        Collectors.mapping(
+                                m -> new PostSearchView.MediaItem(m.getUrl(), m.getMediaType().name()),
+                                Collectors.toList()
+                        )
+                ));
+
+        List<Long> authorIds = posts.stream().map(p -> p.getUserId()).distinct().toList();
+        Map<Long, String> nicknames = userFacade.findNicknamesByIds(authorIds);
+
+        return posts.stream()
+                .map(p -> new PostSearchView(
+                        p.getPostId(),
+                        p.getUserId(),
+                        nicknames.get(p.getUserId()),
+                        p.getContent(),
+                        List.copyOf(p.getTags()),
+                        mediaByPostId.getOrDefault(p.getPostId(), List.of()),
+                        p.getCreatedAt()
+                ))
+                .toList();
     }
 }

@@ -128,13 +128,6 @@ export default function Sidebar() {
       </div>
 
       <nav className={styles.nav}>
-        <Link
-          href="/search"
-          className={pathname === "/search" || pathname.startsWith("/search/") ? styles.navItemActive : styles.navItem}
-        >
-          <span className="material-symbols-outlined">search</span>
-          <span>검색</span>
-        </Link>
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           return (

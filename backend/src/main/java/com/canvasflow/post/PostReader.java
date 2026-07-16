@@ -1,6 +1,7 @@
 package com.canvasflow.post;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -16,6 +17,9 @@ public interface PostReader {
     // mypage 모듈이 마이페이지 "창작물" 통계(postCount)를 채우려고 추가함 - post 담당자 확인 부탁드립니다.
     // (구현은 PostReaderImpl.countByAuthorId 참고, PostRepository.countByUserIdAndDeletedAtIsNull 사용)
     long countByAuthorId(Long userId);
+
+    List<PostSearchView> findByTag(String tag);
+
 
     record PostPurchaseInfo(Long authorId, BigDecimal singlePurchasePrice) {}
 

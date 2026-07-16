@@ -33,3 +33,7 @@ Thumbs.db
 # local tool/cache files
 frontend/.claude/
 *.tsbuildinfo
+
+# dev server logs
+backend/bootrun.log
+backend/bootrun-err.log
