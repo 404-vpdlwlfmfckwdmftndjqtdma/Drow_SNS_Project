@@ -1,5 +1,9 @@
 package com.canvasflow.post;
 
+import com.canvasflow.global.media.MediaType;
+
+import java.util.List;
+
 /**
  * [post 모듈의 창구 - 유일하게 노출되는 타입]
  *
@@ -27,5 +31,16 @@ public interface PostExtension {
      */
     default String render(Long postId, String text) {
         return text;
+    }
+
+    /** post 내부 DTO(PostRequestDto 등)를 다른 모듈에 노출하지 않기 위한, 확장 모듈 전용 공개 미디어 타입. */
+    record MediaItem(String url, MediaType mediaType) {}
+
+    /**
+     * 게시글 조회 시 미디어 목록을 가공할 기회. 기본은 그대로 통과.
+     * 예) 이미지 블러는 지정된 사진의 url을 블러 처리된 버전으로 바꿔치기한다.
+     */
+    default List<MediaItem> renderMedia(Long postId, List<MediaItem> media) {
+        return media;
     }
 }

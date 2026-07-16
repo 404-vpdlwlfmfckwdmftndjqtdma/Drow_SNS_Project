@@ -120,13 +120,15 @@ public class PostService {
                     for (PostExtension extension : extensions) {
                         renderedContent = extension.render(post.getPostId(), renderedContent);
                     }
+                    List<PostRequestDto.MediaItem> media = renderMedia(
+                            post.getPostId(), mediaByPostId.getOrDefault(post.getPostId(), List.of()));
                     return new PostViewDto(
                             post.getUserId(),
                             post.getPostId(),
                             renderedContent,
                             post.getVisibility(),
                             List.copyOf(post.getTags()),
-                            mediaByPostId.getOrDefault(post.getPostId(), List.of()),
+                            media,
                             post.getViewCount(),
                             post.getCreatedAt(),
                             post.getUpdatedAt(),
@@ -151,17 +153,18 @@ public class PostService {
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
         }
 
-        String renderedContent = post.getContent();
-        for (PostExtension extension : extensions) {
-            renderedContent = extension.render(post.getPostId(), renderedContent);
-        }
-
         post.increaseViewCount();
 
         List<PostRequestDto.MediaItem> mediaItems = postMediaRepository
                 .findByPostIdInOrderByPostIdAscSortOrderAsc(List.of(postId)).stream()
                 .map(m-> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()))
                 .toList();
+
+        String renderedContent = post.getContent();
+        for (PostExtension extension : extensions) {
+            renderedContent = extension.render(post.getPostId(), renderedContent);
+        }
+        mediaItems = renderMedia(post.getPostId(), mediaItems);
 
         return new PostViewDto(
                 post.getUserId(),
@@ -241,8 +244,19 @@ public class PostService {
         post.delete();
     }
 
-
-
+    // PostRequestDto.MediaItem(내부 DTO) <-> PostExtension.MediaItem(공개 타입) 변환을 감춰서
+    // 확장 모듈이 post의 내부 타입을 직접 참조하지 않도록 한다 (모듈 경계 위반 방지).
+    private List<PostRequestDto.MediaItem> renderMedia(Long postId, List<PostRequestDto.MediaItem> media) {
+        List<PostExtension.MediaItem> converted = media.stream()
+                .map(m -> new PostExtension.MediaItem(m.url(), m.mediaType()))
+                .collect(Collectors.toList());
+        for (PostExtension extension : extensions) {
+            converted = extension.renderMedia(postId, converted);
+        }
+        return converted.stream()
+                .map(m -> new PostRequestDto.MediaItem(m.url(), m.mediaType()))
+                .toList();
+    }
 
 
 
