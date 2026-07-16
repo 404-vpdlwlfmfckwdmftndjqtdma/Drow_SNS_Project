@@ -1,6 +1,5 @@
 package com.canvasflow.post.service;
 
-import com.canvasflow.global.common.ContentVisibility;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import com.canvasflow.post.dto.PostRequestDto;
@@ -93,7 +92,7 @@ public class PostService {
                 }
                 yield postRepository.findVisiblePostsCommentedByUser(viewerId);
             }
-            default -> postRepository.findVisiblePosts(viewerId);
+            default -> postRepository.findVisiblePosts();
         };
 
         List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
@@ -147,10 +146,6 @@ public class PostService {
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.POST_NOT_FOUND));
 
         if(post.getDeletedAt() != null){
-            throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
-        }
-
-        if(post.getVisibility() == ContentVisibility.PRIVATE && !post.getUserId().equals(viewerId)){
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
         }
 

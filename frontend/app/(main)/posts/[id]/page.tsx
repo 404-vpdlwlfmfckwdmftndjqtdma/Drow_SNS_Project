@@ -14,7 +14,7 @@ interface PostDetailResponse {
   userId: number;
   nickname: string;
   content: string;
-  visibility: "PUBLIC" | "PRIVATE" | "LOCKED";
+  visibility: "PUBLIC" | "LOCKED";
   tags: string[];
   media: { url: string; mediaType: "IMAGE" | "VIDEO" }[];
   viewCount: number;
@@ -25,7 +25,6 @@ interface PostDetailResponse {
 const VISIBILITY_LABEL: Record<string, string> = {
   PUBLIC: "전체 공개",
   LOCKED: "구독자 전용",
-  PRIVATE: "나만 보기",
 };
 
 // 게시글 상세. 구독 잠금(LOCKED) 열람 제한은 아직 서버에 연동 전이라(subscription 도메인 연동 대기 중)
