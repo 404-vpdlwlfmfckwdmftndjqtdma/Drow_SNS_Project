@@ -2,6 +2,7 @@ package com.canvasflow.mypage.service;
 
 import com.canvasflow.follow.FollowFacade;
 import com.canvasflow.mypage.MyPageFacade;
+import com.canvasflow.mypage.dto.MyPagePostResponse;
 import com.canvasflow.mypage.dto.MyPageResponse;
 import com.canvasflow.post.PostReader;
 import com.canvasflow.user.UserFacade;
@@ -9,6 +10,8 @@ import com.canvasflow.user.UserProfileView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * 마이페이지 요약 정보 집계.
@@ -19,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 이 클래스 자신도 mypage 모듈 기본 패키지의 MyPageFacade를 구현해서, 다른 모듈이 나중에
  * 마이페이지 요약이 필요해지면 MyPageService를 직접 참조하지 않고 이 인터페이스로만 의존할 수 있게 해둔다.
  * TODO: SubscriptionService 쪽에 카운트 조회 메서드가 추가되면 subscriptionCount도 실제 값으로 교체 (현재는 0 placeholder).
- *       followingCount / followerCount는 FollowFacade, postCount는 PostReader로 이미 실제 값 연동됨.
+ *       followingCount / followerCount는 FollowFacade, postCount / viewCount는 PostReader로 이미 실제 값 연동됨.
  */
 @RequiredArgsConstructor
 @Service
@@ -37,6 +40,7 @@ public class MyPageService implements MyPageFacade {
         long followingCount = followFacade.countFollowing(userId);
         long followerCount = followFacade.countFollowers(userId);
         long postCount = postReader.countByAuthorId(userId);
+        long viewCount = postReader.sumViewCountByAuthorId(userId);
 
         // TODO: subscriptionCount는 subscription 쪽 Facade 나오면 실제 집계 쿼리로 교체
         return new MyPageResponse(
@@ -44,7 +48,22 @@ public class MyPageService implements MyPageFacade {
                 profile.nickname(),
                 profile.profileImageUrl(),
                 profile.bio(),
-                postCount, followingCount, followerCount, 0L
+                postCount, followingCount, followerCount, 0L, viewCount
         );
+    }
+
+    /** 마이페이지/타인 프로필 포트폴리오 그리드용 게시글 목록 (최신 작성순) - PostReader.getPostsByAuthorId 그대로 매핑. */
+    @Override
+    @Transactional(readOnly = true)
+    public List<MyPagePostResponse> getPosts(Long userId) {
+        return postReader.getPostsByAuthorId(userId).stream()
+                .map(post -> new MyPagePostResponse(
+                        post.postId(),
+                        post.content(),
+                        post.thumbnailUrl(),
+                        post.thumbnailUrl() != null,
+                        post.isVideo()
+                ))
+                .toList();
     }
 }

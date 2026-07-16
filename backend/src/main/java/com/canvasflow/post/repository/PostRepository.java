@@ -61,4 +61,17 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     // 삭제(soft delete)된 글은 제외하고 센다. visibility(PRIVATE 등)는 구분하지 않고 전부 포함 - 본인/타인 마이페이지 모두
     // "이 사람이 쓴 글 총개수"라는 의미로 쓰기 위함이다(공개된 글만 셀지는 추후 논의 필요).
     long countByUserIdAndDeletedAtIsNull(Long userId);
+
+    // mypage 모듈(PostReader.getPostsByAuthorId)에서 마이페이지/타인 프로필 포트폴리오 그리드용으로 추가함 - post 담당자 확인 부탁드립니다.
+    // countByUserIdAndDeletedAtIsNull과 동일하게 삭제된 글만 제외하고 visibility는 구분하지 않는다
+    // (본인 마이페이지에서 비공개 글도 같이 보여줄지는 추후 논의 필요 - 지금은 우선 전부 포함).
+    List<PostEntity> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId);
+
+    // mypage 모듈(PostReader.sumViewCountByAuthorId)에서 마이페이지 "조회수" 통계용으로 추가함 - post 담당자 확인 부탁드립니다.
+    // 삭제된 글은 합산에서 제외한다. 글이 하나도 없으면 SUM이 NULL을 반환하므로 COALESCE로 0 처리.
+    @Query("""
+        SELECT COALESCE(SUM(p.viewCount), 0) FROM PostEntity p
+        WHERE p.userId = :userId AND p.deletedAt IS NULL
+        """)
+    long sumViewCountByUserId(@Param("userId") Long userId);
 }

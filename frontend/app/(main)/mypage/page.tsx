@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import CompactChannelList, { type CompactChannelItem } from "@/components/channel/list/CompactChannelList";
+import PortfolioGrid, { toPortfolioPosts, type MyPagePostResponse, type PortfolioPost } from "@/components/post/PortfolioGrid";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
@@ -17,6 +18,7 @@ interface MyPageSummary {
   followingCount: number;
   followerCount: number;
   subscriptionCount: number;
+  viewCount: number;
 }
 
 // FollowUserResponse 와 1:1로 맞춘 응답 타입 (channels/page.tsx와 동일).
@@ -29,18 +31,19 @@ interface FollowingUser {
 
 const CHANNEL_PANEL_LIMIT = 5;
 
-// 마이페이지: 프로필(닉네임/소개/이미지/팔로워·팔로잉·창작물 수는 실제 연동) + 게시글 썸네일 포트폴리오
+// 마이페이지: 프로필(닉네임/소개/이미지/팔로워·팔로잉·창작물·조회수는 실제 연동) + 게시글 포트폴리오 그리드
 //            + 우측 채널 미리보기 패널(CompactChannelList, 1200px 이상에서만 노출).
+// 포트폴리오 그리드는 users/[id] 페이지와 공용인 PortfolioGrid 컴포넌트를 쓴다 - 사진/영상이 있으면 첫 썸네일만,
+// 없으면 텍스트만 보여주고 좋아요 수는 노출하지 않는다.
+// GET /api/v1/mypage/posts (PostReader.getPostsByAuthorId 기반, 최신 작성순) 로 실제 게시글 연동.
 // 채널 미리보기 패널은 GET /api/v1/follows/following(최신 팔로우순 정렬)을 그대로 받아 앞에서 5개만 잘라서 넘긴다.
-// 팔로워 목록/진행중 협업 사이드바, 그림/문서/숏폼 탭은 제거하고 그만큼 썸네일 영역을 넓게 쓴다.
-// 프로필 수정 버튼은 이름 오른쪽 끝에 붙여서 아래 포트폴리오 영역과 간격을 둔다.
-// GET /api/v1/mypage 로 연동 - 팔로워/팔로잉/창작물(postCount)은 FollowFacade/PostReader 기반 실수치.
-// 조회수는 MyPageResponse에 필드 자체가 없어 더미로 남겨둔다.
-// TODO: 포트폴리오 목록도 GET /api/v1/posts?authorId=me 로 연동
+// GET /api/v1/mypage 로 연동 - 팔로워/팔로잉/창작물(postCount)/조회수(viewCount) 전부 FollowFacade/PostReader 기반 실수치.
 export default function MyPage() {
   const router = useRouter();
   const [me, setMe] = useState<MyPageSummary | null>(null);
   const [channelPreview, setChannelPreview] = useState<CompactChannelItem[]>([]);
+  const [posts, setPosts] = useState<PortfolioPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -64,6 +67,17 @@ export default function MyPage() {
         setChannelPreview(mapped);
       } catch {
         // 비로그인 등으로 실패하면 빈 목록으로 둔다 (더미로 되돌아가지 않도록 [] 유지).
+      }
+    })();
+
+    (async () => {
+      try {
+        const res = await api.get<ApiResponse<MyPagePostResponse[]>>("/api/v1/mypage/posts");
+        setPosts(toPortfolioPosts(res.data.data));
+      } catch {
+        // 비로그인 등으로 실패하면 빈 목록으로 둔다.
+      } finally {
+        setPostsLoading(false);
       }
     })();
   }, []);
@@ -118,48 +132,16 @@ export default function MyPage() {
               </div>
               <div className={styles.divider} />
               <div>
-                <span className={styles.statValue} style={{ color: "var(--color-primary)" }}>12.5M</span>
+                <span className={styles.statValue} style={{ color: "var(--color-primary)" }}>
+                  {(me?.viewCount ?? 0).toLocaleString()}
+                </span>
                 <span className={styles.statLabel}>조회수</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className={styles.portfolioGrid}>
-          <div className={`${styles.portfolioCard} ${styles.portfolioCardWide}`}>
-            <div className={styles.portfolioMediaWide} />
-          </div>
-
-          <div className={styles.portfolioCard}>
-            <div className={styles.portfolioMedia} />
-            <div className={styles.portfolioBody}>
-              <h3 className={styles.portfolioTitle}>Geometric Study #12</h3>
-              <div className={styles.portfolioMetaRow}>
-                <span className={styles.likeMeta}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>favorite</span>1.2k
-                </span>
-                <span className={styles.publicBadge}>공개</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 비공개 초안 - 잠금 오버레이 */}
-          <div className={styles.portfolioCard}>
-            <div className={styles.portfolioMedia}>
-              <div className={styles.lockOverlay}>
-                <span className="material-symbols-outlined" style={{ fontSize: 32 }}>lock</span>
-                <p className={styles.lockTitle}>Private Draft</p>
-                <p className={styles.lockDesc}>비공개 초안입니다</p>
-              </div>
-            </div>
-            <div className={styles.portfolioBody}>
-              <h3 className={styles.portfolioTitle}>Project: Synthesis</h3>
-              <span className={styles.likeMeta}>
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>visibility_off</span>숨김
-              </span>
-            </div>
-          </div>
-        </div>
+        {!postsLoading && <PortfolioGrid wideFirst isOwner posts={posts} />}
       </div>
 
       <aside className={styles.channelPanel}>
