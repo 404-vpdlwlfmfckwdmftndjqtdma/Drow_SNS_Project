@@ -4,8 +4,6 @@ import com.canvasflow.global.media.MediaType;
 import com.canvasflow.imageblur.internal.ImageBlurRepository;
 import com.canvasflow.imageblur.internal.ImageBlurTarget;
 import com.canvasflow.post.PostExtension;
-import com.canvasflow.purchase.PurchaseReader;
-import com.canvasflow.subscription.SubscriptionReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +21,6 @@ import java.util.stream.Collectors;
 public class ImageBlurExtension implements PostExtension {
 
     private final ImageBlurRepository imageBlurRepository;
-    private final PurchaseReader purchaseReader;
-    private final SubscriptionReader subscriptionReader;
 
 
     @Override
@@ -32,12 +28,14 @@ public class ImageBlurExtension implements PostExtension {
         return "imageBlur";
     }
 
+    //저장 할 때
     @Override
     public void apply(Long postId, Object section) {
-        imageBlurRepository.deleteByPostId(postId);
+        imageBlurRepository.deleteByPostId(postId); //기존의 사진들을 지움
         if (!(section instanceof  Map<?, ?> map) || !(map.get("targetIndexes") instanceof  List<?> indexes)) {
             return;
         }List<ImageBlurTarget> rows = new ArrayList<>();
+        //프론트에서 받은 형태 확인, 배열 돌며 가릴 사진 저장
         for(Object item : indexes){
             if(item instanceof  Number index) {
                 rows.add(new ImageBlurTarget(postId, index.intValue()));
@@ -48,10 +46,9 @@ public class ImageBlurExtension implements PostExtension {
     }
 
     @Override
-    public List<PostExtension.MediaItem> renderMedia(Long postId, Long authorId, Long viewerId, List<PostExtension.MediaItem> media){
-        if (viewerId != null && viewerId.equals(authorId)) return media;              // 작성자 본인
-        if (purchaseReader.hasPurchased(viewerId, postId)) return media;             // 단건구매
-        if (subscriptionReader.isSubscribed(viewerId, authorId)) return media;       // 구독중
+    //화면에 보여주는 코드, 블러처리는 Cloudinary의 e_blur:숫자 활용
+    public List<PostExtension.MediaItem> renderMedia(Long postId, List<PostExtension.MediaItem> media, boolean unlocked){
+        if (unlocked) return media; // 구매/구독으로 잠금 해제된 뷰어에게는 원본 그대로
 
         Set<Integer> blurred = imageBlurRepository.findByPostId(postId).stream()
                 .map(ImageBlurTarget::getMediaIndex)
@@ -62,7 +59,7 @@ public class ImageBlurExtension implements PostExtension {
         for (int i = 0; i < media.size(); i++) {
             PostExtension.MediaItem item = media.get(i);
             if (blurred.contains(i) && item.mediaType() == MediaType.IMAGE) {
-                result.add(new PostExtension.MediaItem(item.url().replaceFirst("/upload/", "/upload/e_blur:2000/"), item.mediaType()));
+                result.add(new PostExtension.MediaItem(item.url().replaceFirst("/upload/", "/upload/e_blur:3000/"), item.mediaType()));
             } else {
                 result.add(item);
             }

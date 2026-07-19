@@ -15,6 +15,7 @@ interface PostListItem {
   postId: number;
   userId: number;
   nickname: string;
+  profileImageUrl?: string;
   content: string;
   likeCount?: number;
   commentCount?: number;
@@ -135,15 +136,22 @@ export default function PostListPage() {
 
           return (
             <article className={styles.card} key={post.postId}>
-              <Link className={styles.cardMain} href={`/posts/${post.postId}`}>
-              <div className={styles.cardHeader}>
-                <div className={styles.avatar} />
+              <Link className={styles.cardHeader} href={`/users/${post.userId}`}>
+                <div
+                  className={styles.avatar}
+                  style={
+                    post.profileImageUrl
+                      ? { backgroundImage: `url(${post.profileImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                      : undefined
+                  }
+                />
                 <div>
                   <p className={styles.authorName}>{post.nickname ?? `작성자 #${post.userId}`}</p>
                   <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
                 </div>
-              </div>
+              </Link>
 
+              <Link className={styles.cardMain} href={`/posts/${post.postId}`}>
               <Thumbnail media={post.media} />
 
               <div className={styles.body}>
