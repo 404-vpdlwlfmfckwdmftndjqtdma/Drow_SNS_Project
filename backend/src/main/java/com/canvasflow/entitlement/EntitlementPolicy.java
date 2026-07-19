@@ -6,6 +6,7 @@ import com.canvasflow.subscription.SubscriptionReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -40,11 +41,9 @@ public class EntitlementPolicy implements ContentAccessPolicy {
         if (subscriptionReader.isSubscribed(viewerId, authorId)) {
             return ALL_KEYS;
         }
-        // 게시글 단건 구매 → 전부 해제
-        if (purchaseReader.hasPurchased(viewerId, postId)) {
-            return ALL_KEYS;
-        }
-        // 아무 권한 없음 → 전부 잠금
-        return Set.of();
+        // 그 외 → 이 글에서 구매한 품목(capability)만 부분 해제
+        Set<String> unlocked = new HashSet<>(purchaseReader.purchasedKeys(viewerId, postId));
+        unlocked.retainAll(ALL_KEYS); // 알 수 없는 key 는 무시 (방어)
+        return unlocked;
     }
 }
