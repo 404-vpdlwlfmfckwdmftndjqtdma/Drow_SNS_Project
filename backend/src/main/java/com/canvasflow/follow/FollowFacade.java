@@ -24,4 +24,7 @@ public interface FollowFacade {
 
     /** 내가 팔로우하고 있는 사람 목록 (채널 "전체 보기" 화면용). */
     List<FollowUserResponse> getFollowingList(Long userId);
+
+    /** 이 userId를 팔로우하고 있는 사람 목록 (팔로워 목록 화면용, 본인/타인 공용). */
+    List<FollowUserResponse> getFollowerList(Long userId);
 }

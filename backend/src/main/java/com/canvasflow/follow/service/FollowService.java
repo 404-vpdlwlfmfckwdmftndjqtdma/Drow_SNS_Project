@@ -90,4 +90,20 @@ public class FollowService implements FollowFacade {
                 })
                 .toList();
     }
+
+    /**
+     * 이 userId를 팔로우하고 있는 사람 목록 (팔로워 목록 화면용, 본인/타인 공용).
+     * getFollowingList와 대칭 구조 - followerId/followingId만 반대로 조회한다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<FollowUserResponse> getFollowerList(Long userId) {
+        return followRepository.findByFollowingIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(follow -> {
+                    UserProfileView profile = userFacade.getProfileView(follow.getFollowerId());
+                    return new FollowUserResponse(profile.id(), profile.nickname(), profile.profileImageUrl(), profile.bio());
+                })
+                .toList();
+    }
 }
