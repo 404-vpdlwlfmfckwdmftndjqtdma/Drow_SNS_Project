@@ -58,6 +58,9 @@ public enum ErrorCode {
     WALLET_INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "WALLET_001", "잔액이 부족합니다."),
     WALLET_INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "WALLET_002", "금액은 0보다 커야 합니다."),
 
+    // Order
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001", "주문을 찾을 수 없습니다."),
+
     // Comment / Like
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_001", "댓글을 찾을 수 없습니다."),
     ALREADY_LIKED(HttpStatus.CONFLICT, "LIKE_001", "이미 좋아요를 눌렀습니다."),

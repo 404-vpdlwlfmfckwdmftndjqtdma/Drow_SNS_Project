@@ -34,18 +34,23 @@ public class WalletService {
 
     /**
      * 충전(+). PG 결제 승인이 끝난 뒤 호출되는 것을 전제로 한다(이 메서드는 잔액만 올린다).
-     * @param refId 관련 결제 식별자 (없으면 null)
+     * @param refId 관련 결제/주문 식별자 (없으면 null)
+     * @return 이번에 남긴 원장 id + 충전 후 잔액
      */
     @Transactional
-    public long charge(Long userId, long amount, Long refId) {
+    public LedgerResult charge(Long userId, long amount, Long refId) {
         if (amount <= 0) {
             throw new CanvasflowException(ErrorCode.WALLET_INVALID_AMOUNT);
         }
         Wallet wallet = lockOrCreate(userId);
         wallet.charge(amount);
-        ledgerRepository.save(new WalletLedger(
+        WalletLedger ledger = ledgerRepository.save(new WalletLedger(
                 userId, amount, WalletLedger.Type.CHARGE, refId, wallet.getBalance()));
-        return wallet.getBalance();
+        return new LedgerResult(ledger.getId(), wallet.getBalance());
+    }
+
+    /** 원장 기록 결과. 호출한 쪽이 원장 id 를 자기 주문에 연결해 두면 추적이 쉬워진다. */
+    public record LedgerResult(Long ledgerId, long balance) {
     }
 
     /**
@@ -55,7 +60,7 @@ public class WalletService {
      * @return 차감 후 잔액
      */
     @Transactional
-    public long use(Long userId, long amount, WalletLedger.Type type, Long refId) {
+    public LedgerResult use(Long userId, long amount, WalletLedger.Type type, Long refId) {
         if (amount <= 0) {
             throw new CanvasflowException(ErrorCode.WALLET_INVALID_AMOUNT);
         }
@@ -65,9 +70,9 @@ public class WalletService {
         if (!wallet.tryUse(amount)) {
             throw new CanvasflowException(ErrorCode.WALLET_INSUFFICIENT_BALANCE);
         }
-        ledgerRepository.save(new WalletLedger(
+        WalletLedger ledger = ledgerRepository.save(new WalletLedger(
                 userId, -amount, type, refId, wallet.getBalance()));
-        return wallet.getBalance();
+        return new LedgerResult(ledger.getId(), wallet.getBalance());
     }
 
     /** 잠금 조회 후 없으면 생성. (첫 충전 시 지갑 자동 개설) */
