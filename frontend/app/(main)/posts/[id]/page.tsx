@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import api from "@/lib/api";
 import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
 import CommentThread from "@/components/comment/CommentThread";
@@ -13,8 +14,9 @@ interface PostDetailResponse {
   postId: number;
   userId: number;
   nickname: string;
+  profileImageUrl?: string;
   content: string;
-  visibility: "PUBLIC" | "PRIVATE" | "LOCKED";
+  visibility: "PUBLIC" | "LOCKED";
   tags: string[];
   media: { url: string; mediaType: "IMAGE" | "VIDEO" }[];
   viewCount: number;
@@ -25,7 +27,6 @@ interface PostDetailResponse {
 const VISIBILITY_LABEL: Record<string, string> = {
   PUBLIC: "전체 공개",
   LOCKED: "구독자 전용",
-  PRIVATE: "나만 보기",
 };
 
 // 게시글 상세. 구독 잠금(LOCKED) 열람 제한은 아직 서버에 연동 전이라(subscription 도메인 연동 대기 중)
@@ -84,14 +85,28 @@ export default function PostDetailPage() {
 
   return (
     <div className={styles.container}>
+      <button className={styles.backButton} onClick={() => router.back()} type="button">
+        <span className="material-symbols-outlined">arrow_back</span>
+        뒤로가기
+      </button>
+
       <article className={styles.card}>
         <div className={styles.cardInner}>
           <div className={styles.header}>
-            <div className={styles.avatar} />
-            <div className={styles.headerText}>
-              <p className={styles.authorName}>{post.nickname ?? `작성자 #${post.userId}`}</p>
-              <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
-            </div>
+            <Link href={`/users/${post.userId}`} className={styles.authorLink}>
+              <div
+                className={styles.avatar}
+                style={
+                  post.profileImageUrl
+                    ? { backgroundImage: `url(${post.profileImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                    : undefined
+                }
+              />
+              <div className={styles.headerText}>
+                <p className={styles.authorName}>{post.nickname ?? `작성자 #${post.userId}`}</p>
+                <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
+              </div>
+            </Link>
             <span className={styles.visibilityTag}>{VISIBILITY_LABEL[post.visibility]}</span>
           </div>
 

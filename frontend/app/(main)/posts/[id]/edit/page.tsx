@@ -7,17 +7,15 @@ import MediaUploader, { type MediaItem } from "@/components/post/MediaUploader";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
-type Visibility = "public" | "subscribers" | "private";
+type Visibility = "public" | "subscribers";
 
-// 프론트 표시용 값 <-> 백엔드 ContentVisibility(PUBLIC/PRIVATE/LOCKED) 매핑
+// 프론트 표시용 값 <-> 백엔드 ContentVisibility(PUBLIC/LOCKED) 매핑
 const VISIBILITY_MAP: Record<Visibility, string> = {
   public: "PUBLIC",
-  private: "PRIVATE",
   subscribers: "LOCKED",
 };
 const VISIBILITY_MAP_REVERSE: Record<string, Visibility> = {
   PUBLIC: "public",
-  PRIVATE: "private",
   LOCKED: "subscribers",
 };
 
@@ -139,14 +137,6 @@ export default function EditPostPage() {
               <div>
                 <p>구독자 전용</p>
                 <p>선택한 등급의 구독자만 가능.</p>
-              </div>
-            </label>
-
-            <label>
-              <input type="radio" name="visibility" checked={visibility === "private"} onChange={() => setVisibility("private")} />
-              <div>
-                <p>나만 보기</p>
-                <p>비공개로 저장됩니다.</p>
               </div>
             </label>
 
