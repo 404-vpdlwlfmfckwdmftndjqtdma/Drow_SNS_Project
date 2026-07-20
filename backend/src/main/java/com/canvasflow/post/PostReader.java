@@ -1,5 +1,7 @@
 package com.canvasflow.post;
 
+import com.canvasflow.global.media.MediaType;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +29,27 @@ public interface PostReader {
     // mypage 모듈이 마이페이지 "조회수" 통계를 채우려고 추가함 - post 담당자 확인 부탁드립니다.
     // (구현은 PostReaderImpl.sumViewCountByAuthorId 참고, PostRepository.sumViewCountByUserId 사용)
     long sumViewCountByAuthorId(Long userId);
+
+    // mypage의 "내가 좋아요한 글 / 댓글 단 글" 목록용 창구.
+    // 호출 측(mypage)이 LikeReader/CommentReader 등에서 얻은 postId 목록을 넘기면,
+    // 삭제 글을 제외하고 블러 등 확장 모듈 렌더 파이프라인을 적용한 결과를 "입력 id 순서대로" 돌려준다.
+    // content는 원문이 아니라 viewerId 기준 가공본이다(비구독자는 블러 치환) - 원문 유출 방지를 위해 반드시 이 창구를 쓸 것.
+    // likeCount/commentCount는 post 소관이 아니므로 없다 - 호출 측이 LikeReader.summarize 등으로 채운다.
+    List<PostView> getViewablePosts(List<Long> postIds, Long viewerId);
+
+    // 렌더 파이프라인 통과 후의 게시글 한 건 (getViewablePosts 전용 반환 타입)
+    record PostView(
+            Long postId,
+            Long userId,
+            String content,          // viewerId 기준 가공본 (비구독자는 블러 구간이 ●로 치환됨)
+            List<String> tags,
+            List<ViewMedia> media,
+            Long viewCount,
+            LocalDateTime createdAt,
+            String nickname
+    ) {}
+
+    record ViewMedia(String url, MediaType mediaType) {}
 
     record PostPurchaseInfo(Long authorId, BigDecimal singlePurchasePrice) {}
 

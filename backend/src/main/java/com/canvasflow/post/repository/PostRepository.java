@@ -18,33 +18,9 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
         """)
     List<PostEntity> findVisiblePosts();
 
-    @Query(value = """
-            SELECT p.* FROM posts p
-            WHERE p.deleted_at IS NULL
-                AND EXISTS (
-                            SELECT 1
-                            FROM likes l
-                            WHERE l.user_id = :userId
-                                AND l.target_type = 'POST'
-                                AND l.target_id = p.post_id
-                )
-            ORDER BY p.created_at DESC
-            """, nativeQuery = true)
-    List<PostEntity> findVisiblePostsLikedByUser(@Param("userId") Long userId);
-
-    @Query(value = """
-            SELECT p.* FROM posts p
-            WHERE p.deleted_at IS NULL
-                AND EXISTS (
-                            SELECT 1
-                            FROM comments c
-                            WHERE c.post_id = p.post_id
-                                AND c.writer_id = :userId
-                                AND c.deleted_at IS NULL
-                )
-            ORDER BY p.created_at DESC
-            """, nativeQuery = true)
-    List<PostEntity> findVisiblePostsCommentedByUser(@Param("userId") Long userId);
+    // PostReader.getViewablePosts용: id 목록으로 삭제 안 된 글만 한 방에 조회한다.
+    // IN 쿼리는 순서를 보장하지 않으므로 입력 id 순서 보정은 호출부(PostReaderImpl)에서 한다.
+    List<PostEntity> findByPostIdInAndDeletedAtIsNull(List<Long> postIds);
 
     // mypage 모듈(PostReader.countByAuthorId)에서 마이페이지 "창작물" 통계용으로 추가함 - post 담당자 확인 부탁드립니다.
     // 삭제(soft delete)된 글은 제외하고 센다. visibility(PRIVATE 등)는 구분하지 않고 전부 포함 - 본인/타인 마이페이지 모두
