@@ -47,6 +47,8 @@ spec:
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: "none"
           # JWT_SECRET / CLOUDINARY_* 는 별도 Secret(4nf-secret)에서 주입 (값은 git에 없음)
+            - name: FRONTEND_URL
+              value: "https://4nf.coder-han.com"
           envFrom:
             - secretRef:
                 name: 4nf-secret

@@ -20,4 +20,13 @@ public interface AuthFacade {
     TokenResponse reissue(ReissueRequest request);
 
     void logout(Long userId);
+
+    /**
+     * 비밀번호 재설정 메일 발송. 존재하지 않는 이메일이어도 예외를 던지지 않고 조용히 종료한다
+     * (이메일 가입 여부를 노출하지 않기 위함) - 컨트롤러는 항상 같은 성공 응답을 준다.
+     */
+    void requestPasswordReset(String email);
+
+    /** 메일로 받은 토큰으로 실제 비밀번호를 변경한다. */
+    void resetPassword(String token, String newPassword);
 }

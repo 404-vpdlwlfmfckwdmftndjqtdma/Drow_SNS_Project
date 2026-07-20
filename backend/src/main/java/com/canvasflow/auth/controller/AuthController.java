@@ -1,6 +1,8 @@
 package com.canvasflow.auth.controller;
 
 import com.canvasflow.auth.dto.LoginRequest;
+import com.canvasflow.auth.dto.PasswordResetDto;
+import com.canvasflow.auth.dto.PasswordResetRequestDto;
 import com.canvasflow.auth.dto.ReissueRequest;
 import com.canvasflow.auth.dto.SignupRequest;
 import com.canvasflow.auth.dto.TokenResponse;
@@ -45,5 +47,18 @@ public class AuthController {
         }
         authService.logout(authMember.userId());
         return ResponseEntity.ok(ApiResponse.ok("로그아웃되었습니다.", null));
+    }
+
+    // 가입 여부와 무관하게 항상 같은 메시지를 준다 - 이메일 존재 여부가 응답으로 노출되지 않도록.
+    @PostMapping("/password/reset-request")
+    public ResponseEntity<ApiResponse<Void>> requestPasswordReset(@Valid @RequestBody PasswordResetRequestDto request) {
+        authService.requestPasswordReset(request.email());
+        return ResponseEntity.ok(ApiResponse.ok("입력하신 이메일로 비밀번호 재설정 링크를 보내드렸습니다.", null));
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody PasswordResetDto request) {
+        authService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.ok(ApiResponse.ok("비밀번호가 변경되었습니다.", null));
     }
 }
