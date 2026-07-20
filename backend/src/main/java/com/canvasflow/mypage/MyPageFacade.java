@@ -1,6 +1,9 @@
 package com.canvasflow.mypage;
 
+import com.canvasflow.mypage.dto.MyPagePostResponse;
 import com.canvasflow.mypage.dto.MyPageResponse;
+
+import java.util.List;
 
 /**
  * mypage 모듈이 다른 모듈에 노출하는 기능을 모은 파사드 인터페이스.
@@ -13,4 +16,7 @@ import com.canvasflow.mypage.dto.MyPageResponse;
 public interface MyPageFacade {
 
     MyPageResponse getSummary(Long userId);
+
+    /** 마이페이지/타인 프로필 포트폴리오 그리드용 게시글 목록 (최신 작성순). */
+    List<MyPagePostResponse> getPosts(Long userId);
 }

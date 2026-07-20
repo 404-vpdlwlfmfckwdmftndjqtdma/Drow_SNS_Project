@@ -148,6 +148,14 @@
   color: var(--color-on-surface-variant);
 }
 
+.statLink {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .divider {
   width: 1px;
   height: 32px;
@@ -176,103 +184,4 @@
   backdrop-filter: var(--glass-blur);
   color: var(--color-on-surface);
   box-shadow: none;
-}
-
-.portfolioGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-md);
-}
-
-@media (min-width: 1024px) {
-  .portfolioGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.portfolioCardWide {
-  grid-column: span 2;
-}
-
-.portfolioCard {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.portfolioMedia {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  background: var(--color-surface-container-high);
-}
-
-.portfolioMediaWide {
-  composes: portfolioMedia;
-  aspect-ratio: 16 / 9;
-}
-
-.portfolioMediaImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.lockOverlay {
-  position: absolute;
-  inset: 0;
-  backdrop-filter: blur(20px);
-  background: rgba(247, 249, 251, 0.3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--space-md);
-}
-
-.lockTitle {
-  font-size: 14px;
-  font-weight: 700;
-  margin: var(--space-sm) 0 var(--space-xs);
-}
-
-.lockDesc {
-  font-size: 12px;
-  color: var(--color-on-surface-variant);
-}
-
-.portfolioBody {
-  padding: var(--space-md);
-}
-
-.portfolioTitle {
-  font-family: var(--font-display);
-  font-size: 16px;
-  margin: 0 0 var(--space-xs);
-}
-
-.portfolioMetaRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.likeMeta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: 14px;
-  color: var(--color-on-surface-variant);
-}
-
-.publicBadge {
-  background: rgba(0, 88, 190, 0.1);
-  color: var(--color-secondary);
-  padding: 2px var(--space-sm);
-  border-radius: var(--radius-full);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
 }

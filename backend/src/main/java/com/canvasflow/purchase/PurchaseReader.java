@@ -2,6 +2,7 @@ package com.canvasflow.purchase;
 
 import com.canvasflow.purchase.entity.PostPurchase;
 import com.canvasflow.purchase.repository.PostPurchaseRepository;
+import com.canvasflow.purchase.repository.PurchaseItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +18,22 @@ import java.util.stream.Collectors;
 public class PurchaseReader {
 
     private final PostPurchaseRepository postPurchaseRepository;
+    private final PurchaseItemRepository purchaseItemRepository;
 
     public boolean hasPurchased(Long buyerId, Long postId) {
         return postPurchaseRepository.existsByBuyerIdAndPostId(
                 buyerId, postId);
+    }
+
+    /**
+     * 이 뷰어가 이 글에서 구매한 기능 key 목록. (부분 구매 판정용)
+     * capability 는 PostExtension.key() 와 매칭. 비로그인이면 빈 Set.
+     */
+    public Set<String> purchasedKeys(Long buyerId, Long postId) {
+        if (buyerId == null) {
+            return Set.of();
+        }
+        return Set.copyOf(purchaseItemRepository.findCapabilities(buyerId, postId));
     }
 
     /** 목록용: 여러 게시물 중 구매한 것만 postId Set으로 */

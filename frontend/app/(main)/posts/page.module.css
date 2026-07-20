@@ -77,17 +77,20 @@
   text-decoration: none;
 }
 
-/* 홈 피드(app/(main)/page.tsx) 카드 헤더랑 같은 스타일 - 프로필/닉네임 자리 */
+/* 홈 피드(app/(main)/page.tsx) 카드 헤더랑 같은 스타일 - 프로필/닉네임 자리.
+   이제 게시글 링크(cardMain)가 아니라 그 사람 마이페이지로 가는 별도 링크다. */
 .cardHeader {
   padding: var(--space-md);
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  color: inherit;
+  text-decoration: none;
 }
 
 /* 사진/영상 없는 글: cardHeader 바로 다음에 body가 오는 경우라 위쪽 여백을 줄여서
    header-thumbnail 사이 간격이랑 비슷하게 맞춤 (안 그러면 padding이 겹쳐서 두 배로 벌어짐) */
-.cardHeader + .body {
+.cardHeader + .cardMain > .body:first-child {
   padding-top: 0;
 }
 
