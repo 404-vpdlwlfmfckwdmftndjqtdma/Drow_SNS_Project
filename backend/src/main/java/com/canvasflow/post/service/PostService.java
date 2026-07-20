@@ -16,8 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.canvasflow.post.ContentAccessPolicy;
 import com.canvasflow.post.PostExtension;
 
 
@@ -35,6 +38,8 @@ public class PostService {
     private final PostMediaRepository postMediaRepository;
     private final UserFacade userFacade;
     private final List<PostExtension> extensions;
+    // entitlement 도메인이 아직 구현체를 안 올렸을 수도 있어 Optional로 받는다 - 없으면 전부 잠금 상태로 취급.
+    private final Optional<ContentAccessPolicy> contentAccessPolicy;
 
 
     //글 작성
@@ -114,13 +119,15 @@ public class PostService {
 
         return posts.stream()
                 .map(post -> {
-                    // 상세 조회와 동일하게, 목록에서도 블러 등 모듈 렌더 파이프라인을 거쳐야 원문이 새지 않는다
+                    //목록에서도 블러 등 모듈 렌더 파이프라인을 거쳐야 원문이 새지 않는다
+                    //블러 처리 코드
+                    Set<String> unlockedKeys = unlockedKeysFor(viewerId, post.getPostId(), post.getUserId());
                     String renderedContent = post.getContent();
                     for (PostExtension extension : extensions) {
-                        renderedContent = extension.render(post.getPostId(), post.getUserId(), viewerId, renderedContent);
+                        renderedContent = extension.render(post.getPostId(), renderedContent);
                     }
                     List<PostRequestDto.MediaItem> media = renderMedia(
-                            post.getPostId(), post.getUserId(), viewerId,
+                            post.getPostId(), unlockedKeys,
                             mediaByPostId.getOrDefault(post.getPostId(), List.of()));
                     return new PostViewDto(
                             post.getUserId(),
@@ -132,7 +139,8 @@ public class PostService {
                             post.getViewCount(),
                             post.getCreatedAt(),
                             post.getUpdatedAt(),
-                            nicknameByUserId.get(post.getUserId())
+                            nicknameByUserId.get(post.getUserId()),
+                            null    // TODO: 목록용 배치 조회 생기면 채우기 (N+1 방지)
                     );
                 })
                 .toList();
@@ -156,11 +164,13 @@ public class PostService {
                 .map(m-> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()))
                 .toList();
 
+        //블러 처리 코드
+        Set<String> unlockedKeys = unlockedKeysFor(viewerId, post.getPostId(), post.getUserId());
         String renderedContent = post.getContent();
         for (PostExtension extension : extensions) {
-            renderedContent = extension.render(post.getPostId(), post.getUserId(), viewerId, renderedContent);
+            renderedContent = extension.render(post.getPostId(), renderedContent);
         }
-        mediaItems = renderMedia(post.getPostId(), post.getUserId(), viewerId, mediaItems);
+        mediaItems = renderMedia(post.getPostId(), unlockedKeys, mediaItems);
 
         return new PostViewDto(
                 post.getUserId(),
@@ -172,7 +182,8 @@ public class PostService {
                 post.getViewCount(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                userFacade.findNicknameById(post.getUserId())
+                userFacade.findNicknameById(post.getUserId()),
+                userFacade.getProfileView(post.getUserId()).profileImageUrl()
         );
     }
 
@@ -241,20 +252,25 @@ public class PostService {
     }
 
     // PostRequestDto.MediaItem(내부 DTO) <-> PostExtension.MediaItem(공개 타입) 변환을 감춰서
-    // 확장 모듈이 post의 내부 타입을 직접 참조하지 않도록 한다 (모듈 경계 위반 방지).
-    private List<PostRequestDto.MediaItem> renderMedia(Long postId, Long authorId, Long viewerId, List<PostRequestDto.MediaItem> media) {
+    // 확장 모듈이 post의 내부 타입을 직접 참조하지 않도록 한다
+    private List<PostRequestDto.MediaItem> renderMedia(Long postId, Set<String> unlockedKeys, List<PostRequestDto.MediaItem> media) {
         List<PostExtension.MediaItem> converted = media.stream()
                 .map(m -> new PostExtension.MediaItem(m.url(), m.mediaType()))
                 .collect(Collectors.toList());
         for (PostExtension extension : extensions) {
-            converted = extension.renderMedia(postId, authorId, viewerId, converted);
+            converted = extension.renderMedia(postId, converted, unlockedKeys.contains(extension.key()));
         }
         return converted.stream()
                 .map(m -> new PostRequestDto.MediaItem(m.url(), m.mediaType()))
                 .toList();
     }
 
-
+    // ContentAccessPolicy가 있으면 물어보고 없으면 그냥 빈 set
+    private Set<String> unlockedKeysFor(Long viewerId, Long postId, Long authorId) {
+        return contentAccessPolicy
+                .map(policy -> policy.unlockedKeys(viewerId, postId, authorId))
+                .orElse(Set.of());
+    }
 
 
 

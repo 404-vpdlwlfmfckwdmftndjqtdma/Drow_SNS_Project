@@ -17,7 +17,8 @@ public record PostViewDto(
         Long viewCount,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        String nickname
+        String nickname,
+        String profileImageUrl  //프로필 사진 조회
 
 
         ) {
