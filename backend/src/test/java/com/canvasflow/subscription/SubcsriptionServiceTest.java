@@ -1,6 +1,8 @@
 package com.canvasflow.subscription;
 
 import com.canvasflow.global.exception.CanvasflowException;
+import com.canvasflow.global.exception.ErrorCode;
+import com.canvasflow.payment.PaymentGateway;
 import com.canvasflow.subscription.dto.SubscribeRequest;
 import com.canvasflow.subscription.entity.Subscription;
 import com.canvasflow.subscription.entity.SubscriptionStatus;
@@ -27,8 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * 구독 신청 / 재구독 / 해지 흐름 테스트.
@@ -55,6 +56,9 @@ class SubscriptionServiceTest {
 
     @InjectMocks
     SubscriptionService subscriptionService;
+
+    @Mock
+    private PaymentGateway paymentGateway;
 
     // ===== 헬퍼 =====
 
@@ -153,19 +157,25 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    @DisplayName("이미 ACTIVE 구독 중이면 다시 신청할 수 없다")
+    @DisplayName("혜택이 유효한 구독이 있으면 다시 신청할 수 없다")
     void Duplicate() {
         userExists();
         SubscriptionTier tier = supporterTier();
         given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.of(tier));
+
+        Subscription active = mock(Subscription.class);
+        given(active.isBenefitActive()).willReturn(true);
         given(subscriptionRepository.findBySubscriberIdAndChannelId(SUBSCRIBER_ID, CHANNEL_ID))
-                .willReturn(Optional.of(existingSubscription(tier)));  // ACTIVE 상태
+                .willReturn(Optional.of(active));
 
         assertThatThrownBy(() ->
-                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID, "test-payment-key", "order-123")))
-                .isInstanceOf(CanvasflowException.class);
+                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID,
+                        new SubscribeRequest(TIER_ID, "test-payment-key", "order-123")))
+                .isInstanceOf(CanvasflowException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ALREADY_SUBSCRIBED);
 
         verify(subscriptionRepository, never()).save(any());
+        verify(paymentGateway, never()).confirm(any(), any(), anyLong());
     }
 
     // ===== 3. 재구독 (핵심: 새 행 insert가 아니라 기존 행 재활성화) =====

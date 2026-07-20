@@ -2,10 +2,14 @@ package com.canvasflow.subscription.service;
 
 import com.canvasflow.purchase.PurchaseReader;
 import com.canvasflow.subscription.entity.Subscription;
+import com.canvasflow.subscription.entity.SubscriptionTier;
 import com.canvasflow.subscription.repository.SubscriptionRepository;
+import com.canvasflow.subscription.repository.SubscriptionTierRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 /**
  * 열람 권한 판정: 다음 중 하나면 열람 가능
@@ -21,6 +25,7 @@ public class ContentAccessService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final PurchaseReader purchaseReader;
+    private final SubscriptionTierRepository tierRepository;
 
     public boolean canView(Long viewerId, Long channelId, Long postId,
                            Long authorId, int requiredLevel) {
@@ -51,4 +56,14 @@ public class ContentAccessService {
                 .map(Subscription::effectiveLevel)
                 .orElse(0);
     }
+
+    /** 해당 채널에서 이 글을 열람할 수 있는 최저 등급의 이름 (구독 유도 문구용) */
+    public Optional<String> minUnlockTierName(Long channelId, int requiredLevel) {
+        return tierRepository.findByChannelIdAndDeletedFalseOrderByLevelAsc(channelId)
+                .stream()
+                .filter(t -> t.getLevel() >= requiredLevel)
+                .findFirst()
+                .map(SubscriptionTier::getName);
+    }
+
 }

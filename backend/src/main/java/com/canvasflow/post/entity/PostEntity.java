@@ -14,6 +14,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +56,14 @@ public class PostEntity extends BaseTimeEntity {
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();
 
+    /** visibility=LOCKED 일 때 요구 구독 등급. */
+    @Column(name = "required_level", nullable = false)
+    private int requiredLevel;
+
+    /** 단건 구매 가격. null이면 단건 구매 불가 (PostReader가 읽는 필드) */
+    @Column(name = "single_purchase_price", precision = 10, scale = 0)
+    private BigDecimal singlePurchasePrice;
+
     @Builder
     public PostEntity(Long userId, String content, ContentVisibility visibility, List<String> tags) {
         this.userId = userId;
@@ -76,6 +86,7 @@ public class PostEntity extends BaseTimeEntity {
     public void increaseViewCount(){
         this.viewCount++;
     }
+
 
 
 }
