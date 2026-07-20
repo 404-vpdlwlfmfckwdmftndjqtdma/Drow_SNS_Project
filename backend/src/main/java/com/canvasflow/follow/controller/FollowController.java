@@ -61,6 +61,13 @@ public class FollowController {
         return ResponseEntity.ok(ApiResponse.ok(followService.getFollowingList(authMember.userId())));
     }
 
+    // 특정 유저의 팔로워 목록 (마이페이지/타인 프로필의 "팔로워 수" 클릭 화면용).
+    // 팔로워 수 자체가 이미 로그인 여부와 무관하게 공개되는 정보라, 이 목록도 로그인을 강제하지 않는다.
+    @GetMapping("/{userId}/followers")
+    public ResponseEntity<ApiResponse<List<FollowUserResponse>>> getFollowerList(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.ok(followService.getFollowerList(userId)));
+    }
+
     private void requireLogin(AuthMember authMember) {
         if (authMember == null) {
             throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
