@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Set;
 
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
@@ -14,9 +15,9 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @Query("""
         SELECT p FROM PostEntity p
         WHERE p.deletedAt IS NULL
-        ORDER BY p.createdAt DESC
+        ORDER BY CASE WHEN p.userId IN :followingIds THEN 0 ELSE 1 END, p.createdAt DESC
         """)
-    List<PostEntity> findVisiblePosts();
+    List<PostEntity> findVisiblePosts(@Param("followingIds") Set<Long> followingIds);
 
     @Query(value = """
             SELECT p.* FROM posts p

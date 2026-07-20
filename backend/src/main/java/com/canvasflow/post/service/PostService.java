@@ -2,6 +2,7 @@ package com.canvasflow.post.service;
 
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
+import com.canvasflow.post.FollowingPolicy;
 import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.dto.PostViewDto;
 import com.canvasflow.post.entity.PostEntity;
@@ -13,11 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.canvasflow.post.ContentAccessPolicy;
@@ -40,6 +37,8 @@ public class PostService {
     private final List<PostExtension> extensions;
     // entitlement 도메인이 아직 구현체를 안 올렸을 수도 있어 Optional로 받는다 - 없으면 전부 잠금 상태로 취급.
     private final Optional<ContentAccessPolicy> contentAccessPolicy;
+    //피드목록에서 팔로워의 글이 먼저 뜨도록. Optional로 처리해 코드 구현 없어도 터지지 않게 함
+    private final Optional<FollowingPolicy> followingPolicy;
 
 
     //글 작성
@@ -84,6 +83,16 @@ public class PostService {
     @Transactional(readOnly = true)
     public List<PostViewDto> getAllPosts(Long viewerId, String activity) {
 
+        //팔로우 한 사람의 게시글이 먼저 보이도록
+        Set<Long> followingIds = followingPolicy
+                .map(policy -> policy.followingIds(viewerId))
+                .orElse(Set.of());
+        //나 자신도 팔로우 한 사람에 포함
+        if(viewerId != null){
+            followingIds = new HashSet<>(followingIds);
+            followingIds.add(viewerId);
+        }
+
         List<PostEntity> posts = switch (activity == null ? "" : activity.toLowerCase()) {
             case "likedbyme" -> {
                 if (viewerId == null) {
@@ -97,7 +106,7 @@ public class PostService {
                 }
                 yield postRepository.findVisiblePostsCommentedByUser(viewerId);
             }
-            default -> postRepository.findVisiblePosts();
+            default -> postRepository.findVisiblePosts(followingIds);
         };
 
         List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
@@ -129,6 +138,7 @@ public class PostService {
                     List<PostRequestDto.MediaItem> media = renderMedia(
                             post.getPostId(), unlockedKeys,
                             mediaByPostId.getOrDefault(post.getPostId(), List.of()));
+
                     return new PostViewDto(
                             post.getUserId(),
                             post.getPostId(),
