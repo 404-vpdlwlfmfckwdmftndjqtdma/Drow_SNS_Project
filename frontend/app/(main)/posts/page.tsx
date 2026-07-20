@@ -107,19 +107,6 @@ export default function PostListPage() {
     <main className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>피드</h1>
-        <Link
-          href="/posts/new"
-          className={styles.writeButton}
-          onClick={(event) => {
-            if (!isLoggedIn()) {
-              event.preventDefault();
-              router.push("/login");
-            }
-          }}
-        >
-          <span className="material-symbols-outlined">upload</span>
-          업로드
-        </Link>
       </div>
 
       <div className={styles.filters}>{/* TODO: 콘텐츠 타입/채널/태그 필터, 정렬 셀렉트 */}</div>

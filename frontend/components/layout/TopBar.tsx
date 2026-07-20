@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { isLoggedIn } from "@/lib/auth";
 import styles from "./TopBar.module.css";
 
 export default function TopBar() {
@@ -25,6 +27,7 @@ export default function TopBar() {
 
   return (
     <header className={styles.topBar}>
+      <div />
       <div className={styles.searchWrap}>
         <span className={`material-symbols-outlined ${styles.searchIcon}`}>search</span>
         <input
@@ -46,6 +49,21 @@ export default function TopBar() {
             <span className="material-symbols-outlined">close</span>
           </button>
         )}
+      </div>
+      <div>
+        <Link
+          href="/posts/new"
+          className={styles.uploadBtn}
+          onClick={(e) => {
+            if (!isLoggedIn()) {
+              e.preventDefault();
+              router.push("/login");
+            }
+          }}
+        >
+          <span className="material-symbols-outlined">upload</span>
+          업로드
+        </Link>
       </div>
     </header>
   );
