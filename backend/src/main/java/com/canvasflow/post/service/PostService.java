@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.canvasflow.post.ContentAccessPolicy;
 import com.canvasflow.post.PostExtension;
 
 
@@ -35,8 +34,7 @@ public class PostService {
     private final PostMediaRepository postMediaRepository;
     private final UserFacade userFacade;
     private final List<PostExtension> extensions;
-    // entitlement 도메인이 아직 구현체를 안 올렸을 수도 있어 Optional로 받는다 - 없으면 전부 잠금 상태로 취급.
-    private final Optional<ContentAccessPolicy> contentAccessPolicy;
+    private final PostViewAssembler postViewAssembler;
     //피드목록에서 팔로워의 글이 먼저 뜨도록. Optional로 처리해 코드 구현 없어도 터지지 않게 함
     private final Optional<FollowingPolicy> followingPolicy;
 
@@ -77,83 +75,28 @@ public class PostService {
         return postEntity;
     }
 
-    //글 목록 불러오기
+    //글 목록 불러오기 (공개 피드)
     // viewerId: 지금 목록을 보고 있는 사람. 로그인 안 했으면 컨트롤러에서 null로 넘어올 수 있음
-    // repository 쿼리 단계에서 delete, PRIVATE 둘 다 걸러준다
+    // "내가 좋아요/댓글 단 글" 목록은 이 메서드가 아니라 mypage가 PostReader.getViewablePosts로 조합한다.
     @Transactional(readOnly = true)
-    public List<PostViewDto> getAllPosts(Long viewerId, String activity) {
+    public List<PostViewDto> getAllPosts(Long viewerId) {
 
         //팔로우 한 사람의 게시글이 먼저 보이도록
         Set<Long> followingIds = followingPolicy
                 .map(policy -> policy.followingIds(viewerId))
                 .orElse(Set.of());
         //나 자신도 팔로우 한 사람에 포함
-        if(viewerId != null){
+        if (viewerId != null) {
             followingIds = new HashSet<>(followingIds);
             followingIds.add(viewerId);
         }
 
-        List<PostEntity> posts = switch (activity == null ? "" : activity.toLowerCase()) {
-            case "likedbyme" -> {
-                if (viewerId == null) {
-                    throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
-                }
-                yield postRepository.findVisiblePostsLikedByUser(viewerId);
-            }
-            case "commentedbyme" -> {
-                if (viewerId == null) {
-                    throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
-                }
-                yield postRepository.findVisiblePostsCommentedByUser(viewerId);
-            }
-            default -> postRepository.findVisiblePosts(followingIds);
-        };
+        // 1) 재료 준비: 삭제(soft delete) 안 된 글을 팔로우 우선순위+최신순으로 가져온다. 아직 원문 그대로인 "날것" 상태.
+        List<PostEntity> posts = postRepository.findVisiblePosts(followingIds);
 
-        List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
-        Map<Long, List<PostRequestDto.MediaItem>> mediaByPostId = postIds.isEmpty()
-                ? Map.of()
-                // postId별 media 리스트로 묶어서 각 게시글에 붙일 수 있게 함
-                : postMediaRepository.findByPostIdInOrderByPostIdAscSortOrderAsc(postIds).stream()
-                        .collect(Collectors.groupingBy(
-                                PostMediaEntity::getPostId,
-                                Collectors.mapping(
-                                        m -> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()),
-                                        Collectors.toList()
-                                )
-                        ));
-
-        // 작성자별 닉네임도 media처럼 배치로 한 번에 조회 (글마다 따로 조회하면 N+1)
-        List<Long> authorIds = posts.stream().map(PostEntity::getUserId).distinct().toList();
-        Map<Long, String> nicknameByUserId = userFacade.findNicknamesByIds(authorIds);
-
-        return posts.stream()
-                .map(post -> {
-                    //목록에서도 블러 등 모듈 렌더 파이프라인을 거쳐야 원문이 새지 않는다
-                    //블러 처리 코드
-                    Set<String> unlockedKeys = unlockedKeysFor(viewerId, post.getPostId(), post.getUserId());
-                    String renderedContent = post.getContent();
-                    for (PostExtension extension : extensions) {
-                        renderedContent = extension.render(post.getPostId(), renderedContent);
-                    }
-                    List<PostRequestDto.MediaItem> media = renderMedia(
-                            post.getPostId(), unlockedKeys,
-                            mediaByPostId.getOrDefault(post.getPostId(), List.of()));
-
-                    return new PostViewDto(
-                            post.getUserId(),
-                            post.getPostId(),
-                            renderedContent,
-                            post.getVisibility(),
-                            List.copyOf(post.getTags()),
-                            media,
-                            post.getViewCount(),
-                            post.getCreatedAt(),
-                            post.getUpdatedAt(),
-                            nicknameByUserId.get(post.getUserId()),
-                            null    // TODO: 목록용 배치 조회 생기면 채우기 (N+1 방지)
-                    );
-                })
-                .toList();
+        // 2) 가공: media·닉네임을 배치로 붙이고, 블러 등 렌더 파이프라인을 거쳐
+        //    viewerId에게 보여줘도 안전한 형태(비구독자는 블러 구간 ● 치환)로 조립해서 반환한다.
+        return postViewAssembler.toViewDtos(posts, viewerId);
     }
 
 
@@ -174,27 +117,16 @@ public class PostService {
                 .map(m-> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()))
                 .toList();
 
-        //블러 처리 코드
-        Set<String> unlockedKeys = unlockedKeysFor(viewerId, post.getPostId(), post.getUserId());
-        String renderedContent = post.getContent();
-        for (PostExtension extension : extensions) {
-            renderedContent = extension.render(post.getPostId(), renderedContent);
-        }
-        mediaItems = renderMedia(post.getPostId(), unlockedKeys, mediaItems);
-
-        return new PostViewDto(
-                post.getUserId(),
-                post.getPostId(),
-                renderedContent,
-                post.getVisibility(),
-                List.copyOf(post.getTags()),
+        // 카트에 싣고 → 렌더 파이프라인(구독확인→본문블러→첨부블러) 통과 → 완성품으로 봉인
+        PostViewContent content = PostViewContent.from(
+                post,
                 mediaItems,
-                post.getViewCount(),
-                post.getCreatedAt(),
-                post.getUpdatedAt(),
                 userFacade.findNicknameById(post.getUserId()),
-                userFacade.getProfileView(post.getUserId()).profileImageUrl()
-        );
+                userFacade.getProfileView(post.getUserId()).profileImageUrl());
+
+        postViewAssembler.renderForViewer(content, viewerId);
+
+        return content.toDto();
     }
 
     //게시글 수정
@@ -260,29 +192,5 @@ public class PostService {
 
         post.delete();
     }
-
-    // PostRequestDto.MediaItem(내부 DTO) <-> PostExtension.MediaItem(공개 타입) 변환을 감춰서
-    // 확장 모듈이 post의 내부 타입을 직접 참조하지 않도록 한다
-    private List<PostRequestDto.MediaItem> renderMedia(Long postId, Set<String> unlockedKeys, List<PostRequestDto.MediaItem> media) {
-        List<PostExtension.MediaItem> converted = media.stream()
-                .map(m -> new PostExtension.MediaItem(m.url(), m.mediaType()))
-                .collect(Collectors.toList());
-        for (PostExtension extension : extensions) {
-            converted = extension.renderMedia(postId, converted, unlockedKeys.contains(extension.key()));
-        }
-        return converted.stream()
-                .map(m -> new PostRequestDto.MediaItem(m.url(), m.mediaType()))
-                .toList();
-    }
-
-    // ContentAccessPolicy가 있으면 물어보고 없으면 그냥 빈 set
-    private Set<String> unlockedKeysFor(Long viewerId, Long postId, Long authorId) {
-        return contentAccessPolicy
-                .map(policy -> policy.unlockedKeys(viewerId, postId, authorId))
-                .orElse(Set.of());
-    }
-
-
-
 
 }
