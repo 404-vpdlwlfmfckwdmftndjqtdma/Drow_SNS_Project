@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import api from "@/lib/api";
 import FollowButton from "@/components/follow/FollowButton";
@@ -97,12 +98,12 @@ export default function UserProfilePage() {
             {profile?.bio || "소개가 아직 없습니다."}
           </p>
           <div className={styles.stats}>
-            <div>
+            <Link href={`/users/${targetUserId}/followers`} className={styles.statLink}>
               <span className={styles.statValue} style={{ color: "var(--color-primary)" }}>
                 {profile?.followerCount ?? 0}
               </span>
               <span className={styles.statLabel}>팔로워</span>
-            </div>
+            </Link>
             <div className={styles.divider} />
             <div>
               <span className={styles.statValue} style={{ color: "var(--color-secondary)" }}>

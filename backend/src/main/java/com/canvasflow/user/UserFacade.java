@@ -27,4 +27,10 @@ public interface UserFacade {
     Map<Long, String> findNicknamesByIds(Collection<Long> userIds);
 
     UserProfileView getProfileView(Long userId);
+
+    /**
+     * 여러 유저의 프로필을 한 번에 조회한다 (N+1 방지용, 예: 팔로잉/팔로워 목록에서 프로필 일괄 조회).
+     * findNicknamesByIds와 동일한 패턴 - 존재하지 않는 id는 결과 Map에서 그냥 빠진다(예외 없음).
+     */
+    Map<Long, UserProfileView> getProfileViews(Collection<Long> userIds);
 }

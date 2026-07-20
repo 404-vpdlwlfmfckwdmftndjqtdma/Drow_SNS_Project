@@ -160,6 +160,19 @@ public class UserService implements UserFacade {
         return new UserProfileView(user.getId(), user.getNickname(), user.getProfileImageUrl(), user.getBio());
     }
 
+    /**
+     * 여러 유저의 프로필을 한 번에 조회한다 (N+1 방지용, 예: 팔로잉/팔로워 목록에서 프로필 일괄 조회).
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, UserProfileView> getProfileViews(Collection<Long> userIds) {
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        user -> new UserProfileView(user.getId(), user.getNickname(), user.getProfileImageUrl(), user.getBio())
+                ));
+    }
+
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.USER_NOT_FOUND));

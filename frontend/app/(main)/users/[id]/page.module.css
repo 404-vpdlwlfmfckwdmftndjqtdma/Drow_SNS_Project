@@ -124,6 +124,14 @@
   color: var(--color-on-surface-variant);
 }
 
+.statLink {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .divider {
   width: 1px;
   height: 32px;

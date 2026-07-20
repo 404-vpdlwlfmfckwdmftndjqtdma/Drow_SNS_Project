@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import CompactChannelList, { type CompactChannelItem } from "@/components/channel/list/CompactChannelList";
@@ -110,12 +111,19 @@ export default function MyPage() {
               {me?.bio || "소개가 아직 없습니다."}
             </p>
             <div className={styles.stats}>
-              <div>
-                <span className={styles.statValue} style={{ color: "var(--color-primary)" }}>
-                  {me?.followerCount ?? 0}
-                </span>
-                <span className={styles.statLabel}>팔로워</span>
-              </div>
+              {me ? (
+                <Link href={`/users/${me.userId}/followers`} className={styles.statLink}>
+                  <span className={styles.statValue} style={{ color: "var(--color-primary)" }}>
+                    {me.followerCount}
+                  </span>
+                  <span className={styles.statLabel}>팔로워</span>
+                </Link>
+              ) : (
+                <div>
+                  <span className={styles.statValue} style={{ color: "var(--color-primary)" }}>0</span>
+                  <span className={styles.statLabel}>팔로워</span>
+                </div>
+              )}
               <div className={styles.divider} />
               <div>
                 <span className={styles.statValue} style={{ color: "var(--color-secondary)" }}>
