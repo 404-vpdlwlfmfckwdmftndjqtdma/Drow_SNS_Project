@@ -28,10 +28,27 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
 
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 jwt:
   secret: ${JWT_SECRET}
   access-token-expiration-ms: 3600000       # 1h
   refresh-token-expiration-ms: 1209600000   # 14d
+
+app:
+  # 비밀번호 재설정 메일 등에서 프론트 페이지 링크를 만들 때 쓰는 기준 URL.
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
 toss:
   # 토스 시크릿 키(백엔드 전용). env TOSS_SECRET_KEY 로 오버라이드, 없으면 공개 테스트 키 사용.
@@ -52,3 +69,4 @@ logging:
   level:
     com.canvasflow: DEBUG
     org.hibernate.SQL: DEBUG
+

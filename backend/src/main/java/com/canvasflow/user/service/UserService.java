@@ -173,6 +173,27 @@ public class UserService implements UserFacade {
                 ));
     }
 
+    /**
+     * 이메일로 userId만 조회한다 (비밀번호 찾기용). 존재하지 않아도 예외를 던지지 않는다 -
+     * "이메일이 있는지 없는지"를 노출하지 않으려는 auth 쪽 정책은 호출하는 쪽에서 처리한다.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Long findIdByEmail(String email) {
+        return userRepository.findByEmail(email).map(User::getId).orElse(null);
+    }
+
+    /**
+     * 비밀번호 재설정. 호출하는 쪽(auth 모듈)은 평문 비밀번호만 넘기면 되고,
+     * 암호화는 createUser 때와 동일하게 이 메서드 내부에서 처리한다.
+     */
+    @Override
+    @Transactional
+    public void updatePassword(Long userId, String rawPassword) {
+        User user = getUserOrThrow(userId);
+        user.changePassword(passwordEncoder.encode(rawPassword));
+    }
+
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.USER_NOT_FOUND));
