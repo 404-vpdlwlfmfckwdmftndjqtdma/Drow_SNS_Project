@@ -1,0 +1,219 @@
+.container {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: var(--space-lg) var(--margin-mobile);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.header {
+  margin-bottom: var(--space-xs);
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-xs);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.25;
+}
+
+.description {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-on-surface-variant);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.cardTitle {
+  margin: 0 0 var(--space-xs);
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.label {
+  color: var(--color-on-surface);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-sm);
+  color: var(--color-on-surface);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+.input:focus-visible {
+  outline: 3px solid rgba(107, 56, 212, 0.28);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.primaryButton {
+  min-height: 48px;
+  padding: 0 var(--space-md);
+  color: var(--color-on-primary);
+  background: var(--gradient-brand);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  composes: primaryButton;
+  min-height: 40px;
+  color: var(--color-on-surface);
+  background: var(--color-surface-container-high);
+  font-size: 14px;
+}
+
+.dangerButton {
+  composes: secondaryButton;
+  color: var(--color-error);
+}
+
+/* 등록된 상품 목록 */
+.tierList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.tierItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  flex-wrap: wrap;
+}
+
+.tierInfo {
+  min-width: 0;
+}
+
+.tierName {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+/* 상품의 실제 식별자. 이름이 겹치거나 바뀌어도 이 번호로 지목할 수 있다. */
+.tierId {
+  color: var(--color-outline);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tierPrice {
+  margin: 2px 0 0;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tierDesc {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rowActions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.editingLabel {
+  margin: 0;
+  color: var(--color-outline);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 수정 모드는 한 행 전체를 폼으로 */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.success {
+  margin: 0;
+  padding: var(--space-sm);
+  color: var(--color-on-primary-container);
+  background: var(--color-primary-container);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.error {
+  margin: 0;
+  padding: var(--space-sm);
+  color: var(--color-on-error);
+  background: var(--color-error);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .title {
+    font-size: 28px;
+  }
+}
