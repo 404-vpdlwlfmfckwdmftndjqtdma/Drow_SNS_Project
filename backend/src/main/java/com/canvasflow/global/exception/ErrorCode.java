@@ -40,7 +40,7 @@ public enum ErrorCode {
     // Subscription
     SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "SUB_001", "구독 정보를 찾을 수 없습니다."),
     ALREADY_SUBSCRIBED(HttpStatus.CONFLICT, "SUB_002", "이미 구독 중입니다."),
-    SUBSCRIBE_SELF_CHANNEL(HttpStatus.BAD_REQUEST, "SUB_004", "본인 채널은 구독할 수 없습니다."),
+    SUBSCRIBE_SELF_CHANNEL(HttpStatus.BAD_REQUEST, "SUB_008", "본인 채널은 구독할 수 없습니다."),
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "SUB_003", "구독이 필요한 콘텐츠입니다."),
     TIER_NOT_FOUND(HttpStatus.NOT_FOUND, "SUB_004", "존재하지 않는 구독 등급입니다."),
     TIER_NOT_IN_CHANNEL(HttpStatus.BAD_REQUEST, "SUB_005", "해당 채널의 구독 등급이 아닙니다."),
