@@ -1,4 +1,4 @@
-package com.canvasflow.subscription.service;
+package com.canvasflow.subscription;
 
 import com.canvasflow.purchase.PurchaseReader;
 import com.canvasflow.subscription.entity.Subscription;

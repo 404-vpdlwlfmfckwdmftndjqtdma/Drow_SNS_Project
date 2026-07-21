@@ -1,13 +1,17 @@
 package com.canvasflow.post.service;
 
+import com.canvasflow.global.common.ContentVisibility;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
+import com.canvasflow.post.dto.LockedPostResponse;
+import com.canvasflow.post.dto.PostDetailResponse;
 import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.dto.PostViewDto;
 import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.entity.PostMediaEntity;
 import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostRepository;
+import com.canvasflow.subscription.ContentAccessService;
 import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,6 +44,7 @@ public class PostService {
     private final List<PostExtension> extensions;
     // entitlement 도메인이 아직 구현체를 안 올렸을 수도 있어 Optional로 받는다 - 없으면 전부 잠금 상태로 취급.
     private final Optional<ContentAccessPolicy> contentAccessPolicy;
+    private final ContentAccessService contentAccessService;
 
 
     //글 작성
@@ -149,42 +154,63 @@ public class PostService {
 
     //글 상세 페이지
     @Transactional
-    public PostViewDto getDetail(Long viewerId, Long postId){
+    public PostDetailResponse getDetail(Long viewerId, Long postId) {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.POST_NOT_FOUND));
 
-        if(post.getDeletedAt() != null){
+        if (post.getDeletedAt() != null) {
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
+        }
+        // 2026.07.21 이희경 추가 : 열람 판정
+        if (post.getVisibility() == ContentVisibility.PRIVATE && !post.getUserId().equals(viewerId)) {
+            throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        // ==== 열람 판정 (LOCKED 글만) ====
+        Long channelId = post.getUserId();
+        boolean canView = true;
+        if (post.getVisibility() == ContentVisibility.LOCKED) {
+            canView = contentAccessService.canView(
+                    viewerId, channelId, postId, post.getUserId(), post.getRequiredLevel());
         }
 
         post.increaseViewCount();
 
+        // ==== 열람 가능 : 원문 그대로 ====
+        String content = post.getContent();
+        if (!canView) {
+            for (PostExtension extension : extensions) {
+                content = extension.render(post.getPostId(), content);
+            }
+            // 블러 구간도 없는 완전 잠금 글 -> 잠금응답으로 조기 반환
+            if (content.equals(post.getContent())) {
+                return new LockedPostResponse(
+                        post.getPostId(), true,
+                        null,     // TODO: imageblur
+                        channelId,
+                        userFacade.findNicknameById(post.getUserId()),
+                        post.getRequiredLevel(),
+                        contentAccessService.minUnlockTierName(channelId, post.getRequiredLevel()).orElse(null),
+                        post.getSinglePurchasePrice());
+            }
+        }
+
+        // 기존 미디어/응답 삭제 및 조립
         List<PostRequestDto.MediaItem> mediaItems = postMediaRepository
                 .findByPostIdInOrderByPostIdAscSortOrderAsc(List.of(postId)).stream()
-                .map(m-> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()))
+                .map(m -> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()))
                 .toList();
 
-        //블러 처리 코드
         Set<String> unlockedKeys = unlockedKeysFor(viewerId, post.getPostId(), post.getUserId());
-        String renderedContent = post.getContent();
-        for (PostExtension extension : extensions) {
-            renderedContent = extension.render(post.getPostId(), renderedContent);
-        }
         mediaItems = renderMedia(post.getPostId(), unlockedKeys, mediaItems);
 
         return new PostViewDto(
-                post.getUserId(),
-                post.getPostId(),
-                renderedContent,
-                post.getVisibility(),
-                List.copyOf(post.getTags()),
-                mediaItems,
-                post.getViewCount(),
-                post.getCreatedAt(),
-                post.getUpdatedAt(),
+                post.getUserId(), post.getPostId(),
+                content,                             // ← 호출자가 결정한 본문 (원문 or 블러본)
+                post.getVisibility(), List.copyOf(post.getTags()), mediaItems,
+                post.getViewCount(), post.getCreatedAt(), post.getUpdatedAt(),
                 userFacade.findNicknameById(post.getUserId()),
-                userFacade.getProfileView(post.getUserId()).profileImageUrl()
-        );
+                userFacade.getProfileView(post.getUserId()).profileImageUrl());
     }
 
     //게시글 수정

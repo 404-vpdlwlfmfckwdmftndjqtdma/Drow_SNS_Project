@@ -82,14 +82,7 @@ public class SubscriptionTierService {
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.TIER_NOT_FOUND));
     }
 
-    /**
-     * 로그인 유저의 채널 ID 조회 (작가=채널 1:1).
-     * TODO: 팀의 Channel 도메인에 맞게 구현. 예시:
-     *   return channelRepository.findByOwnerId(loginUserId)
-     *           .orElseThrow(() -> new CanvasflowException(ErrorCode.CHANNEL_NOT_FOUND))
-     *           .getId();
-     */
     private Long resolveMyChannelId(Long loginUserId) {
-        throw new UnsupportedOperationException("Channel 도메인에 맞게 구현하세요.");
+        return loginUserId;     // ChannelId = userId
     }
 }

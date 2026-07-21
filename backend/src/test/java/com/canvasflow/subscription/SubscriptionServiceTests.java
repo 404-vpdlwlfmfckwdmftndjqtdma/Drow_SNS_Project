@@ -4,7 +4,6 @@ import com.canvasflow.purchase.PurchaseReader;
 import com.canvasflow.subscription.entity.Subscription;
 import com.canvasflow.subscription.entity.SubscriptionTier;
 import com.canvasflow.subscription.repository.SubscriptionRepository;
-import com.canvasflow.subscription.service.ContentAccessService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

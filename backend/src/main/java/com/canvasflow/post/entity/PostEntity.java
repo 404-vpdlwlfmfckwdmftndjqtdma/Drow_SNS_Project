@@ -65,12 +65,15 @@ public class PostEntity extends BaseTimeEntity {
     private BigDecimal singlePurchasePrice;
 
     @Builder
-    public PostEntity(Long userId, String content, ContentVisibility visibility, List<String> tags) {
+    public PostEntity(Long userId, String content, ContentVisibility visibility, List<String> tags,
+                      int requiredlevel, BigDecimal singlePurchasePrice) { // <- 추가
         this.userId = userId;
         this.content = content;
         this.visibility = visibility == null ? ContentVisibility.PUBLIC : visibility;
         this.tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
         this.viewCount = 0L;
+        this.requiredLevel = requiredlevel;
+        this.singlePurchasePrice = singlePurchasePrice;
     }
 
     public void update(String content, ContentVisibility visibility, List<String> tags){
