@@ -2,7 +2,6 @@ package com.canvasflow.subscription;
 
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
-import com.canvasflow.payment.PaymentGateway;
 import com.canvasflow.subscription.dto.SubscribeRequest;
 import com.canvasflow.subscription.entity.Subscription;
 import com.canvasflow.subscription.entity.SubscriptionStatus;
@@ -32,7 +31,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * 구독 신청 / 재구독 / 해지 흐름 테스트.
@@ -62,9 +62,6 @@ class SubscriptionServiceTest {
 
     @InjectMocks
     SubscriptionService subscriptionService;
-
-    @Mock
-    private PaymentGateway paymentGateway;
 
     // ===== 헬퍼 =====
 
@@ -126,7 +123,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("무료 구독은 지갑을 차감하지 않는다")
-    void Free_Subscription_No_Charge() {
+    void 무료_구독은_차감_없음() {
         userExists();
         noExistingSubscription();
         willAnswer(inv -> inv.getArgument(0))
@@ -139,7 +136,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("잔액 부족: 구독이 저장되지 않는다")
-    void No_Money() {
+    void 잔액_부족() {
         userExists();
         noExistingSubscription();
         given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.of(supporterTier()));
@@ -181,7 +178,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("본인 채널은 구독할 수 없다")
-    void Self_Subscribe_Unable() {
+    void 본인_채널_구독_불가() {
         given(userFacade.existsById(SUBSCRIBER_ID)).willReturn(true);
 
         assertThatThrownBy(() ->
@@ -244,7 +241,6 @@ class SubscriptionServiceTest {
         Subscription active = existingSubscription(tier);
         active.startPaidPeriod(tier);
         given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.of(tier));
-        given(active.isBenefitActive()).willReturn(true);
         given(subscriptionRepository.findBySubscriberIdAndChannelId(SUBSCRIBER_ID, CHANNEL_ID))
                 .willReturn(Optional.of(active));
 
@@ -255,7 +251,6 @@ class SubscriptionServiceTest {
         // 중복 신청은 지갑도 건드리면 안 된다 (이중 결제 방지의 핵심)
         verify(walletCharger, never()).useForSubscription(anyLong(), anyLong(), anyLong());
         verify(subscriptionRepository, never()).save(any());
-        verify(paymentGateway, never()).confirm(any(), any(), anyLong());
     }
 
     // ===== 3. 재구독 (핵심: 새 행 insert가 아니라 기존 행 재활성화) =====

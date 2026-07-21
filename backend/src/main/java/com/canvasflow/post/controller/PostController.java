@@ -50,7 +50,7 @@ public class PostController {
             @AuthenticationPrincipal AuthMember authMember,
             @PathVariable Long postId){
         Long viewerId = authMember != null ? authMember.userId() : null;
-        return ResponseEntity.ok(ApiResponse.ok((PostViewDto) postService.getDetail(viewerId, postId)));
+        return ResponseEntity.ok(ApiResponse.ok(postService.getDetail(viewerId, postId)));
     }
 
     //게시글 수정
