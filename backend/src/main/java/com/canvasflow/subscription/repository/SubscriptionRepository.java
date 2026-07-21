@@ -2,7 +2,6 @@ package com.canvasflow.subscription.repository;
 
 import com.canvasflow.subscription.entity.Subscription;
 import com.canvasflow.subscription.entity.SubscriptionStatus;
-import com.canvasflow.subscription.entity.SubscriptionTargetType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
