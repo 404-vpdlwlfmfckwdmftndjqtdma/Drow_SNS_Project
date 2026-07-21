@@ -39,4 +39,22 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
         WHERE p.userId = :userId AND p.deletedAt IS NULL
         """)
     long sumViewCountByUserId(@Param("userId") Long userId);
+
+    // 검색 페이지 "태그 검색"용: p.tags는 PostEntity가 직접 소유한 컬렉션(post_tags 테이블, @ElementCollection)이라
+    // 다른 모듈 테이블을 참조하지 않는다. 부분/대소문자 무관 일치, 같은 글이 키워드를 여러 태그에 포함해도
+    // 한 번만 나오도록 DISTINCT.
+    @Query("""
+        SELECT DISTINCT p FROM PostEntity p JOIN p.tags t
+        WHERE p.deletedAt IS NULL AND LOWER(t) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        ORDER BY p.createdAt DESC
+        """)
+    List<PostEntity> findByTagContaining(@Param("keyword") String keyword);
+
+    // PostReader.getPostsByAuthorIds용 (follow 모듈의 "팔로잉 피드"): 여러 작성자의 글을 최신순으로 한 번에 조회.
+    @Query("""
+        SELECT p FROM PostEntity p
+        WHERE p.userId IN :userIds AND p.deletedAt IS NULL
+        ORDER BY p.createdAt DESC
+        """)
+    List<PostEntity> findByUserIdInAndDeletedAtIsNull(@Param("userIds") List<Long> userIds);
 }

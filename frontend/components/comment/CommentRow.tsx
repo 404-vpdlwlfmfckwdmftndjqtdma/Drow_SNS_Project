@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import CommentAvatar, { UnknownAvatar } from "./CommentAvatar";
 import styles from "./CommentModal.module.css";
-import { formatCommentDateTime } from "./dateTime";
+import { formatRelativeTime } from "./dateTime";
 
 export interface CommentItem {
   id: number;
@@ -9,6 +11,7 @@ export interface CommentItem {
   parentId: number | null;
   writerId: number;
   writerNickname?: string;
+  writerProfileImageUrl?: string | null;
   content: string;
   deleted: boolean;
   createdAt: string;
@@ -45,64 +48,96 @@ export default function CommentRow({ comment: c, depth, currentUserId, actions }
   const replyDraft = actions.replyDrafts[c.id] ?? "";
   const editDraft = actions.editDrafts[c.id];
   const isMine = currentUserId != null && c.writerId === currentUserId;
-  const displayName = c.writerNickname ?? `유저 ${c.writerId}`;
-  const createdAtLabel = formatCommentDateTime(c.createdAt);
+  const displayName = c.deleted ? "알 수 없음" : c.writerNickname ?? `유저 ${c.writerId}`;
+  const createdAtLabel = formatRelativeTime(c.createdAt);
+  const avatarSize = depth === 0 ? 36 : 28;
 
   return (
-    <div className={styles.comment} style={{ marginLeft: depth * 24 }}>
-      <div className={styles.meta}>
-        <span className={isMine ? styles.nicknameMine : styles.nickname}>{displayName}</span> · {c.deleted ? "[삭제됨]" : createdAtLabel}
-      </div>
-
-      {editDraft === undefined ? (
-        <p className={styles.content}>{c.deleted ? "삭제된 댓글입니다" : c.content}</p>
+    <div className={depth === 0 ? styles.commentRow : styles.replyRow}>
+      {c.deleted ? (
+        <UnknownAvatar size={avatarSize} />
       ) : (
-        <div className={styles.row}>
-          <input
-            className={styles.input}
-            value={editDraft}
-            onChange={(e) => actions.onEditChange(c.id, e.target.value)}
-          />
-          <button className={styles.submit} onClick={() => actions.onSubmitEdit(c.id)}>
-            저장
-          </button>
-          <button onClick={() => actions.onCancelEdit(c.id)}>취소</button>
-        </div>
+        <CommentAvatar userId={c.writerId} nickname={displayName} profileImageUrl={c.writerProfileImageUrl} size={avatarSize} />
       )}
 
-      <div className={styles.actions}>
-        {!c.deleted && (
-          <button className={styles.likeBtn} onClick={() => actions.onToggleLike(c)}>
-            <span className={`material-symbols-outlined${c.likedByMe ? " filled" : ""}`} style={{ fontSize: 16 }}>
-              favorite
-            </span>
-            {c.likeCount}
-          </button>
+      <div className={styles.commentBody}>
+        <div className={styles.commentHeader}>
+          {c.deleted ? (
+            <span className={styles.nicknameUnknown}>{displayName}</span>
+          ) : (
+            <Link href={`/users/${c.writerId}`} className={isMine ? styles.nicknameMine : styles.nickname}>
+              {displayName}
+            </Link>
+          )}
+          <span className={styles.timestamp}>{createdAtLabel}</span>
+        </div>
+
+        {editDraft === undefined ? (
+          <p className={c.deleted ? styles.contentDeleted : styles.content}>
+            {c.deleted ? "삭제된 댓글입니다" : c.content}
+          </p>
+        ) : (
+          <div className={styles.editRow}>
+            <input
+              className={styles.input}
+              value={editDraft}
+              onChange={(e) => actions.onEditChange(c.id, e.target.value)}
+              autoFocus
+            />
+            <button className={styles.smallSubmit} onClick={() => actions.onSubmitEdit(c.id)}>
+              저장
+            </button>
+            <button className={styles.smallCancel} onClick={() => actions.onCancelEdit(c.id)}>
+              취소
+            </button>
+          </div>
         )}
-        {depth === 0 && <button onClick={() => actions.onStartReply(c.id)}>답글</button>}
-        {isMine && !c.deleted && editDraft === undefined && (
-          <button onClick={() => actions.onStartEdit(c)}>수정</button>
+
+        <div className={styles.actionsRow}>
+          {!c.deleted && (
+            <button className={styles.likeBtn} onClick={() => actions.onToggleLike(c)}>
+              <span className={`material-symbols-outlined${c.likedByMe ? " filled" : ""}`} style={{ fontSize: 16 }}>
+                favorite
+              </span>
+              {c.likeCount}
+            </button>
+          )}
+          {depth === 0 && (
+            <button className={styles.actionBtn} onClick={() => actions.onStartReply(c.id)}>
+              답글
+            </button>
+          )}
+          {isMine && !c.deleted && editDraft === undefined && (
+            <button className={styles.actionBtn} onClick={() => actions.onStartEdit(c)}>
+              수정
+            </button>
+          )}
+          {isMine && !c.deleted && (
+            <button className={styles.actionBtn} onClick={() => actions.onDelete(c.id)}>
+              삭제
+            </button>
+          )}
+        </div>
+
+        {c.id in actions.replyDrafts && depth === 0 && (
+          <div className={styles.editRow}>
+            <input
+              className={styles.input}
+              placeholder="대댓글 입력"
+              value={replyDraft}
+              onChange={(e) => actions.onReplyChange(c.id, e.target.value)}
+              autoFocus
+            />
+            <button className={styles.smallSubmit} onClick={() => actions.onSubmitReply(c.id)}>
+              등록
+            </button>
+          </div>
         )}
-        {isMine && !c.deleted && <button onClick={() => actions.onDelete(c.id)}>삭제</button>}
+
+        {c.replies?.map((r) => (
+          <CommentRow key={r.id} comment={r} depth={depth + 1} currentUserId={currentUserId} actions={actions} />
+        ))}
       </div>
-
-      {c.id in actions.replyDrafts && depth === 0 && (
-        <div className={styles.row}>
-          <input
-            className={styles.input}
-            placeholder="대댓글 입력"
-            value={replyDraft}
-            onChange={(e) => actions.onReplyChange(c.id, e.target.value)}
-          />
-          <button className={styles.submit} onClick={() => actions.onSubmitReply(c.id)}>
-            등록
-          </button>
-        </div>
-      )}
-
-      {c.replies?.map((r) => (
-        <CommentRow key={r.id} comment={r} depth={depth + 1} currentUserId={currentUserId} actions={actions} />
-      ))}
     </div>
   );
 }

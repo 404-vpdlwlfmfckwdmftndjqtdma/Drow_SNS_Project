@@ -8,6 +8,9 @@
 }
 
 .item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
   padding: var(--space-sm);
   border-radius: var(--radius);
   background: var(--color-surface-container-lowest);
@@ -18,4 +21,21 @@
 
 .unread {
   border-left: 3px solid var(--color-primary);
+}
+
+.selected {
+  background: var(--color-surface-container-low);
+  outline: 1.5px solid var(--color-primary);
+}
+
+.checkbox {
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
 }

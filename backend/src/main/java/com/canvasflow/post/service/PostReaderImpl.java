@@ -103,7 +103,29 @@ public class PostReaderImpl implements PostReader {
                 .filter(Objects::nonNull)
                 .toList();
 
-        return assembler.toViewDtos(ordered, viewerId).stream()
+        return toPostViews(ordered, viewerId);
+    }
+
+    // follow 모듈의 "팔로잉 피드"용 창구. 여러 작성자의 글을 최신순으로 모아서 getViewablePosts와
+    // 동일한 렌더 파이프라인을 태운다 - 이미 createdAt DESC로 조회하므로 별도 순서 보정은 필요 없다.
+    @Override
+    public List<PostView> getPostsByAuthorIds(List<Long> authorIds, Long viewerId) {
+        if (authorIds.isEmpty()) {
+            return List.of();
+        }
+        List<PostEntity> posts = postRepository.findByUserIdInAndDeletedAtIsNull(authorIds);
+        return toPostViews(posts, viewerId);
+    }
+
+    // search 모듈이 태그 검색용으로 추가함 - post 담당자 확인 부탁드립니다.
+    @Override
+    public List<PostView> searchByTag(String tag, Long viewerId) {
+        List<PostEntity> posts = postRepository.findByTagContaining(tag);
+        return toPostViews(posts, viewerId);
+    }
+
+    private List<PostView> toPostViews(List<PostEntity> posts, Long viewerId) {
+        return assembler.toViewDtos(posts, viewerId).stream()
                 .map(dto -> new PostView(
                         dto.postId(),
                         dto.userId(),

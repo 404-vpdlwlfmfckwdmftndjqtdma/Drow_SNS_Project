@@ -9,13 +9,12 @@ import PostLikeButton from "@/components/post/PostLikeButton";
 import type { ApiResponse } from "@/types";
 import styles from "../account-list.module.css";
 
+// 백엔드 PostReader.PostView와 1:1로 맞춘 응답 타입 (likeCount/commentCount는 post 소관이 아니라 없음).
 interface PostListItem {
   postId: number;
   userId: number;
   nickname: string;
   content: string;
-  likeCount?: number;
-  commentCount?: number;
   tags: string[];
   media: { url: string; mediaType: "IMAGE" | "VIDEO" }[];
   viewCount: number;
@@ -24,7 +23,8 @@ interface PostListItem {
 
 const CONTENT_PREVIEW_LIMIT = 120;
 
-export default function MyCommentsPage() {
+// 마이페이지 "팔로우" 탭: 내가 팔로우한 사람들이 쓴 글만 모아서 최신순으로 보여준다.
+export default function MyFollowingFeedPage() {
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -54,9 +54,9 @@ export default function MyCommentsPage() {
     setError("");
 
     api
-      .get<ApiResponse<PostListItem[]>>("/api/v1/comments/me/posts")
+      .get<ApiResponse<PostListItem[]>>("/api/v1/follows/feed")
       .then((res) => setPosts(res.data.data))
-      .catch(() => setError("댓글 단 게시글을 불러오지 못했습니다."))
+      .catch(() => setError("팔로우 피드를 불러오지 못했습니다."))
       .finally(() => setLoading(false));
   }, [currentUserId]);
 
@@ -78,8 +78,8 @@ export default function MyCommentsPage() {
     <main className={styles.container}>
       <header className={styles.header}>
         <p className={styles.eyebrow}>MY ACTIVITY</p>
-        <h1 className={styles.title}>댓글</h1>
-        <p className={styles.description}>내가 댓글을 작성한 게시글을 모아봅니다.</p>
+        <h1 className={styles.title}>팔로우</h1>
+        <p className={styles.description}>내가 팔로우한 사람들의 게시물을 모아봅니다.</p>
       </header>
 
       {error && <p className={styles.error}>{error}</p>}
@@ -87,10 +87,10 @@ export default function MyCommentsPage() {
       {currentUserId == null ? (
         <section className={styles.emptyState}>
           <span className={styles.iconWrap} aria-hidden="true">
-            <span className="material-symbols-outlined">chat_bubble</span>
+            <span className="material-symbols-outlined">group</span>
           </span>
           <h2 className={styles.emptyTitle}>로그인 후 확인할 수 있어요</h2>
-          <p className={styles.emptyDescription}>내가 댓글 단 게시글은 로그인한 계정에서만 조회됩니다.</p>
+          <p className={styles.emptyDescription}>팔로우 피드는 로그인한 계정에서만 조회됩니다.</p>
         </section>
       ) : loading ? (
         <section className={styles.emptyState}>
@@ -99,10 +99,10 @@ export default function MyCommentsPage() {
       ) : posts.length === 0 ? (
         <section className={styles.emptyState}>
           <span className={styles.iconWrap} aria-hidden="true">
-            <span className="material-symbols-outlined">chat_bubble</span>
+            <span className="material-symbols-outlined">group</span>
           </span>
-          <h2 className={styles.emptyTitle}>댓글 단 게시글이 없습니다</h2>
-          <p className={styles.emptyDescription}>게시글에 댓글을 작성하면 여기에서 다시 모아볼 수 있어요.</p>
+          <h2 className={styles.emptyTitle}>아직 피드가 없습니다</h2>
+          <p className={styles.emptyDescription}>관심 있는 사람을 팔로우하면 그 사람의 글이 여기에 모여요.</p>
         </section>
       ) : (
         <section className={styles.activityGrid}>
@@ -158,16 +158,8 @@ export default function MyCommentsPage() {
                 </Link>
 
                 <div className={styles.actionRow}>
-                  <PostLikeButton
-                    postId={post.postId}
-                    userId={currentUserId}
-                    initialLikeCount={post.likeCount ?? 0}
-                  />
-                  <CommentButton
-                    postId={post.postId}
-                    userId={currentUserId}
-                    initialCommentCount={post.commentCount}
-                  />
+                  <PostLikeButton postId={post.postId} userId={currentUserId} />
+                  <CommentButton postId={post.postId} userId={currentUserId} />
                   <span className={styles.viewCount}>조회 {post.viewCount}</span>
                 </div>
               </article>

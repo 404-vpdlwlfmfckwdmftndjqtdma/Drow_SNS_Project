@@ -4,6 +4,9 @@ import com.canvasflow.follow.FollowFacade;
 import com.canvasflow.follow.dto.FollowUserResponse;
 import com.canvasflow.follow.entity.Follow;
 import com.canvasflow.follow.repository.FollowRepository;
+import com.canvasflow.notification.NotificationFacade;
+import com.canvasflow.notification.NotificationTargetType;
+import com.canvasflow.notification.NotificationType;
 import com.canvasflow.user.UserFacade;
 import com.canvasflow.user.UserProfileView;
 import com.canvasflow.global.exception.CanvasflowException;
@@ -28,6 +31,7 @@ public class FollowService implements FollowFacade {
 
     private final FollowRepository followRepository;
     private final UserFacade userFacade;
+    private final NotificationFacade notificationFacade;
 
     @Override
     @Transactional
@@ -43,7 +47,20 @@ public class FollowService implements FollowFacade {
         }
 
         followRepository.save(Follow.builder().followerId(followerId).followingId(followingId).build());
-        // TODO: NotificationService 연동 - "OO님이 나를 팔로우했습니다" 알림 저장
+        notifyNewFollower(followerId, followingId);
+    }
+
+    // 알림 저장 실패가 팔로우 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다 (comment/like 모듈과 동일한 패턴).
+    private void notifyNewFollower(Long followerId, Long followingId) {
+        try {
+            String followerNickname = userFacade.getNicknameOrThrow(followerId);
+            notificationFacade.notify(
+                    followingId, followerId, NotificationType.NEW_FOLLOWER,
+                    NotificationTargetType.USER, followerId,
+                    followerNickname + "님이 회원님을 팔로우하기 시작했습니다.");
+        } catch (Exception e) {
+            // 알림 저장 실패는 무시 - 다음 접속 시 팔로워 목록으로 확인 가능
+        }
     }
 
     @Override

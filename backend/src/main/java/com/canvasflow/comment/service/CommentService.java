@@ -19,7 +19,7 @@ import com.canvasflow.notification.NotificationFacade;
 import com.canvasflow.notification.NotificationTargetType;
 import com.canvasflow.notification.NotificationType;
 import com.canvasflow.post.PostReader;
-import com.canvasflow.user.UserFacade;
+import com.canvasflow.user.UserProfileView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
@@ -58,7 +58,7 @@ public class CommentService {
     private final NotificationFacade notificationFacade;
     private final CommentEmitterRepository commentEmitterRepository;
     private final PostStreamService postStreamService;
-    private final UserFacade userFacade;
+    private final CommentWriterProfileResolver writerProfileResolver;
 
     @Transactional
     public CommentResponse create(Long userId, Long postId, CommentCreateRequest request) {
@@ -75,7 +75,7 @@ public class CommentService {
             }
         }
 
-        String writerNickname = resolveWriterNickname(userId);
+        UserProfileView writerProfile = writerProfileResolver.resolve(userId);
 
         Comment comment = commentRepository.save(Comment.builder()
                 .postId(postId)
@@ -84,9 +84,10 @@ public class CommentService {
                 .content(request.content())
                 .build());
 
-        notifyCommentCreated(userId, writerNickname, postId, parent, comment);
+        notifyCommentCreated(userId, writerProfile.nickname(), postId, parent, comment);
 
-        CommentResponse response = CommentResponse.of(comment, writerNickname, 0L, false, List.of());
+        CommentResponse response = CommentResponse.of(
+                comment, writerProfile.nickname(), writerProfile.profileImageUrl(), 0L, false, List.of());
         broadcast(postId, "comment-created", response);
         postStreamService.publishCommentCreated(
             response.postId(),
@@ -94,6 +95,7 @@ public class CommentService {
             response.parentId(),
             response.writerId(),
             response.writerNickname(),
+            response.writerProfileImageUrl(),
             response.content(),
             response.deleted(),
             response.createdAt(),
@@ -104,25 +106,16 @@ public class CommentService {
         return response;
     }
 
-    private String resolveWriterNickname(Long userId) {
-        try {
-            return userFacade.getNicknameOrThrow(userId);
-        } catch (CanvasflowException e) {
-            if (e.getErrorCode() == ErrorCode.USER_NOT_FOUND) {
-                return "user-" + userId;
-            }
-            throw e;
-        }
-    }
-
     // 알림 저장은 댓글 작성 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다.
     private void notifyCommentCreated(Long writerId, String writerNickname, Long postId, Comment parent, Comment comment) {
         try {
             if (parent != null) {
                 if (!parent.getWriterId().equals(writerId)) {
+                    // targetType은 COMMENT가 아니라 POST로 저장한다 - 댓글은 단독 페이지가 없어서
+                    // 프론트가 알림을 클릭했을 때 이동할 곳은 결국 이 댓글이 달린 게시글이기 때문.
                     notificationFacade.notify(
                             parent.getWriterId(), writerId, NotificationType.REPLY,
-                            NotificationTargetType.COMMENT, parent.getId(),
+                            NotificationTargetType.POST, postId,
                             writerNickname + "님이 회원님의 댓글에 답글을 남겼습니다.");
                 }
                 return;
@@ -153,9 +146,11 @@ public class CommentService {
                 return;
             }
             try {
+                // targetType은 COMMENT가 아니라 POST로 저장한다 - 댓글 단독 페이지가 없어서
+                // 알림을 클릭하면 결국 이 댓글이 달린 게시글로 이동시켜야 하기 때문.
                 notificationFacade.notify(
                         comment.getWriterId(), event.likerId(), NotificationType.LIKE,
-                        NotificationTargetType.COMMENT, event.commentId(),
+                        NotificationTargetType.POST, comment.getPostId(),
                         event.likerNickname() + "님이 회원님의 댓글을 좋아합니다.");
             } catch (Exception e) {
                 // 알림 저장 실패는 무시 - 다음 접속 시 목록 조회로 확인 가능
@@ -178,7 +173,12 @@ public class CommentService {
 
         Map<Long, List<Comment>> repliesByParentId = replies.stream()
                 .collect(Collectors.groupingBy(Comment::getParentId));
-        Map<Long, String> nicknames = fetchNicknames(roots.getContent(), replies);
+
+        List<Long> writerIds = Stream.concat(roots.getContent().stream(), replies.stream())
+                .map(Comment::getWriterId)
+                .distinct()
+                .toList();
+        Map<Long, UserProfileView> profiles = writerProfileResolver.resolveAll(writerIds);
 
         List<Long> allCommentIds = Stream.concat(roots.getContent().stream(), replies.stream())
                 .map(Comment::getId)
@@ -189,16 +189,22 @@ public class CommentService {
             List<CommentResponse> replyResponses = repliesByParentId
                     .getOrDefault(root.getId(), List.of())
                     .stream()
-                    .map(reply -> CommentResponse.of(
-                            reply,
-                            nicknames.get(reply.getWriterId()),
-                            likeSummary.countOf(reply.getId()),
-                            likeSummary.likedByViewer(reply.getId()),
-                            List.of()))
+                    .map(reply -> {
+                        UserProfileView profile = profiles.get(reply.getWriterId());
+                        return CommentResponse.of(
+                                reply,
+                                profile.nickname(),
+                                profile.profileImageUrl(),
+                                likeSummary.countOf(reply.getId()),
+                                likeSummary.likedByViewer(reply.getId()),
+                                List.of());
+                    })
                     .toList();
+            UserProfileView rootProfile = profiles.get(root.getWriterId());
             return CommentResponse.of(
                     root,
-                    nicknames.get(root.getWriterId()),
+                    rootProfile.nickname(),
+                    rootProfile.profileImageUrl(),
                     likeSummary.countOf(root.getId()),
                     likeSummary.likedByViewer(root.getId()),
                     replyResponses);
@@ -215,10 +221,11 @@ public class CommentService {
     public CommentResponse update(Long commentId, Long userId, CommentUpdateRequest request) {
         Comment comment = getOwnedActiveComment(commentId, userId);
         comment.changeContent(request.content());
-        String nickname = userFacade.findNicknameById(userId);
+        UserProfileView writerProfile = writerProfileResolver.resolve(userId);
         long likeCount = likeReader.countByTarget(LikeTargetType.COMMENT, commentId);
         boolean likedByMe = likeReader.isLikedByUser(userId, LikeTargetType.COMMENT, commentId);
-        CommentResponse response = CommentResponse.of(comment, nickname, likeCount, likedByMe, List.of());
+        CommentResponse response = CommentResponse.of(
+                comment, writerProfile.nickname(), writerProfile.profileImageUrl(), likeCount, likedByMe, List.of());
         broadcast(comment.getPostId(), "comment-updated", response);
         postStreamService.publishCommentUpdated(
             response.postId(),
@@ -226,6 +233,7 @@ public class CommentService {
             response.parentId(),
             response.writerId(),
             response.writerNickname(),
+            response.writerProfileImageUrl(),
             response.content(),
             response.deleted(),
             response.createdAt(),
@@ -307,13 +315,5 @@ public class CommentService {
             throw new CanvasflowException(ErrorCode.COMMENT_NOT_FOUND);
         }
         return comment;
-    }
-
-    private Map<Long, String> fetchNicknames(List<Comment> roots, List<Comment> replies) {
-        List<Long> writerIds = Stream.concat(roots.stream(), replies.stream())
-                .map(Comment::getWriterId)
-                .distinct()
-                .toList();
-        return userFacade.findNicknamesByIds(writerIds);
     }
 }

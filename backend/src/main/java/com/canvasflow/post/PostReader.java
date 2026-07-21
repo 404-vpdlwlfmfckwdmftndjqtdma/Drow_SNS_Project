@@ -37,6 +37,15 @@ public interface PostReader {
     // likeCount/commentCount는 post 소관이 아니므로 없다 - 호출 측이 LikeReader.summarize 등으로 채운다.
     List<PostView> getViewablePosts(List<Long> postIds, Long viewerId);
 
+    // follow 모듈의 "팔로우한 사람들 피드"용 창구. 호출 측(follow)이 자기 리포지토리로 얻은 팔로잉 유저 id
+    // 목록을 넘기면, 그 유저들이 쓴 글을 최신순으로 모아 getViewablePosts와 동일한 렌더 파이프라인(블러 등)을
+    // 적용해서 돌려준다. authorIds가 비어 있으면(아무도 안 팔로우) 빈 리스트.
+    List<PostView> getPostsByAuthorIds(List<Long> authorIds, Long viewerId);
+
+    // search 모듈의 "태그 검색"용 창구 - post 담당자 확인 부탁드립니다.
+    // 부분/대소문자 무관 태그 일치 검색이고, getViewablePosts와 동일한 렌더 파이프라인(블러 등)을 적용한다.
+    List<PostView> searchByTag(String tag, Long viewerId);
+
     // 렌더 파이프라인 통과 후의 게시글 한 건 (getViewablePosts 전용 반환 타입)
     record PostView(
             Long postId,
