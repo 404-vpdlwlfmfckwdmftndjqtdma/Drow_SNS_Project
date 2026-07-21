@@ -108,6 +108,16 @@ export default function PostDetailPage() {
               </div>
             </Link>
             <span className={styles.visibilityTag}>{VISIBILITY_LABEL[post.visibility]}</span>
+            {post.visibility === "LOCKED" && !isOwner && (
+              // TODO: 구매 연동 전까지 자리만 잡아둔 버튼
+              <button
+                type="button"
+                className={styles.purchaseButton}
+                onClick={() => alert("구매 기능은 준비 중입니다")}
+              >
+                구매하기
+              </button>
+            )}
           </div>
 
           {post.media.length > 0 && (

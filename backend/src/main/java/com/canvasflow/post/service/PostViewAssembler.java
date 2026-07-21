@@ -8,6 +8,7 @@ import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.entity.PostMediaEntity;
 import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.user.UserFacade;
+import com.canvasflow.user.UserProfileView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -44,16 +45,17 @@ public class PostViewAssembler {
 
         // 카트에 실을 재료는 미리 한 방에 조회해 둔다 (루프 안에서 글마다 조회하면 N+1)
         Map<Long, List<PostRequestDto.MediaItem>> mediaByPostId = loadMediaByPostId(posts);
-        Map<Long, String> nicknameByUserId = loadNicknameByAuthorId(posts);
+        Map<Long, UserProfileView> profileByAuthorId = loadProfileByAuthorId(posts);
 
         // 글 1개당: 카트에 싣고 → 렌더 파이프라인 통과 → 완성품으로 봉인
         List<PostViewDto> result = new ArrayList<>();
         for (PostEntity post : posts) {
+            UserProfileView profile = profileByAuthorId.get(post.getUserId());
             PostViewContent content = PostViewContent.from(
                     post,
                     mediaByPostId.getOrDefault(post.getPostId(), List.of()),
-                    nicknameByUserId.get(post.getUserId()),
-                    null);   // 프로필사진 TODO: 목록용 배치 조회 생기면 채우기 (N+1 방지)
+                    profile != null ? profile.nickname() : null,
+                    profile != null ? profile.profileImageUrl() : null);
 
             renderForViewer(content, viewerId);
 
@@ -83,12 +85,13 @@ public class PostViewAssembler {
     }
 
     // [재료 준비] 작성자 닉네임을 한 방에 조회한다. 결과: { 유저5: "화가딩", 유저7: "글쟁이" }
-    private Map<Long, String> loadNicknameByAuthorId(List<PostEntity> posts) {
+    // 프로필 사진도 같이 조회
+    private Map<Long, UserProfileView> loadProfileByAuthorId(List<PostEntity> posts) {
         Set<Long> authorIds = new LinkedHashSet<>();   // Set이라 같은 작성자는 한 번만 담긴다
         for (PostEntity post : posts) {
             authorIds.add(post.getUserId());
         }
-        return userFacade.findNicknamesByIds(List.copyOf(authorIds));
+        return userFacade.getProfileViews(List.copyOf(authorIds));
     }
 
     /**

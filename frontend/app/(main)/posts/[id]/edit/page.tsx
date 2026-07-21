@@ -47,7 +47,7 @@ export default function EditPostPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // 기존 글 값 불러와서 폼 채우기. media도 여기서 그대로 value로 넘겨받아야
-  // 저장할 때 "지우고 다시 채우기" 방식에서 기존 사진이 안 날아감.
+  // 저장할 때 지우고 다시 채우기 방식에서 기존 사진이 안 날아감.
   useEffect(() => {
     api
       .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`)

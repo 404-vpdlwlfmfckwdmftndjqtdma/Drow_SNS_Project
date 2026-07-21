@@ -1,6 +1,5 @@
 package com.canvasflow.subscription.service;
 
-import com.canvasflow.payment.PaymentGateway;
 import com.canvasflow.subscription.dto.SubscribeRequest;
 import com.canvasflow.subscription.dto.SubscriptionResponse;
 import com.canvasflow.subscription.entity.Subscription;
@@ -9,6 +8,7 @@ import com.canvasflow.subscription.entity.SubscriptionTier;
 import com.canvasflow.subscription.repository.SubscriptionRepository;
 import com.canvasflow.subscription.repository.SubscriptionTierRepository;
 import com.canvasflow.user.UserFacade;
+import com.canvasflow.wallet.WalletCharger;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -26,18 +26,29 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionTierRepository tierRepository;
     private final UserFacade userFacade;
-    private final PaymentGateway paymentGateway;
-    // TODO: ChannelRepository 추가 (채널 존재 검증용)
+    private final WalletCharger walletCharger;   // wallet 창구 (차감)
 
+    /**
+     * 채널 구독 신청.
+     *
+     * "채널"은 별도 개체가 아니라 작가(유저) 본인이다 - channelId 에는 작가의 userId 가 들어간다.
+     * 구독하면 그 작가 글의 블러가 전부 해제된다(EntitlementPolicy 가 구독을 보고 ALL_KEYS 반환).
+     *
+     * 결제는 지갑 차감이다. 외부 결제는 order 모듈의 충전에서만 일어난다.
+     */
     @Transactional
     public Long subscribe(Long subscriberId, Long channelId, SubscribeRequest request) {
         if (!userFacade.existsById(subscriberId)) {
             throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
         }
-        // TODO: 채널 존재 검증
-        // if (!channelRepository.existsById(channelId)) {
-        //     throw new CanvasflowException(ErrorCode.CHANNEL_NOT_FOUND);
-        // }
+        // 채널 = 작가(유저)이므로 채널 존재 검증은 곧 유저 존재 검증이다
+        if (!userFacade.existsById(channelId)) {
+            throw new CanvasflowException(ErrorCode.USER_NOT_FOUND);
+        }
+        // 자기 자신 구독 방지 (작성자는 이미 전부 열람 가능)
+        if (subscriberId.equals(channelId)) {
+            throw new CanvasflowException(ErrorCode.SUBSCRIBE_SELF_CHANNEL);
+        }
 
         SubscriptionTier tier = resolveTier(request.tierId());
 
@@ -49,13 +60,12 @@ public class SubscriptionService {
             throw new CanvasflowException(ErrorCode.ALREADY_SUBSCRIBED);
         }
 
-        // 2) 구독 검증. 유료 등급이면 결재 승인 (금액은 서버의 tier 가격 - 조작 불가)
+        // 2) 유료 등급이면 지갑에서 차감 (금액은 서버의 tier 가격 - 조작 불가).
+        //    잔액이 모자라면 여기서 예외 → 아무것도 저장되지 않고 화면은 충전을 유도한다.
         boolean paid = tier != null && tier.getMonthlyPrice().signum() > 0;
         if (paid) {
-            if (request.paymentKey() == null || request.orderId() == null) {
-                throw new CanvasflowException(ErrorCode.PAYMENT_REQUIRED);
-            }
-            paymentGateway.confirm(request.paymentKey(), request.orderId(),tier.getMonthlyPrice().longValueExact());
+            walletCharger.useForSubscription(
+                    subscriberId, tier.getMonthlyPrice().longValueExact(), channelId);
         }
 
         // 3) 저장 or 재시작

@@ -98,6 +98,22 @@
   background: rgba(107, 56, 212, 0.08);
 }
 
+.purchaseButton {
+  padding: 4px var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.purchaseButton:hover {
+  background: #5b2fb8;
+}
+
 .actions {
   display: flex;
   gap: var(--space-sm);
