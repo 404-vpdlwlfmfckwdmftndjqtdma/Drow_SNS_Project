@@ -187,9 +187,9 @@ export default function NewPostPage() {
   return (
     <div className={styles.container}>
       <div className={styles.guide}>
-        <span className="material-symbols-outlined" data-icon>lightbulb</span>
-        <p>텍스트를 드래그하면 옆에 뜨는 버튼으로 선택한 글자를 블러 처리할 수 있어요.</p>
-        <p>사진 밑의 블러 버튼을 누르면 그 사진이 블러 처리돼요.</p>
+        <span data-icon>lightbulb</span>
+        <p>가리고 싶은 텍스트를 드래그하면 블러 처리 버튼이 나타납니다.</p>
+        <p>사진 밑의 블러 버튼을 누르면 해당 사진이 블러 처리됩니다.</p>
       </div>
 
       <div data-layout="post-form">
@@ -233,41 +233,54 @@ export default function NewPostPage() {
           )}
         </div>
 
-        <div>
+        <div data-panel="side">
           {(blurRanges.length > 0 || blurredImageIndexes.size > 0) && (
-            <div data-panel="settings">
+            <div data-panel="price">
               <h3>
                 <span data-icon data-tone="primary">sell</span>
                 판매 가격
               </h3>
+              <p className={styles.priceHint}>비워두면 판매하지 않고, 0원 이상 입력 시 구독자만 볼 수 있습니다.</p>
 
               {blurRanges.length > 0 && (
                 <div className={styles.priceField}>
-                  <label htmlFor="textBlurPrice">텍스트 블러 해제</label>
-                  <input
-                    id="textBlurPrice"
-                    className={styles.priceInput}
-                    type="number"
-                    min={0}
-                    placeholder="가격 (원, 비우면 판매 안 함)"
-                    value={textBlurPrice}
-                    onChange={(event) => setTextBlurPrice(event.target.value)}
-                  />
+                  <label htmlFor="textBlurPrice" className={styles.priceFieldLabel}>
+                    <span data-icon>match_case</span>
+                    텍스트 블러 해제
+                  </label>
+                  <div className={styles.priceInputGroup}>
+                    <input
+                      id="textBlurPrice"
+                      className={styles.priceInput}
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      value={textBlurPrice}
+                      onChange={(event) => setTextBlurPrice(event.target.value)}
+                    />
+                    <span className={styles.priceUnit}>원</span>
+                  </div>
                 </div>
               )}
 
               {blurredImageIndexes.size > 0 && (
                 <div className={styles.priceField}>
-                  <label htmlFor="imageBlurPrice">이미지 블러 해제</label>
-                  <input
-                    id="imageBlurPrice"
-                    className={styles.priceInput}
-                    type="number"
-                    min={0}
-                    placeholder="가격 (원, 비우면 판매 안 함)"
-                    value={imageBlurPrice}
-                    onChange={(event) => setImageBlurPrice(event.target.value)}
-                  />
+                  <label htmlFor="imageBlurPrice" className={styles.priceFieldLabel}>
+                    <span data-icon>image</span>
+                    이미지 블러 해제
+                  </label>
+                  <div className={styles.priceInputGroup}>
+                    <input
+                      id="imageBlurPrice"
+                      className={styles.priceInput}
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      value={imageBlurPrice}
+                      onChange={(event) => setImageBlurPrice(event.target.value)}
+                    />
+                    <span className={styles.priceUnit}>원</span>
+                  </div>
                 </div>
               )}
             </div>

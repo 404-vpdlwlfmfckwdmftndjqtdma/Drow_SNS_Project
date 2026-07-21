@@ -90,18 +90,30 @@
   .container > [data-layout="post-form"] {
     grid-template-columns: 2fr 1fr;
   }
+
+  /* 판매 가격 패널이 있든 없든 게시하기 버튼 위치가 안 바뀌게, 오른쪽 칼럼을 에디터와 같은 높이로 고정한다 */
+  .container [data-panel="side"] {
+    height: 640px;
+  }
 }
 
 .container [data-panel="editor"] {
   background: var(--color-surface-container-lowest);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  min-height: 440px;
+  height: 640px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   box-shadow: var(--shadow-card);
   border: 1px solid var(--color-surface-container-high);
+  /* 스크롤은 계속 동작하되(내용이 넘치면 카드 크기 대신 안에서 스크롤), 스크롤바만 안 보이게 */
+  scrollbar-width: none;
+}
+
+.container [data-panel="editor"]::-webkit-scrollbar {
+  display: none;
 }
 
 /* textarea는 부분 배경색을 못 입혀서, 뒤에 하이라이트 전용 레이어를 똑같은 글꼴/줄간격으로 겹쳐둔다 */
@@ -199,35 +211,6 @@
   color: var(--color-on-surface-variant);
 }
 
-.priceField {
-  margin-bottom: var(--space-sm);
-}
-
-.priceField:last-child {
-  margin-bottom: 0;
-}
-
-.priceField label {
-  display: block;
-  margin-bottom: var(--space-xs);
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.priceInput {
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface-container-high);
-  background: var(--color-surface-container-low);
-  font-size: 16px;
-}
-
-.priceInput:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
 .tagsInput {
   width: 100%;
   padding: var(--space-sm) var(--space-lg);
@@ -242,60 +225,87 @@
   border-color: var(--color-primary);
 }
 
-.container [data-panel="settings"] {
+/* 오른쪽 칼럼 - 게시하기 버튼을 항상 맨 아래에 고정한다(판매 가격 패널이 있든 없든 위치가 안 바뀌게) */
+.container [data-panel="side"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.container [data-panel="price"] {
   background: var(--color-surface-container-lowest);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
+  padding: var(--space-md);
   box-shadow: var(--shadow-card);
   border: 1px solid var(--color-surface-container-high);
   margin-bottom: var(--space-md);
 }
 
-.container [data-panel="settings"] h3 {
+.container [data-panel="price"] h3 {
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  margin: 0 0 var(--space-md);
+  margin: 0 0 var(--space-xs);
 }
 
-.container [data-panel="settings"] label {
+.priceHint {
+  margin: 0 0 var(--space-sm);
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+
+/* 라벨 한 줄 + 그 아래 입력창 한 줄, 세로로 쌓는 컴팩트한 배치 */
+.priceField {
   display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface-container-high);
-  cursor: pointer;
+  flex-direction: column;
+  gap: 4px;
   margin-bottom: var(--space-sm);
 }
 
-.container [data-panel="settings"] label:has(input:checked) {
-  border-color: var(--color-primary);
-  background: rgba(107, 56, 212, 0.03);
+.priceField:last-child {
+  margin-bottom: 0;
 }
 
-.container [data-panel="settings"] label p:first-child {
+.priceFieldLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   font-weight: 700;
-  font-size: 14px;
-  margin: 0;
+  font-size: 16px;
+  color: var(--color-on-surface);
+  white-space: nowrap;
 }
 
-.container [data-panel="settings"] label p:last-child {
-  font-size: 12px;
+.priceFieldLabel [data-icon] {
+  font-size: 20px;
   color: var(--color-on-surface-variant);
-  margin: 0;
 }
 
-.container [data-panel="settings"] select {
-  margin-top: var(--space-sm);
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
+.priceInputGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.priceInput {
+  flex: 1;
+  width: 0;
+  padding: 6px var(--space-sm);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-surface-container-high);
   background: var(--color-surface-container-low);
-  font-size: 16px;
+  font-size: 15px;
+}
+
+.priceInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.priceUnit {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
 }
 
 .container [data-action="submit"] {
@@ -313,6 +323,7 @@
   gap: var(--space-sm);
   cursor: pointer;
   box-shadow: var(--shadow-floating);
+  margin-top: auto;
   margin-bottom: var(--space-md);
   transition: background 0.15s ease, transform 0.1s ease;
 }
@@ -328,38 +339,4 @@
 .container [data-action="submit"]:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-/* 가린 부분 판매 가격 입력 */
-.priceField {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-sm);
-  font-size: 14px;
-}
-
-.priceField > span:first-child {
-  flex: 1 1 auto;
-  font-weight: 700;
-}
-
-.priceField input {
-  width: 120px;
-  min-height: 40px;
-  padding: 0 var(--space-sm);
-  color: var(--color-on-surface);
-  background: var(--color-surface);
-  border: 1px solid var(--color-outline-variant);
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-size: 14px;
-  text-align: right;
-}
-
-.priceHint {
-  margin: 0;
-  color: var(--color-on-surface-variant);
-  font-size: 12px;
-  line-height: 1.5;
 }
