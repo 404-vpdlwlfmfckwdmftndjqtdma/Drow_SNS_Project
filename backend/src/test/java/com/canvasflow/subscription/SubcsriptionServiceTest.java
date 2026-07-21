@@ -1,6 +1,7 @@
 package com.canvasflow.subscription;
 
 import com.canvasflow.global.exception.CanvasflowException;
+import com.canvasflow.global.exception.ErrorCode;
 import com.canvasflow.subscription.dto.SubscribeRequest;
 import com.canvasflow.subscription.entity.Subscription;
 import com.canvasflow.subscription.entity.SubscriptionStatus;
@@ -9,6 +10,7 @@ import com.canvasflow.subscription.repository.SubscriptionRepository;
 import com.canvasflow.subscription.repository.SubscriptionTierRepository;
 import com.canvasflow.subscription.service.SubscriptionService;
 import com.canvasflow.user.UserFacade;
+import com.canvasflow.wallet.WalletCharger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -53,6 +56,9 @@ class SubscriptionServiceTest {
     @Mock
     UserFacade userFacade;
 
+    @Mock
+    WalletCharger walletCharger;
+
     @InjectMocks
     SubscriptionService subscriptionService;
 
@@ -75,8 +81,10 @@ class SubscriptionServiceTest {
                 .build();
     }
 
+    /** 구독자와 채널 주인(작가) 둘 다 실재하는 상태. 채널 = 작가(유저)라 검증도 유저 조회다. */
     private void userExists() {
         given(userFacade.existsById(SUBSCRIBER_ID)).willReturn(true);
+        given(userFacade.existsById(CHANNEL_ID)).willReturn(true);
     }
 
     private void noExistingSubscription() {
@@ -97,7 +105,7 @@ class SubscriptionServiceTest {
         willAnswer(inv -> inv.getArgument(0))
                 .given(subscriptionRepository).save(any(Subscription.class));
 
-        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID, "test-payment-key", "order-123"));
+        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID));
 
         // 저장된 Subscription의 내용까지 검증
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
@@ -107,6 +115,50 @@ class SubscriptionServiceTest {
         assertThat(saved.getChannelId()).isEqualTo(CHANNEL_ID);
         assertThat(saved.getTier()).isEqualTo(tier);
         assertThat(saved.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+
+        // 결제는 지갑 차감이며, 금액은 서버의 tier 가격(5,000원)이어야 한다 - 금액 조작 방어
+        verify(walletCharger).useForSubscription(SUBSCRIBER_ID, 5000L, CHANNEL_ID);
+    }
+
+    @Test
+    @DisplayName("무료 구독은 지갑을 차감하지 않는다")
+    void 무료_구독은_차감_없음() {
+        userExists();
+        noExistingSubscription();
+        willAnswer(inv -> inv.getArgument(0))
+                .given(subscriptionRepository).save(any(Subscription.class));
+
+        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(null));
+
+        verify(walletCharger, never()).useForSubscription(anyLong(), anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("잔액 부족: 구독이 저장되지 않는다")
+    void 잔액_부족() {
+        userExists();
+        noExistingSubscription();
+        given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.of(supporterTier()));
+        willThrow(new CanvasflowException(ErrorCode.WALLET_INSUFFICIENT_BALANCE))
+                .given(walletCharger).useForSubscription(anyLong(), anyLong(), anyLong());
+
+        assertThatThrownBy(() ->
+                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID)))
+                .isInstanceOf(CanvasflowException.class);
+
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("본인 채널은 구독할 수 없다")
+    void 본인_채널_구독_불가() {
+        given(userFacade.existsById(SUBSCRIBER_ID)).willReturn(true);
+
+        assertThatThrownBy(() ->
+                subscriptionService.subscribe(SUBSCRIBER_ID, SUBSCRIBER_ID, new SubscribeRequest(TIER_ID)))
+                .isInstanceOf(CanvasflowException.class);
+
+        verify(subscriptionRepository, never()).save(any());
     }
 
     @Test
@@ -117,7 +169,7 @@ class SubscriptionServiceTest {
         willAnswer(inv -> inv.getArgument(0))
                 .given(subscriptionRepository).save(any(Subscription.class));
 
-        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(null, null, null));
+        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(null));
 
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
         verify(subscriptionRepository).save(captor.capture());
@@ -133,7 +185,7 @@ class SubscriptionServiceTest {
         given(userFacade.existsById(SUBSCRIBER_ID)).willReturn(false);
 
         assertThatThrownBy(() ->
-                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID, "test-payment-key", "order-123")))
+                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID)))
                 .isInstanceOf(CanvasflowException.class);
 
         verify(subscriptionRepository, never()).save(any());
@@ -146,25 +198,31 @@ class SubscriptionServiceTest {
         given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID, "test-payment-key", "order-123")))
+                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID)))
                 .isInstanceOf(CanvasflowException.class);
 
         verify(subscriptionRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("이미 ACTIVE 구독 중이면 다시 신청할 수 없다")
+    @DisplayName("혜택 기간이 남은 구독 중이면 다시 신청할 수 없다")
     void Duplicate() {
         userExists();
         SubscriptionTier tier = supporterTier();
+        // 유료 구독은 status가 ACTIVE인 것만으로는 부족하고 expiresAt이 남아 있어야 혜택이 살아있다.
+        // startPaidPeriod로 30일 이용권을 시작시켜야 실제 "구독 중" 상태가 된다.
+        Subscription active = existingSubscription(tier);
+        active.startPaidPeriod(tier);
         given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.of(tier));
         given(subscriptionRepository.findBySubscriberIdAndChannelId(SUBSCRIBER_ID, CHANNEL_ID))
-                .willReturn(Optional.of(existingSubscription(tier)));  // ACTIVE 상태
+                .willReturn(Optional.of(active));
 
         assertThatThrownBy(() ->
-                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID, "test-payment-key", "order-123")))
+                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID)))
                 .isInstanceOf(CanvasflowException.class);
 
+        // 중복 신청은 지갑도 건드리면 안 된다 (이중 결제 방지의 핵심)
+        verify(walletCharger, never()).useForSubscription(anyLong(), anyLong(), anyLong());
         verify(subscriptionRepository, never()).save(any());
     }
 
@@ -187,7 +245,7 @@ class SubscriptionServiceTest {
         given(subscriptionRepository.findBySubscriberIdAndChannelId(anyLong(), anyLong()))
                 .willReturn(Optional.of(canceled));
 
-        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID, "test-payment-key", "order-123"));
+        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID));
 
         // 유니크 제약 때문에 새 행을 만들면 안 된다 - 이 검증이 이 테스트의 존재 이유
         verify(subscriptionRepository, never()).save(any());

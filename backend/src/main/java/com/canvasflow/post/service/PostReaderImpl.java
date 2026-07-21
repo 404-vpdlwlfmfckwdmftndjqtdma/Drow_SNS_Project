@@ -5,6 +5,7 @@ import com.canvasflow.post.PostReader;
 import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.entity.PostMediaEntity;
 import com.canvasflow.post.repository.PostMediaRepository;
+import com.canvasflow.post.repository.PostProductRepository;
 import com.canvasflow.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,19 +24,44 @@ public class PostReaderImpl implements PostReader {
 
     private final PostRepository postRepository;
     private final PostMediaRepository postMediaRepository;
+    private final PostProductRepository postProductRepository;
     private final PostViewAssembler assembler;
-
-    @Override
-    public Optional<PostPurchaseInfo> getPurchaseInfo(Long postId) {
-        return postRepository.findById(postId)
-                .map(post -> new PostPurchaseInfo(post.getUserId(), null));
-        // TODO 단건 구매 가격 정책 확정 후 PostEntity에 singlePurchasePrice를 추가한다.
-    }
 
     @Override
     public Optional<PostInfo> getPostInfo(Long postId) {
         return postRepository.findById(postId)
                 .map(post -> new PostInfo(post.getUserId()));
+    }
+
+    // 판매자가 글에 등록해 둔 기능별 가격표. 삭제된 글이면 빈 목록.
+    @Override
+    public List<ProductInfo> getProducts(Long postId) {
+        Long authorId = findAuthorIdOfLivePost(postId);
+        if (authorId == null) {
+            return List.of();
+        }
+        return postProductRepository.findByPostIdAndOnSaleTrue(postId).stream()
+                .map(product -> new ProductInfo(postId, authorId, product.getCapability(), product.getPrice()))
+                .toList();
+    }
+
+    // 구매 직전 단건 확인. 삭제된 글 / 판매 중지 상품이면 empty → purchase 쪽에서 구매 불가 처리.
+    @Override
+    public Optional<ProductInfo> getProduct(Long postId, String capability) {
+        Long authorId = findAuthorIdOfLivePost(postId);
+        if (authorId == null) {
+            return Optional.empty();
+        }
+        return postProductRepository.findByPostIdAndCapabilityAndOnSaleTrue(postId, capability)
+                .map(product -> new ProductInfo(postId, authorId, product.getCapability(), product.getPrice()));
+    }
+
+    // 살아있는 글이면 작성자 id, 삭제됐거나 없으면 null
+    private Long findAuthorIdOfLivePost(Long postId) {
+        return postRepository.findById(postId)
+                .filter(post -> post.getDeletedAt() == null)
+                .map(PostEntity::getUserId)
+                .orElse(null);
     }
 
     // mypage 모듈이 마이페이지 "창작물" 통계용으로 추가함 - post 담당자 확인 부탁드립니다.
