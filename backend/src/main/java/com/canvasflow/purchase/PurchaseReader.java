@@ -1,7 +1,5 @@
 package com.canvasflow.purchase;
 
-import com.canvasflow.purchase.entity.PostPurchase;
-import com.canvasflow.purchase.repository.PostPurchaseRepository;
 import com.canvasflow.purchase.repository.PurchaseItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,20 +7,26 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-/** 다른 모듈이 구매 여부를 확인할 때 쓰는 공개 창구 */
+/**
+ * 다른 모듈이 구매 여부를 확인할 때 쓰는 공개 창구.
+ *
+ * 판정 기준은 purchase_items(기능별 권한) 한 곳이다.
+ * 부분 구매가 가능하므로 "이 글을 샀다" = "이 글에서 뭐라도 하나 샀다" 를 뜻한다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PurchaseReader {
 
-    private final PostPurchaseRepository postPurchaseRepository;
     private final PurchaseItemRepository purchaseItemRepository;
 
+    /** 이 글에서 뭐라도 하나 구매했는지 */
     public boolean hasPurchased(Long buyerId, Long postId) {
-        return postPurchaseRepository.existsByBuyerIdAndPostId(
-                buyerId, postId);
+        if (buyerId == null) {
+            return false;
+        }
+        return purchaseItemRepository.existsByBuyerIdAndPostId(buyerId, postId);
     }
 
     /**
@@ -36,12 +40,11 @@ public class PurchaseReader {
         return Set.copyOf(purchaseItemRepository.findCapabilities(buyerId, postId));
     }
 
-    /** 목록용: 여러 게시물 중 구매한 것만 postId Set으로 */
+    /** 목록용: 여러 게시물 중 뭐라도 구매한 글의 postId */
     public Set<Long> findPurchasedPostIds(Long buyerId, List<Long> postIds) {
-        return postPurchaseRepository
-                .findByBuyerIdAndPostIdIn(buyerId, postIds)
-                .stream()
-                .map(PostPurchase::getPostId)
-                .collect(Collectors.toSet());
+        if (buyerId == null || postIds.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(purchaseItemRepository.findPurchasedPostIds(buyerId, postIds));
     }
 }

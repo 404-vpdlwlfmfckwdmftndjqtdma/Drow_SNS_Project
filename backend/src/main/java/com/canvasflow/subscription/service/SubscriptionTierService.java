@@ -25,8 +25,6 @@ public class SubscriptionTierService {
     private static final int MAX_TIERS_PER_CHANNEL = 5;
 
     private final SubscriptionTierRepository tierRepository;
-    // TODO: 팀의 Channel 도메인에 맞게 주입
-    // private final ChannelRepository channelRepository;
 
     /** 등급 생성 - 자동으로 내 채널에 생성됨 */
     public TierResponse create(Long loginUserId, TierCreateRequest request) {

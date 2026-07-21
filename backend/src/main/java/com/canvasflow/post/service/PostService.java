@@ -10,7 +10,9 @@ import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.dto.PostViewDto;
 import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.entity.PostMediaEntity;
+import com.canvasflow.post.entity.PostProduct;
 import com.canvasflow.post.repository.PostMediaRepository;
+import com.canvasflow.post.repository.PostProductRepository;
 import com.canvasflow.post.repository.PostRepository;
 import com.canvasflow.subscription.ContentAccessService;
 import com.canvasflow.user.UserFacade;
@@ -18,6 +20,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,10 +42,9 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostMediaRepository postMediaRepository;
+    private final PostProductRepository postProductRepository;
     private final UserFacade userFacade;
     private final List<PostExtension> extensions;
-    // entitlement 도메인이 아직 구현체를 안 올렸을 수도 있어 Optional로 받는다 - 없으면 전부 잠금 상태로 취급.
-    private final Optional<ContentAccessPolicy> contentAccessPolicy;
     private final ContentAccessService contentAccessService;
     private final PostViewAssembler postViewAssembler;
 
@@ -77,7 +82,30 @@ public class PostService {
             extension.apply(postEntity.getPostId(), extensionData.get(extension.key()));
         }
 
+        //판매 가격표 저장 (판매자가 기능별로 값을 매긴 경우)
+        replaceProducts(postEntity.getPostId(), postRequestDto.prices());
+
         return postEntity;
+    }
+
+    /**
+     * 가격표 전체 교체. 요청에 없는 기능은 판매하지 않는 것으로 본다(글 수정 시 전체 전송 규칙).
+     * 이미 구매한 사람의 권한(purchase_items)은 가격표와 별개라 여기서 지워도 영향이 없다.
+     */
+    private void replaceProducts(Long postId, Map<String, BigDecimal> prices) {
+        postProductRepository.deleteAllByPostId(postId);
+        if (prices == null || prices.isEmpty()) {
+            return;
+        }
+        List<PostProduct> products = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> entry : prices.entrySet()) {
+            BigDecimal price = entry.getValue();
+            if (price == null || price.signum() <= 0) {
+                continue;   // 0원 이하는 판매 안 함으로 간주 (무료 공개와 같음)
+            }
+            products.add(new PostProduct(postId, entry.getKey(), price));
+        }
+        postProductRepository.saveAll(products);
     }
 
     //글 목록 불러오기 (공개 피드)
