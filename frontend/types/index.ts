@@ -89,7 +89,7 @@ export interface Subscription {
 
 export type NotificationType = "COMMENT" | "REPLY" | "LIKE" | "NEW_FOLLOWER" | "NEW_POST" | "NEW_SUBSCRIBER";
 
-export type NotificationTargetType = "POST" | "COMMENT";
+export type NotificationTargetType = "POST" | "COMMENT" | "USER";
 
 export interface AppNotification {
   id: number;

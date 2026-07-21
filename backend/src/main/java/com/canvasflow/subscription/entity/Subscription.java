@@ -62,9 +62,14 @@ public class Subscription extends BaseTimeEntity {
         this.status = SubscriptionStatus.ACTIVE;
     }
 
-    /** 현재 유효한 등급 레벨. 해지 상태거나 무료 구독이면 0 */
+    /**
+     * 현재 유효한 등급 레벨. 해지했거나 이용권이 만료됐거나 무료 구독이면 0.
+     *
+     * 반드시 isBenefitActive()를 거쳐야 한다 - status만 보면 30일 이용권이 끝난 뒤에도
+     * (해지하지 않는 한 status는 계속 ACTIVE라) 혜택이 영구히 유지되는 버그가 된다.
+     */
     public int effectiveLevel() {
-        if (status != SubscriptionStatus.ACTIVE) return 0;
+        if (!isBenefitActive()) return 0;
         return tier == null ? 0 : tier.getLevel();
     }
 
@@ -90,11 +95,6 @@ public class Subscription extends BaseTimeEntity {
         if (status != SubscriptionStatus.ACTIVE) return false;
         if (tier == null) return true;
         return expiresAt != null && expiresAt.isAfter(LocalDateTime.now());
-    }
-
-    public int effectivelevel() {
-        if (!isBenefitActive()) return 0;
-        return tier == null ? 0 : tier.getLevel();
     }
 
     /** 결재 완료 후 호출: 30일 이용권 시작/연장 */

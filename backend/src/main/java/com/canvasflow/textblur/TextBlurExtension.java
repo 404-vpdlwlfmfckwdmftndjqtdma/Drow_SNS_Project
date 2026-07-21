@@ -32,7 +32,7 @@ public class TextBlurExtension implements PostExtension {
 
     private static final char BLUR_CHAR = '●';
 
-    private final TextBlurRangeRepository textBlurRangeRepository;
+    private final TextBlurRangeRepository rangeRepository;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -41,38 +41,36 @@ public class TextBlurExtension implements PostExtension {
     }
 
     @Override
-    @Transactional
     public void apply(Long postId, Object section) {
-        // 글 수정 시 기존 구간은 항상 초기화 (section이 null이면 "블러 없음"으로 수정한 것)
-        textBlurRangeRepository.deleteByPostId(postId);
-        if (section == null) {
+        // 전체 교체(replace): 기존 블러 지우고 이번에 온 것만 저장
+        rangeRepository.deleteByPostId(postId);
+
+        // section = {"ranges": [ {"start":9,"end":15}, ... ]} (또는 null)
+        if (!(section instanceof Map<?, ?> map) || !(map.get("ranges") instanceof List<?> ranges)) {
             return;
         }
 
-        RangesPayload payload = objectMapper.convertValue(section, RangesPayload.class);
-        if (payload.ranges() == null || payload.ranges().isEmpty()) {
-            return;
+        List<TextBlurRange> rows = new ArrayList<>();
+        for (Object item : ranges) {
+            if (item instanceof Map<?, ?> r
+                    && r.get("start") instanceof Number start
+                    && r.get("end") instanceof Number end) {
+                rows.add(new TextBlurRange(postId, start.intValue(), end.intValue()));
+            }
         }
-
-        List<TextBlurRange> entities = payload.ranges().stream()
-                .map(r -> TextBlurRange.builder()
-                        .postId(postId)
-                        .startIdx(r.start())
-                        .endIdx(r.end())
-                        .build())              // 구간 유효성(start<end 등)은 엔티티 생성자가 검증
-                .toList();
-
-        textBlurRangeRepository.saveAll(entities);
+        rangeRepository.saveAll(rows);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public String render(Long postId, String text) {
+    public String render(Long postId, String text, boolean unlocked) {
+        if (unlocked) {
+            return text;   // 구매/구독으로 잠금 해제된 뷰어(작성자 포함)에게는 원문 그대로
+        }
         if (text == null || text.isEmpty()) {
             return text;
         }
 
-        List<TextBlurRange> ranges = textBlurRangeRepository.findByPostIdOrderByStartIdxAsc(postId);
+        List<TextBlurRange> ranges = rangeRepository.findByPostIdOrderByStartIdxAsc(postId);
         if (ranges.isEmpty()) {
             return  text;       // 블러없는 글은 그대로 통과 (파이프라인 규칙)
         }

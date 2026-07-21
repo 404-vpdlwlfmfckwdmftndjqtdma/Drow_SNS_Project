@@ -4,45 +4,10 @@
   padding: var(--space-md) var(--margin-desktop);
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-}
-
 .title {
   font-size: 24px;
   font-weight: 700;
-  margin: 0;
-}
-
-.writeButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px var(--space-md);
-  border-radius: var(--radius-full);
-  border: none;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  box-shadow: var(--shadow-floating);
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.writeButton .material-symbols-outlined {
-  font-size: 16px;
-}
-
-.writeButton:hover {
-  background: #5b2fb8;
-}
-
-.writeButton:active {
-  transform: scale(0.97);
+  margin: 0 0 var(--space-md);
 }
 
 .filters {

@@ -152,6 +152,7 @@ public class PostService {
         if (!canView) {
             for (PostExtension extension : extensions) {
                 content = extension.render(post.getPostId(), content);
+                // TODO 어떻게 고치는지 모르겠슨...
             }
             // 블러 구간도 없는 완전 잠금 글 -> 잠금 응답으로 조기 반환
             if (content.equals(post.getContent())) {

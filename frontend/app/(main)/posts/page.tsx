@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { AUTH_CHANGE_EVENT, getCurrentUserId, isLoggedIn } from "@/lib/auth";
+import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
 import CommentButton from "@/components/comment/CommentButton";
 import PostLikeButton from "@/components/post/PostLikeButton";
 import type { ApiResponse } from "@/types";
@@ -62,7 +61,6 @@ function Thumbnail({ media }: { media: PostListItem["media"] }) {
 }
 
 export default function PostListPage() {
-  const router = useRouter();
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [error, setError] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -105,22 +103,7 @@ export default function PostListPage() {
 
   return (
     <main className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>피드</h1>
-        <Link
-          href="/posts/new"
-          className={styles.writeButton}
-          onClick={(event) => {
-            if (!isLoggedIn()) {
-              event.preventDefault();
-              router.push("/login");
-            }
-          }}
-        >
-          <span className="material-symbols-outlined">upload</span>
-          업로드
-        </Link>
-      </div>
+      <h1 className={styles.title}>피드</h1>
 
       <div className={styles.filters}>{/* TODO: 콘텐츠 타입/채널/태그 필터, 정렬 셀렉트 */}</div>
 
