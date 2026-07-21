@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import api from "@/lib/api";
+import { getCurrentUserId } from "@/lib/auth";
 import FollowButton from "@/components/follow/FollowButton";
+import SubscribeButton from "@/components/subscription/SubscribeButton";
 import PortfolioGrid, { toPortfolioPosts, type MyPagePostResponse, type PortfolioPost } from "@/components/post/PortfolioGrid";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
@@ -39,6 +41,12 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<PortfolioPost[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  // 내 프로필인지 여부. localStorage는 클라이언트에만 있으므로 마운트 후에 판단한다.
+  const [isMyProfile, setIsMyProfile] = useState(false);
+
+  useEffect(() => {
+    setIsMyProfile(getCurrentUserId() === targetUserId);
+  }, [targetUserId]);
 
   useEffect(() => {
     if (!Number.isFinite(targetUserId)) return;
@@ -92,6 +100,8 @@ export default function UserProfilePage() {
             <h1 className={styles.name}>{profile?.nickname ?? (loading ? "불러오는 중..." : "알 수 없는 사용자")}</h1>
             <div className={styles.actions}>
               <FollowButton targetUserId={targetUserId} onFollowChange={handleFollowChange} />
+              {/* 자기 채널은 구독할 수 없으므로(백엔드도 막음) 내 프로필에서는 숨긴다 */}
+              {!isMyProfile && <SubscribeButton channelId={targetUserId} />}
             </div>
           </div>
           <p className={styles.bio}>

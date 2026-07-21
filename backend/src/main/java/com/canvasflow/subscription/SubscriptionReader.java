@@ -19,7 +19,7 @@ public class SubscriptionReader {
             return false;
         return subscriptionRepository
                 .findBySubscriberIdAndChannelId(viewerId, authorId)
-                .map(Subscription::effectiveLevel)
-                .orElse(0) > 0;
+                .map(Subscription::hasPaidBenefit)
+                .orElse(false);
     }
 }

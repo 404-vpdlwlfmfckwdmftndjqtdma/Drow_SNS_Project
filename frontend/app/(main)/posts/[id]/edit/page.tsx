@@ -7,18 +7,6 @@ import MediaUploader, { type MediaItem } from "@/components/post/MediaUploader";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
-type Visibility = "public" | "subscribers";
-
-// 프론트 표시용 값 <-> 백엔드 ContentVisibility(PUBLIC/LOCKED) 매핑
-const VISIBILITY_MAP: Record<Visibility, string> = {
-  public: "PUBLIC",
-  subscribers: "LOCKED",
-};
-const VISIBILITY_MAP_REVERSE: Record<string, Visibility> = {
-  PUBLIC: "public",
-  LOCKED: "subscribers",
-};
-
 // 백엔드 PostEntity.content 컬럼 길이(@Lob, length=800)와 맞춤
 const CONTENT_MAX_LENGTH = 800;
 
@@ -27,7 +15,6 @@ interface PostDetailResponse {
   postId: number;
   userId: number;
   content: string;
-  visibility: string;
   tags: string[];
   media: MediaItem[];
   viewCount: number;
@@ -35,12 +22,12 @@ interface PostDetailResponse {
   updatedAt: string;
 }
 
+// 공개 범위 선택은 두지 않는다 (작성 화면과 동일) - 접근 제어는 블러 + 가격으로만 표현한다.
 export default function EditPostPage() {
   const router = useRouter();
   const { id: postId } = useParams<{ id: string }>();
 
   const [loading, setLoading] = useState(true);
-  const [visibility, setVisibility] = useState<Visibility>("public");
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -56,7 +43,6 @@ export default function EditPostPage() {
       .then((res) => {
         const post = res.data.data;
         setContent(post.content ?? "");
-        setVisibility(VISIBILITY_MAP_REVERSE[post.visibility] ?? "public");
         setTagsInput(post.tags.map((tag) => `#${tag}`).join(""));
         setMedia(post.media ?? []);
       })
@@ -87,7 +73,6 @@ export default function EditPostPage() {
     try {
       await api.put(`/api/v1/posts/${postId}`, {
         content,
-        visibility: VISIBILITY_MAP[visibility],
         tags,
         media,
         prices: Object.keys(prices).length > 0 ? prices : undefined,
@@ -148,37 +133,6 @@ export default function EditPostPage() {
         </div>
 
         <div>
-          <div data-panel="settings">
-            <h3>
-              <span data-icon data-tone="primary">visibility</span>
-              공개 설정
-            </h3>
-
-            <label>
-              <input type="radio" name="visibility" checked={visibility === "public"} onChange={() => setVisibility("public")} />
-              <div>
-                <p>전체 공개</p>
-                <p>누구나 볼 수 있습니다.</p>
-              </div>
-            </label>
-
-            <label>
-              <input type="radio" name="visibility" checked={visibility === "subscribers"} onChange={() => setVisibility("subscribers")} />
-              <div>
-                <p>구독자 전용</p>
-                <p>선택한 등급의 구독자만 가능.</p>
-              </div>
-            </label>
-
-            {visibility === "subscribers" && (
-              <select defaultValue="basic">
-                <option value="basic">Tier 1 (베이직)</option>
-                <option value="premium">Tier 2 (프리미엄)</option>
-                <option value="vip">Tier 3 (VIP)</option>
-              </select>
-            )}
-          </div>
-
           <button data-action="submit" disabled={submitting} onClick={handleSubmit} type="button">
             <span data-icon data-filled="true">save</span>
             {submitting ? "수정 중..." : "수정 완료"}

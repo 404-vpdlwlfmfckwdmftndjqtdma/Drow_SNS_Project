@@ -8,14 +8,16 @@ import java.util.Optional;
 
 public interface SubscriptionTierRepository extends JpaRepository<SubscriptionTier, Long> {
 
-    /** 채널의 등급 목록 (삭제 제외, 레벨 오름차순) */
-    List<SubscriptionTier> findByChannelIdAndDeletedFalseOrderByLevelAsc(Long channelId);
+    /** 채널의 구독 상품 목록 (삭제 제외, 저렴한 순) */
+    List<SubscriptionTier> findByChannelIdAndDeletedFalseOrderByMonthlyPriceAsc(Long channelId);
 
     Optional<SubscriptionTier> findByIdAndDeletedFalse(Long id);
 
-    boolean existsByChannelIdAndLevelAndDeletedFalse(Long channelId, int level);
+    /** 같은 채널에 같은 이름의 상품이 이미 있는지 (수정 시 자기 자신은 제외) */
+    boolean existsByChannelIdAndNameAndDeletedFalse(Long channelId, String name);
 
-    long countByChannelIdAndDeletedFalse(Long channelId);
+    boolean existsByChannelIdAndNameAndDeletedFalseAndIdNot(Long channelId, String name, Long id);
+
 
     Optional<SubscriptionTier> findByIdAndChannelIdAndDeletedFalse(Long id, Long channelId);
 }
