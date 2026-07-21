@@ -52,11 +52,14 @@ public class MyPageService implements MyPageFacade {
         );
     }
 
-    /** 마이페이지/타인 프로필 포트폴리오 그리드용 게시글 목록 (최신 작성순) - PostReader.getPostsByAuthorId 그대로 매핑. */
+    /**
+     * 마이페이지/타인 프로필 포트폴리오 그리드용 게시글 목록 (최신 작성순) - PostReader.getPostsByAuthorId 그대로 매핑.
+     * viewerId를 그대로 전달해서 post 쪽 렌더 파이프라인(블러 등)이 보는 사람 기준으로 콘텐츠를 가공하게 한다.
+     */
     @Override
     @Transactional(readOnly = true)
-    public List<MyPagePostResponse> getPosts(Long userId) {
-        return postReader.getPostsByAuthorId(userId).stream()
+    public List<MyPagePostResponse> getPosts(Long authorId, Long viewerId) {
+        return postReader.getPostsByAuthorId(authorId, viewerId).stream()
                 .map(post -> new MyPagePostResponse(
                         post.postId(),
                         post.content(),
