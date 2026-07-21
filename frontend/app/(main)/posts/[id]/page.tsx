@@ -29,6 +29,32 @@ const VISIBILITY_LABEL: Record<string, string> = {
   LOCKED: "구독자 전용",
 };
 
+// ImageBlurExtension이 블러 걸 때 URL에 이 문자열을 끼워넣는다 (백엔드 posts/imageblur 참고).
+// 원본/블러본을 서버가 URL 자체로 구분해서 내려주기 때문에, 프론트는 URL만 보고 판단하면 된다.
+const BLUR_URL_MARKER = "/upload/e_blur:";
+
+function isBlurredImageUrl(url: string) {
+  return url.includes(BLUR_URL_MARKER);
+}
+
+// 백엔드가 블러 구간을 ● 로 치환해서 보내주므로(TextBlurExtension), 연속된 ● 구간만 클릭 가능하게 감싼다.
+function renderContentWithBlurClick(content: string, onBlurredClick: () => void) {
+  return content.split(/(●+)/g).map((part, index) =>
+    part.startsWith("●") ? (
+      <button
+        key={index}
+        type="button"
+        className={styles.blurredTextSpan}
+        onClick={onBlurredClick}
+      >
+        {part}
+      </button>
+    ) : (
+      <span key={index}>{part}</span>
+    )
+  );
+}
+
 // 게시글 상세. 구독 잠금(LOCKED) 열람 제한은 아직 서버에 연동 전이라(subscription 도메인 연동 대기 중)
 // 지금은 공개 범위 뱃지만 보여주고, 실제 블러/잠금 UI는 나중에 붙인다.
 export default function PostDetailPage() {
@@ -40,6 +66,12 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mediaIndex, setMediaIndex] = useState(0);
+
+  // TODO(구매 모듈 담당자): 아래 openPurchase(capability)를 실제 구매 모듈(모달/패널)
+  // 여는 걸로 교체. 필요한 정보는 postId(=post.postId)와 capability("textBlur"|"imageBlur")뿐.
+  const openPurchase = (capability: "textBlur" | "imageBlur") => {
+    alert(`구매 기능은 준비 중입니다 (postId: ${postId}, capability: ${capability})`);
+  };
 
   useEffect(() => {
     const syncCurrentUser = () => setCurrentUserId(getCurrentUserId());
@@ -108,16 +140,6 @@ export default function PostDetailPage() {
               </div>
             </Link>
             <span className={styles.visibilityTag}>{VISIBILITY_LABEL[post.visibility]}</span>
-            {post.visibility === "LOCKED" && !isOwner && (
-              // TODO: 구매 연동 전까지 자리만 잡아둔 버튼
-              <button
-                type="button"
-                className={styles.purchaseButton}
-                onClick={() => alert("구매 기능은 준비 중입니다")}
-              >
-                구매하기
-              </button>
-            )}
           </div>
 
           {post.media.length > 0 && (
@@ -125,6 +147,14 @@ export default function PostDetailPage() {
               <div className={styles.mediaItem}>
                 {post.media[mediaIndex].mediaType === "VIDEO" ? (
                   <video src={post.media[mediaIndex].url} controls controlsList="nodownload" />
+                ) : isBlurredImageUrl(post.media[mediaIndex].url) ? (
+                  <button
+                    type="button"
+                    className={styles.blurredImageButton}
+                    onClick={() => openPurchase("imageBlur")}
+                  >
+                    <img src={post.media[mediaIndex].url} alt="" />
+                  </button>
                 ) : (
                   <img src={post.media[mediaIndex].url} alt="" />
                 )}
@@ -156,7 +186,11 @@ export default function PostDetailPage() {
             </section>
           )}
 
-          {post.content && <p className={styles.content}>{post.content}</p>}
+          {post.content && (
+            <p className={styles.content}>
+              {renderContentWithBlurClick(post.content, () => openPurchase("textBlur"))}
+            </p>
+          )}
 
           {post.tags.length > 0 && (
             <div className={styles.tags}>

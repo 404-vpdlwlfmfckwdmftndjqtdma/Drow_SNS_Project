@@ -2,6 +2,7 @@ package com.canvasflow.post.service;
 
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
+import com.canvasflow.post.FollowingPolicy;
 import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.dto.PostViewDto;
 import com.canvasflow.post.entity.PostEntity;
