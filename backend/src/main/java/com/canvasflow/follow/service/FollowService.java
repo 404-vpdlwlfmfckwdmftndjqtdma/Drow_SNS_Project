@@ -4,6 +4,9 @@ import com.canvasflow.follow.FollowFacade;
 import com.canvasflow.follow.dto.FollowUserResponse;
 import com.canvasflow.follow.entity.Follow;
 import com.canvasflow.follow.repository.FollowRepository;
+import com.canvasflow.notification.NotificationFacade;
+import com.canvasflow.notification.NotificationTargetType;
+import com.canvasflow.notification.NotificationType;
 import com.canvasflow.user.UserFacade;
 import com.canvasflow.user.UserProfileView;
 import com.canvasflow.global.exception.CanvasflowException;
@@ -28,6 +31,7 @@ public class FollowService implements FollowFacade {
 
     private final FollowRepository followRepository;
     private final UserFacade userFacade;
+    private final NotificationFacade notificationFacade;
 
     @Override
     @Transactional
@@ -43,7 +47,20 @@ public class FollowService implements FollowFacade {
         }
 
         followRepository.save(Follow.builder().followerId(followerId).followingId(followingId).build());
-        // TODO: NotificationService 연동 - "OO님이 나를 팔로우했습니다" 알림 저장
+        notifyNewFollower(followerId, followingId);
+    }
+
+    // 알림 저장 실패가 팔로우 자체를 막으면 안 되는 부가 효과라 예외를 삼킨다 (comment/like 모듈과 동일한 패턴).
+    private void notifyNewFollower(Long followerId, Long followingId) {
+        try {
+            String followerNickname = userFacade.getNicknameOrThrow(followerId);
+            notificationFacade.notify(
+                    followingId, followerId, NotificationType.NEW_FOLLOWER,
+                    NotificationTargetType.USER, followerId,
+                    followerNickname + "님이 회원님을 팔로우하기 시작했습니다.");
+        } catch (Exception e) {
+            // 알림 저장 실패는 무시 - 다음 접속 시 팔로워 목록으로 확인 가능
+        }
     }
 
     @Override
@@ -92,6 +109,16 @@ public class FollowService implements FollowFacade {
                 .map(follow -> profilesById.get(follow.getFollowingId()))
                 .filter(profile -> profile != null)
                 .map(profile -> new FollowUserResponse(profile.id(), profile.nickname(), profile.profileImageUrl(), profile.bio()))
+                .toList();
+    }
+
+    // feed 모듈이 "팔로우한 사람들 피드"용으로 추가함 - follow 담당자 확인 부탁드립니다.
+    // 프로필 조회 없이 id만 반환한다 (feed는 이 id로 PostReader만 호출하면 되므로 불필요한 조회 생략).
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getFollowingIds(Long userId) {
+        return followRepository.findByFollowerIdOrderByCreatedAtDesc(userId).stream()
+                .map(Follow::getFollowingId)
                 .toList();
     }
 

@@ -1,6 +1,7 @@
 package com.canvasflow.user;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,4 +44,8 @@ public interface UserFacade {
 
     /** 비밀번호 재설정. 평문 비밀번호만 넘기면 암호화는 이 메서드 내부에서 처리한다. */
     void updatePassword(Long userId, String rawPassword);
+
+    // search 모듈이 "유저 검색"용으로 추가함 - user 담당자 확인 부탁드립니다.
+    // 부분/대소문자 무관 닉네임 일치, 닉네임 가나다순. email은 포함하지 않는다.
+    List<UserProfileView> searchByNickname(String keyword);
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { type CommentDeletedEvent, type CommentLikeCountEvent } from "@/lib/commentStream";
 import { subscribeToPostFeed } from "@/lib/postFeedStream";
+import CommentAvatar from "./CommentAvatar";
 import CommentRow, { type CommentActions, type CommentItem } from "./CommentRow";
 import styles from "./CommentModal.module.css";
 
@@ -21,6 +22,11 @@ interface PageEnvelope<T> {
   size: number;
 }
 
+interface MyProfile {
+  nickname: string;
+  profileImageUrl: string | null;
+}
+
 interface CommentModalProps {
   postId: number;
   userId: number | null;
@@ -35,11 +41,26 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
   const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
   const [editDrafts, setEditDrafts] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
+  const [myProfile, setMyProfile] = useState<MyProfile | null>(null);
 
   useEffect(() => {
     fetchComments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
+
+  // 입력창에 내 아바타를 보여주기 위한 최소 프로필 조회 (닉네임/프로필사진만 사용, 이메일은 화면에 노출하지 않음).
+  useEffect(() => {
+    if (userId == null) {
+      setMyProfile(null);
+      return;
+    }
+    api
+      .get<ApiEnvelope<MyProfile>>(`/api/v1/users/${userId}`)
+      .then((res) => setMyProfile({ nickname: res.data.data.nickname, profileImageUrl: res.data.data.profileImageUrl }))
+      .catch(() => {
+        // 실패해도 입력 자체는 가능해야 하므로 조용히 무시 (아바타는 이니셜 폴백으로 표시됨)
+      });
+  }, [userId]);
 
   useEffect(() => {
     return subscribeToPostFeed(postId, {
@@ -133,6 +154,12 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
     }
   }
 
+  function submitRoot() {
+    if (!rootContent.trim()) return;
+    createComment(rootContent);
+    setRootContent("");
+  }
+
   const actions: CommentActions = {
     replyDrafts,
     editDrafts,
@@ -174,33 +201,13 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
-          <span className={styles.title}>댓글</span>
+          <span className={styles.title}>댓글 {countAll(comments)}</span>
           <button className={styles.closeBtn} onClick={onClose} aria-label="닫기">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         <div className={styles.body}>
-          <div className={styles.row}>
-            <input
-              className={styles.input}
-              placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요"}
-              value={rootContent}
-              onChange={(e) => setRootContent(e.target.value)}
-              disabled={userId == null}
-            />
-            <button
-              className={styles.submit}
-              disabled={userId == null}
-              onClick={() => {
-                createComment(rootContent);
-                setRootContent("");
-              }}
-            >
-              등록
-            </button>
-          </div>
-
           {loading ? (
             <p className={styles.empty}>불러오는 중...</p>
           ) : comments.length === 0 ? (
@@ -211,9 +218,43 @@ export default function CommentModal({ postId, userId, onClose }: CommentModalPr
             ))
           )}
         </div>
+
+        <div className={styles.composer}>
+          <CommentAvatar
+            userId={userId ?? 0}
+            nickname={myProfile?.nickname ?? "나"}
+            profileImageUrl={myProfile?.profileImageUrl}
+            size={32}
+            linked={false}
+          />
+          <input
+            className={styles.composerInput}
+            placeholder={userId == null ? "로그인 후 댓글을 작성할 수 있습니다" : "댓글을 입력하세요..."}
+            value={rootContent}
+            onChange={(e) => setRootContent(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitRoot();
+            }}
+            disabled={userId == null}
+          />
+          <button
+            className={styles.sendBtn}
+            disabled={userId == null || !rootContent.trim()}
+            onClick={submitRoot}
+            aria-label="댓글 등록"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              send
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   );
+}
+
+function countAll(list: CommentItem[]): number {
+  return list.reduce((sum, c) => sum + 1 + countAll(c.replies), 0);
 }
 
 function insertComment(list: CommentItem[], comment: CommentItem): CommentItem[] {
@@ -237,6 +278,7 @@ function mergeUpdated(list: CommentItem[], updated: CommentItem): CommentItem[] 
           likeCount: updated.likeCount,
           likedByMe: updated.likedByMe,
           writerNickname: updated.writerNickname,
+          writerProfileImageUrl: updated.writerProfileImageUrl,
         }
       : { ...c, replies: mergeUpdated(c.replies, updated) }
   );

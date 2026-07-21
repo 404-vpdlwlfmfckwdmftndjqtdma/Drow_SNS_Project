@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * 댓글/좋아요/팔로우/신규구독 발생 시 각 도메인 서비스에서 이 메서드를 호출해 알림을 저장한다.
@@ -112,7 +113,19 @@ public class NotificationService {
     public void markAsRead(Long notificationId, Long userId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.INVALID_INPUT_VALUE));
-        // TODO: notification.getReceiver().getId().equals(userId) 검증
+        if (!notification.getReceiverId().equals(userId)) {
+            throw new CanvasflowException(ErrorCode.FORBIDDEN);
+        }
         notification.markAsRead();
+    }
+
+    // 선택 삭제. receiverId까지 같이 걸어서 지우므로 남의 알림 id가 섞여 와도 그 부분만 조용히 무시된다
+    // (전체를 막고 예외를 던지기보다, 내 것만 지우고 넘어가는 편이 UX상 자연스럽다고 판단).
+    @Transactional
+    public void deleteNotifications(List<Long> notificationIds, Long userId) {
+        if (notificationIds.isEmpty()) {
+            return;
+        }
+        notificationRepository.deleteByIdInAndReceiverId(notificationIds, userId);
     }
 }

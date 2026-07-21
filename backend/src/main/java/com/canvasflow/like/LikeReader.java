@@ -44,6 +44,12 @@ public class LikeReader {
         return new LikeSummary(counts, likedByViewer);
     }
 
+    // feed 모듈의 "내가 좋아요한 글" 목록용으로 추가함 - like 담당자 확인 부탁드립니다.
+    // 이 유저가 좋아요를 누른 게시글 id를 최근에 누른 순으로 반환한다.
+    public List<Long> findLikedPostIds(Long userId) {
+        return likeRepository.findLikedTargetIds(userId, LikeTargetType.POST);
+    }
+
     public record LikeSummary(Map<Long, Long> countsByTargetId, Set<Long> likedTargetIds) {
         public long countOf(Long targetId) {
             return countsByTargetId.getOrDefault(targetId, 0L);
