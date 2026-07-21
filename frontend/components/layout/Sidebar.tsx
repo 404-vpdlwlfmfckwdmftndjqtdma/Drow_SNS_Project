@@ -14,6 +14,7 @@ const ACCOUNT_NAV_ITEMS = [
   { href: "/mypage/following", label: "팔로우", icon: "group", requiresAuth: true },
   { href: "/mypage/likes", label: "좋아요", icon: "favorite", requiresAuth: true },
   { href: "/mypage/comments", label: "댓글", icon: "chat_bubble", requiresAuth: true },
+  { href: "/mypage/tiers", label: "구독 등록", icon: "sell", requiresAuth: true },
   { href: "/payment", label: "결제", icon: "credit_card", requiresAuth: true },
 ];
 

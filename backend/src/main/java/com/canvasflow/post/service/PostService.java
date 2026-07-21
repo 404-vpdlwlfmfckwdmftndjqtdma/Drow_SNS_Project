@@ -166,14 +166,20 @@ public class PostService {
 
         post.update(postRequestDto.content(), postRequestDto.visibility(), postRequestDto.tags());
 
-        //블러처리
-        Map<String, Object> extensionData = postRequestDto.extensions() != null ? postRequestDto.extensions() : Map.of();
-        for(PostExtension extension : extensions) {
-            extension.apply(post.getPostId(), extensionData.get(extension.key()));
+        // 블러/가격표는 "보낸 경우에만" 교체한다.
+        // 요청에 아예 없으면(null) 손대지 않는다 - 예전에는 없으면 전부 삭제로 처리해서,
+        // extensions를 보내지 않는 수정 화면에서 글만 고쳐도 블러가 통째로 사라졌다.
+        // 지우고 싶으면 빈 값({} 또는 [])을 명시적으로 보내면 된다.
+        if (postRequestDto.extensions() != null) {
+            Map<String, Object> extensionData = postRequestDto.extensions();
+            for (PostExtension extension : extensions) {
+                extension.apply(post.getPostId(), extensionData.get(extension.key()));
+            }
         }
 
-        //가격표도 전체 교체 (미디어와 같은 규칙)
-        replaceProducts(postId, postRequestDto.prices());
+        if (postRequestDto.prices() != null) {
+            replaceProducts(postId, postRequestDto.prices());
+        }
 
         //이미지 수정은 지우고 새로 저장 방식으로(프론트에서는 기존의 사진들도 떠 추가/삭제 가능, 서버에서는 지우고 새로 채워넣는 방식)
         postMediaRepository.deleteAllByPostId(postId);

@@ -10,7 +10,6 @@ public class SubscriptionTierDtos {
 
     public record TierCreateRequest(
             @NotBlank @Size(max = 30) String name,
-            @Min(1) @Max(10) int level,
             @NotNull @DecimalMin("0") BigDecimal monthlyPrice,
             @Size(max = 200) String description
     ) {}
@@ -24,13 +23,12 @@ public class SubscriptionTierDtos {
     public record TierResponse(
             Long id,
             String name,
-            int level,
             BigDecimal monthlyPrice,
             String description
     ) {
         public static TierResponse from(SubscriptionTier tier) {
             return new TierResponse(
-                    tier.getId(), tier.getName(), tier.getLevel(),
+                    tier.getId(), tier.getName(),
                     tier.getMonthlyPrice(), tier.getDescription());
         }
 

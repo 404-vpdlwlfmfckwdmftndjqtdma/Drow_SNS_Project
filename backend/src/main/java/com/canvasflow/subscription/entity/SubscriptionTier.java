@@ -17,12 +17,14 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(
-        name = "subscription_tiers",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_channel_level",
-                columnNames = {"channel_id", "level"})
-)
+/*
+ * 실제 DB에는 "삭제되지 않은 것들 중에서만" 이름 중복을 막는 부분 유니크 인덱스가 걸려 있다:
+ *   CREATE UNIQUE INDEX uk_channel_tier_name
+ *       ON subscription_tiers (channel_id, name) WHERE deleted = false;
+ * JPA의 @UniqueConstraint로는 조건부 인덱스를 표현할 수 없어 여기 선언하지 않는다.
+ * (선언하면 지웠던 이름을 다시 쓸 수 없게 되어 소프트 삭제와 충돌한다.)
+ */
+@Table(name = "subscription_tiers")
 public class SubscriptionTier extends BaseTimeEntity {
 
     @Id
@@ -33,11 +35,7 @@ public class SubscriptionTier extends BaseTimeEntity {
     private Long channelId;
 
     @Column(nullable = false, length = 30)
-    private String name;                // 등급 이름 (팬, 서포터, VIP ...)
-
-    /** 숫자가 클수록 상위 등급. 판정: 구독자 level >= 게시물 요구 level */
-    @Column(nullable = false)
-    private int level;
+    private String name;                // 상품 이름 (팬, 서포터, VIP ...)
 
     @Column(nullable = false, precision = 10, scale = 0)
     private BigDecimal monthlyPrice;    // 월 구독료
@@ -49,11 +47,10 @@ public class SubscriptionTier extends BaseTimeEntity {
     private boolean deleted;            // 구독자가 남아있을 수 있으므로 소프트 삭제
 
     @Builder
-    public SubscriptionTier(Long channelId, String name, int level,
+    public SubscriptionTier(Long channelId, String name,
                             BigDecimal monthlyPrice, String description) {
         this.channelId = channelId;
         this.name = name;
-        this.level = level;
         this.monthlyPrice = monthlyPrice;
         this.description = description;
         this.deleted = false;

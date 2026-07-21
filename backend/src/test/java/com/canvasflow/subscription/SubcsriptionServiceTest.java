@@ -39,7 +39,7 @@ import static org.mockito.Mockito.verify;
  *
  * 등장인물:
  *  - 구독자 userId = 1
- *  - 채널 10번, 등급: 서포터(id=5, level 2)
+ *  - 채널 10번, 구독 상품: 서포터(id=5, 월 5,000원)
  */
 @ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
@@ -69,7 +69,6 @@ class SubscriptionServiceTest {
         return SubscriptionTier.builder()
                 .channelId(CHANNEL_ID)
                 .name("서포터")
-                .level(2)
                 .monthlyPrice(BigDecimal.valueOf(5000))
                 .build();
     }
@@ -156,7 +155,7 @@ class SubscriptionServiceTest {
         userExists();
         noExistingSubscription();
         SubscriptionTier freeTier = SubscriptionTier.builder()
-                .channelId(CHANNEL_ID).name("무료팬").level(1)
+                .channelId(CHANNEL_ID).name("무료팬")
                 .monthlyPrice(BigDecimal.ZERO).build();
         given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.of(freeTier));
         willAnswer(inv -> inv.getArgument(0))
@@ -173,7 +172,7 @@ class SubscriptionServiceTest {
         Subscription saved = captor.getValue();
         assertThat(saved.getTier()).isNull();
         assertThat(saved.isBenefitActive()).isTrue();   // 팔로우로서는 유효
-        assertThat(saved.effectiveLevel()).isZero();    // 블러 해제 혜택은 없음
+        assertThat(saved.hasPaidBenefit()).isFalse();   // 블러 해제 혜택은 없음
     }
 
     @Test
@@ -261,7 +260,7 @@ class SubscriptionServiceTest {
         userExists();
         SubscriptionTier oldTier = supporterTier();
         SubscriptionTier newTier = SubscriptionTier.builder()
-                .channelId(CHANNEL_ID).name("VIP").level(3)
+                .channelId(CHANNEL_ID).name("VIP")
                 .monthlyPrice(BigDecimal.valueOf(10000)).build();
 
         Subscription canceled = existingSubscription(oldTier);
@@ -280,10 +279,10 @@ class SubscriptionServiceTest {
         assertThat(canceled.getTier()).isEqualTo(newTier);  // 등급 갈아타기도 반영
     }
 
-    // ===== 3-1. 혜택 만료 판정 (effectiveLevel) =====
+    // ===== 3-1. 혜택 만료 판정 (hasPaidBenefit) =====
 
     @Test
-    @DisplayName("이용권이 만료되면 등급 레벨이 0이 된다 (블러가 다시 잠긴다)")
+    @DisplayName("이용권이 만료되면 혜택이 사라진다 (블러가 다시 잠긴다)")
     void 만료된_구독은_레벨_0() {
         SubscriptionTier tier = supporterTier();
         Subscription sub = existingSubscription(tier);
@@ -293,38 +292,38 @@ class SubscriptionServiceTest {
 
         assertThat(sub.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
         assertThat(sub.isBenefitActive()).isFalse();
-        assertThat(sub.effectiveLevel()).isZero();   // status만 보면 2가 나오던 버그 자리
+        assertThat(sub.hasPaidBenefit()).isFalse();   // status만 보면 true가 나오던 버그 자리
     }
 
     @Test
-    @DisplayName("이용권 기간이 남아 있으면 등급 레벨이 유지된다")
+    @DisplayName("이용권 기간이 남아 있으면 혜택이 유지된다")
     void 기간_남은_구독은_레벨_유지() {
         SubscriptionTier tier = supporterTier();
         Subscription sub = existingSubscription(tier);
         sub.startPaidPeriod(tier);   // 지금부터 30일
 
         assertThat(sub.isBenefitActive()).isTrue();
-        assertThat(sub.effectiveLevel()).isEqualTo(2);
+        assertThat(sub.hasPaidBenefit()).isTrue();
     }
 
     @Test
-    @DisplayName("해지한 구독은 기간이 남아 있어도 레벨이 0이다")
+    @DisplayName("해지한 구독은 기간이 남아 있어도 혜택이 없다")
     void 해지된_구독은_레벨_0() {
         SubscriptionTier tier = supporterTier();
         Subscription sub = existingSubscription(tier);
         sub.startPaidPeriod(tier);
         sub.cancel();
 
-        assertThat(sub.effectiveLevel()).isZero();
+        assertThat(sub.hasPaidBenefit()).isFalse();
     }
 
     @Test
-    @DisplayName("무료 구독(등급 없음)은 레벨이 0이라 블러가 풀리지 않는다")
+    @DisplayName("무료 구독(등급 없음)은 혜택이 없어 블러가 풀리지 않는다")
     void 무료_구독은_레벨_0() {
         Subscription sub = existingSubscription(null);
 
         assertThat(sub.isBenefitActive()).isTrue();   // 팔로우로서는 유효하지만
-        assertThat(sub.effectiveLevel()).isZero();    // 블러 해제 혜택은 없다
+        assertThat(sub.hasPaidBenefit()).isFalse();    // 블러 해제 혜택은 없다
     }
 
     // ===== 4. 해지 =====

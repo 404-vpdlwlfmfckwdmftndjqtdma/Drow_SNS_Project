@@ -115,7 +115,7 @@ export default function SubscribeButton({ onDone }: { onDone?: () => void }) {
           <option value="">무료 구독 (등급 없음 · 차감 없음)</option>
           {tiers?.map((tier) => (
             <option key={tier.id} value={tier.id}>
-              Lv.{tier.level} {tier.name} · 월 {tier.monthlyPrice.toLocaleString("ko-KR")}원
+              {tier.name} · 월 {tier.monthlyPrice.toLocaleString("ko-KR")}원
             </option>
           ))}
         </select>

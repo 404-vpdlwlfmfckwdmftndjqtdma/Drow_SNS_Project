@@ -58,14 +58,14 @@ public class Subscription extends BaseTimeEntity {
     }
 
     /**
-     * 현재 유효한 등급 레벨. 해지했거나 이용권이 만료됐거나 무료 구독이면 0.
+     * 유료 구독 혜택이 지금 유효한가 (= 블러가 풀리는가).
      *
      * 반드시 isBenefitActive()를 거쳐야 한다 - status만 보면 30일 이용권이 끝난 뒤에도
      * (해지하지 않는 한 status는 계속 ACTIVE라) 혜택이 영구히 유지되는 버그가 된다.
+     * 무료 구독(tier == null)은 팔로우 수준이라 혜택이 없다.
      */
-    public int effectiveLevel() {
-        if (!isBenefitActive()) return 0;
-        return tier == null ? 0 : tier.getLevel();
+    public boolean hasPaidBenefit() {
+        return isBenefitActive() && tier != null;
     }
 
     public void cancel() {

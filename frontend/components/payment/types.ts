@@ -44,11 +44,10 @@ export interface PurchaseResponse {
   purchasedAt: string;
 }
 
-/** GET /api/v1/channels/{channelId}/tiers */
+/** GET /api/v1/channels/{channelId}/tiers - 작가가 등록한 구독 상품 */
 export interface TierResponse {
   id: number;
   name: string;
-  level: number;
   monthlyPrice: number;
   description: string | null;
 }

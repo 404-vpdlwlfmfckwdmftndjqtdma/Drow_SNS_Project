@@ -2,7 +2,6 @@ package com.canvasflow.post.service;
 
 import com.canvasflow.global.media.MediaType;
 import com.canvasflow.post.PostReader;
-import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.repository.PostProductRepository;
 import com.canvasflow.post.repository.PostRepository;

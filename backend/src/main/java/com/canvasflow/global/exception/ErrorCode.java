@@ -44,8 +44,7 @@ public enum ErrorCode {
     SUBSCRIPTION_REQUIRED(HttpStatus.FORBIDDEN, "SUB_003", "구독이 필요한 콘텐츠입니다."),
     TIER_NOT_FOUND(HttpStatus.NOT_FOUND, "SUB_004", "존재하지 않는 구독 등급입니다."),
     TIER_NOT_IN_CHANNEL(HttpStatus.BAD_REQUEST, "SUB_005", "해당 채널의 구독 등급이 아닙니다."),
-    TIER_LEVEL_DUPLICATED(HttpStatus.CONFLICT, "SUB_006", "이미 존재하는 등급 레벨입니다."),
-    TIER_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "SUB_007", "등급은 최대 5개까지 만들 수 있습니다."),
+    TIER_NAME_DUPLICATED(HttpStatus.CONFLICT, "SUB_006", "이미 같은 이름의 구독 상품이 있습니다."),
 
     // Purchase
     ALREADY_PURCHASED(HttpStatus.CONFLICT, "PUR_001", "이미 구매한 게시물입니다."),
