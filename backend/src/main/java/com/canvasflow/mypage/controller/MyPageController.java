@@ -47,18 +47,25 @@ public class MyPageController {
         return ResponseEntity.ok(ApiResponse.ok(myPageService.getSummary(userId)));
     }
 
-    /** 내 포트폴리오 그리드용 게시글 목록 (프론트 PortfolioGrid). */
+    /** 내 포트폴리오 그리드용 게시글 목록 (프론트 PortfolioGrid). 본인 글이라 블러 없이 원문이 나간다. */
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<List<MyPagePostResponse>>> getMyPosts(@AuthenticationPrincipal AuthMember authMember) {
         if (authMember == null) {
             throw new CanvasflowException(ErrorCode.UNAUTHORIZED);
         }
-        return ResponseEntity.ok(ApiResponse.ok(myPageService.getPosts(authMember.userId())));
+        Long me = authMember.userId();
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.getPosts(me, me)));
     }
 
-    /** 타인 프로필 포트폴리오 그리드용 게시글 목록. 로그인 여부와 무관하게 누구나 조회 가능. */
+    /**
+     * 타인 프로필 포트폴리오 그리드용 게시글 목록. 로그인 여부와 무관하게 누구나 조회 가능.
+     * 단, 열람자 기준으로 블러가 적용되므로 viewerId를 반드시 함께 넘긴다(비로그인은 null).
+     */
     @GetMapping("/{userId}/posts")
-    public ResponseEntity<ApiResponse<List<MyPagePostResponse>>> getPostsByUserId(@PathVariable Long userId) {
-        return ResponseEntity.ok(ApiResponse.ok(myPageService.getPosts(userId)));
+    public ResponseEntity<ApiResponse<List<MyPagePostResponse>>> getPostsByUserId(
+            @AuthenticationPrincipal AuthMember authMember,
+            @PathVariable Long userId) {
+        Long viewerId = authMember != null ? authMember.userId() : null;
+        return ResponseEntity.ok(ApiResponse.ok(myPageService.getPosts(userId, viewerId)));
     }
 }
