@@ -2,6 +2,7 @@ package com.canvasflow.post.service;
 
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
+import com.canvasflow.post.FollowingPolicy;
 import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.dto.PostViewDto;
 import com.canvasflow.post.entity.PostEntity;
@@ -19,6 +20,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import com.canvasflow.post.PostExtension;
 
@@ -39,6 +42,9 @@ public class PostService {
     private final UserFacade userFacade;
     private final List<PostExtension> extensions;
     private final PostViewAssembler postViewAssembler;
+
+    //피드목록에서 팔로워의 글이 먼저 뜨도록. Optional로 처리해 코드 구현 없어도 터지지 않게 함
+    private final Optional<FollowingPolicy> followingPolicy;
 
 
     //글 작성
@@ -106,8 +112,18 @@ public class PostService {
     @Transactional(readOnly = true)
     public List<PostViewDto> getAllPosts(Long viewerId) {
 
-        // 1) 재료 준비: 삭제(soft delete) 안 된 글을 최신순으로 전부 가져온다. 아직 원문 그대로인 "날것" 상태.
-        List<PostEntity> posts = postRepository.findVisiblePosts();
+        //팔로우 한 사람의 게시글이 먼저 보이도록
+        Set<Long> followingIds = followingPolicy
+                .map(policy -> policy.followingIds(viewerId))
+                .orElse(Set.of());
+        //나 자신도 팔로우 한 사람에 포함
+        if (viewerId != null) {
+            followingIds = new HashSet<>(followingIds);
+            followingIds.add(viewerId);
+        }
+
+        // 1) 재료 준비: 삭제(soft delete) 안 된 글을 팔로우 우선순위+최신순으로 가져온다. 아직 원문 그대로인 "날것" 상태.
+        List<PostEntity> posts = postRepository.findVisiblePosts(followingIds);
 
         // 2) 가공: media·닉네임을 배치로 붙이고, 블러 등 렌더 파이프라인을 거쳐
         //    viewerId에게 보여줘도 안전한 형태(비구독자는 블러 구간 ● 치환)로 조립해서 반환한다.

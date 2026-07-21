@@ -98,6 +98,54 @@
   background: rgba(107, 56, 212, 0.08);
 }
 
+.purchaseButton {
+  display: block;
+  margin-top: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.purchaseButton:hover {
+  background: #5b2fb8;
+}
+
+/* 텍스트 블러(● 구간) 클릭 영역 - 글자처럼 보이되 클릭 가능하다는 걸 알 수 있게 밑줄만 */
+.blurredTextSpan {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+/* 블러된 사진 전체를 누르면 구매 버튼이 뜨게 하는 클릭 영역 */
+.blurredImageButton {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.blurredImageButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .actions {
   display: flex;
   gap: var(--space-sm);

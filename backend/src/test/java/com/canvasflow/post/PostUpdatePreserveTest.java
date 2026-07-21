@@ -74,7 +74,7 @@ class PostUpdatePreserveTest {
         extension = spy(new RecordingExtension());
         postService = new PostService(
                 postRepository, postMediaRepository, postProductRepository,
-                userFacade, List.of(extension), postViewAssembler);
+                userFacade, List.of(extension), postViewAssembler, Optional.empty());
     }
 
     /** apply 호출 여부만 기록하는 테스트용 확장 모듈 */

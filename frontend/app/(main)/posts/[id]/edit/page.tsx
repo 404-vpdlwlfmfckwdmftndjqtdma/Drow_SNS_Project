@@ -31,10 +31,12 @@ export default function EditPostPage() {
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [media, setMedia] = useState<MediaItem[]>([]);
+  const [textBlurPrice, setTextBlurPrice] = useState("");
+  const [imageBlurPrice, setImageBlurPrice] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // 기존 글 값 불러와서 폼 채우기. media도 여기서 그대로 value로 넘겨받아야
-  // 저장할 때 "지우고 다시 채우기" 방식에서 기존 사진이 안 날아감.
+  // 저장할 때 지우고 다시 채우기 방식에서 기존 사진이 안 날아감.
   useEffect(() => {
     api
       .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`)
@@ -58,12 +60,22 @@ export default function EditPostPage() {
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
 
+    // 0원 이하/빈 값은 안 보내서 백엔드가 "판매 안 함"으로 처리하게 둔다.
+    const prices: Record<string, number> = {};
+    if (Number(textBlurPrice) > 0) {
+      prices.textBlur = Number(textBlurPrice);
+    }
+    if (Number(imageBlurPrice) > 0) {
+      prices.imageBlur = Number(imageBlurPrice);
+    }
+
     setSubmitting(true);
     try {
       await api.put(`/api/v1/posts/${postId}`, {
         content,
         tags,
         media,
+        prices: Object.keys(prices).length > 0 ? prices : undefined,
       });
       router.push(`/posts/${postId}`);
     } catch {
@@ -98,6 +110,24 @@ export default function EditPostPage() {
               placeholder="태그를 #으로 구분해서 입력하세요 (예: #일상#그림)"
               type="text"
               value={tagsInput}
+            />
+
+            {/* 수정 시 블러 선택은 초기화되므로(다시 선택 필요), 가격만 별도로 입력받는다 */}
+            <input
+              className={styles.priceInput}
+              type="number"
+              min={0}
+              placeholder="텍스트 블러 해제 가격 (원, 블러 있을 때만)"
+              value={textBlurPrice}
+              onChange={(event) => setTextBlurPrice(event.target.value)}
+            />
+            <input
+              className={styles.priceInput}
+              type="number"
+              min={0}
+              placeholder="이미지 블러 해제 가격 (원, 블러 있을 때만)"
+              value={imageBlurPrice}
+              onChange={(event) => setImageBlurPrice(event.target.value)}
             />
           </div>
         </div>
