@@ -12,6 +12,8 @@ import java.util.Map;
 public record PostRequestDto(
         String content,
         ContentVisibility visibility,
+        int requiresdlevel,                 // <- 추가 LOCKED일 때 요구 등급)
+        BigDecimal singlePurchasePrice,     // (null = 단건 구매 불가)
         List<String> tags,
         List<MediaItem> media,
 
