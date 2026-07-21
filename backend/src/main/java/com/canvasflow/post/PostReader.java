@@ -36,8 +36,10 @@ public interface PostReader {
 
     // mypage 모듈이 마이페이지/타인 프로필의 포트폴리오 그리드(PortfolioGrid)를 실제 게시글로 채우려고 추가함
     // - post 담당자 확인 부탁드립니다. 최신 작성순으로 반환하고, 썸네일은 media의 첫 번째(sortOrder 기준) 항목이다.
+    // viewerId 기준으로 PostViewAssembler 렌더 파이프라인(블러 등)을 거친 뒤 썸네일/본문을 고른다 -
+    // 잠금 콘텐츠가 타인 프로필/마이페이지 포트폴리오 그리드에서 원문으로 새지 않도록 하기 위함.
     // (구현은 PostReaderImpl.getPostsByAuthorId 참고, PostRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc 사용)
-    List<PostSummary> getPostsByAuthorId(Long userId);
+    List<PostSummary> getPostsByAuthorId(Long userId, Long viewerId);
 
     // mypage 모듈이 마이페이지 "조회수" 통계를 채우려고 추가함 - post 담당자 확인 부탁드립니다.
     // (구현은 PostReaderImpl.sumViewCountByAuthorId 참고, PostRepository.sumViewCountByUserId 사용)
