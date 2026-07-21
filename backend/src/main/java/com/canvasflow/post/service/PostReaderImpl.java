@@ -4,8 +4,6 @@ import com.canvasflow.global.media.MediaType;
 import com.canvasflow.post.PostReader;
 import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.entity.PostEntity;
-import com.canvasflow.post.entity.PostMediaEntity;
-import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostProductRepository;
 import com.canvasflow.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ import java.util.stream.Collectors;
 public class PostReaderImpl implements PostReader {
 
     private final PostRepository postRepository;
-    private final PostMediaRepository postMediaRepository;
     private final PostProductRepository postProductRepository;
     private final PostViewAssembler assembler;
 
@@ -72,8 +69,10 @@ public class PostReaderImpl implements PostReader {
     }
 
     // mypage 포트폴리오 그리드용 목록.
-    // 피드와 동일하게 assembler(렌더 파이프라인)를 거친다 - 예전에는 엔티티 원문을 그대로 내보내서
-    // 프로필/채널 화면으로 블러 원문과 원본 이미지 URL이 유출됐다. 목록도 반드시 파이프라인을 거칠 것.
+    // getViewablePosts/getPostsByAuthorIds와 동일한 렌더 파이프라인(toPostViews)을 거친 뒤,
+    // 그중 첫 번째(sortOrder 기준) 미디어만 썸네일로 골라 반환한다.
+    // 예전에 이 메서드가 파이프라인을 건너뛰고 엔티티 원문을 그대로 내보내서, 프로필/채널 화면으로
+    // 블러 원문과 원본 이미지 URL이 유출된 적이 있다. 목록도 반드시 파이프라인을 거칠 것.
     @Override
     public List<PostSummary> getPostsByAuthorId(Long userId, Long viewerId) {
         List<PostEntity> posts = postRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId);
@@ -81,16 +80,16 @@ public class PostReaderImpl implements PostReader {
             return List.of();
         }
 
-        return assembler.toViewDtos(posts, viewerId).stream()
-                .map(dto -> {
-                    // 렌더된 media 중 첫 번째가 썸네일 (assembler가 sortOrder 순서를 유지해 준다)
-                    PostRequestDto.MediaItem thumbnail = dto.media().isEmpty() ? null : dto.media().get(0);
+        return toPostViews(posts, viewerId).stream()
+                .map(view -> {
+                    // 렌더된 media 중 첫 번째가 썸네일 (파이프라인이 sortOrder 순서를 유지해 준다)
+                    ViewMedia thumbnail = view.media().isEmpty() ? null : view.media().get(0);
                     return new PostSummary(
-                            dto.postId(),
-                            dto.content(),   // 블러 등 렌더 적용본
+                            view.postId(),
+                            view.content(),   // 블러 등 렌더 적용본
                             thumbnail != null ? thumbnail.url() : null,
                             thumbnail != null && thumbnail.mediaType() == MediaType.VIDEO,
-                            dto.createdAt()
+                            view.createdAt()
                     );
                 })
                 .toList();
@@ -121,7 +120,29 @@ public class PostReaderImpl implements PostReader {
                 .filter(Objects::nonNull)
                 .toList();
 
-        return assembler.toViewDtos(ordered, viewerId).stream()
+        return toPostViews(ordered, viewerId);
+    }
+
+    // follow 모듈의 "팔로잉 피드"용 창구. 여러 작성자의 글을 최신순으로 모아서 getViewablePosts와
+    // 동일한 렌더 파이프라인을 태운다 - 이미 createdAt DESC로 조회하므로 별도 순서 보정은 필요 없다.
+    @Override
+    public List<PostView> getPostsByAuthorIds(List<Long> authorIds, Long viewerId) {
+        if (authorIds.isEmpty()) {
+            return List.of();
+        }
+        List<PostEntity> posts = postRepository.findByUserIdInAndDeletedAtIsNull(authorIds);
+        return toPostViews(posts, viewerId);
+    }
+
+    // search 모듈이 태그 검색용으로 추가함 - post 담당자 확인 부탁드립니다.
+    @Override
+    public List<PostView> searchByTag(String tag, Long viewerId) {
+        List<PostEntity> posts = postRepository.findByTagContaining(tag);
+        return toPostViews(posts, viewerId);
+    }
+
+    private List<PostView> toPostViews(List<PostEntity> posts, Long viewerId) {
+        return assembler.toViewDtos(posts, viewerId).stream()
                 .map(dto -> new PostView(
                         dto.postId(),
                         dto.userId(),

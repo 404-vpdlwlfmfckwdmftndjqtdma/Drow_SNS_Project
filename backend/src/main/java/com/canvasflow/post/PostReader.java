@@ -35,11 +35,12 @@ public interface PostReader {
     long countByAuthorId(Long userId);
 
     /**
-     * 마이페이지/타인 프로필의 포트폴리오 그리드용 게시글 목록 (최신 작성순).
+     * 마이페이지/타인 프로필의 포트폴리오 그리드(PortfolioGrid)용 게시글 목록 (최신 작성순).
      * 썸네일은 media의 첫 번째(sortOrder 기준) 항목이다.
      *
      * ★ viewerId(지금 보는 사람)를 반드시 넘길 것. 목록도 피드와 똑같이 렌더 파이프라인을 거치므로
      *   비구독자에게는 블러 처리된 content/썸네일이 나간다. 비로그인이면 null.
+     *   (실제로 이 창구가 파이프라인을 건너뛰어 타인 프로필로 원문이 유출된 사고가 있었다.)
      */
     List<PostSummary> getPostsByAuthorId(Long userId, Long viewerId);
 
@@ -53,6 +54,15 @@ public interface PostReader {
     // content는 원문이 아니라 viewerId 기준 가공본이다(비구독자는 블러 치환) - 원문 유출 방지를 위해 반드시 이 창구를 쓸 것.
     // likeCount/commentCount는 post 소관이 아니므로 없다 - 호출 측이 LikeReader.summarize 등으로 채운다.
     List<PostView> getViewablePosts(List<Long> postIds, Long viewerId);
+
+    // follow 모듈의 "팔로우한 사람들 피드"용 창구. 호출 측(follow)이 자기 리포지토리로 얻은 팔로잉 유저 id
+    // 목록을 넘기면, 그 유저들이 쓴 글을 최신순으로 모아 getViewablePosts와 동일한 렌더 파이프라인(블러 등)을
+    // 적용해서 돌려준다. authorIds가 비어 있으면(아무도 안 팔로우) 빈 리스트.
+    List<PostView> getPostsByAuthorIds(List<Long> authorIds, Long viewerId);
+
+    // search 모듈의 "태그 검색"용 창구 - post 담당자 확인 부탁드립니다.
+    // 부분/대소문자 무관 태그 일치 검색이고, getViewablePosts와 동일한 렌더 파이프라인(블러 등)을 적용한다.
+    List<PostView> searchByTag(String tag, Long viewerId);
 
     // 렌더 파이프라인 통과 후의 게시글 한 건 (getViewablePosts 전용 반환 타입)
     record PostView(

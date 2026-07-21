@@ -4,6 +4,8 @@ import com.canvasflow.comment.entity.Comment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -19,4 +21,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     boolean existsByParentId(Long parentId);
 
     long countByPostId(Long postId);
+
+    // 마이페이지 "내가 댓글 단 글" 목록용: 삭제 안 된 댓글 기준으로 이 유저가 댓글을 남긴 postId 목록 (중복 제거).
+    @Query("SELECT DISTINCT c.postId FROM Comment c WHERE c.writerId = :writerId AND c.deletedAt IS NULL")
+    List<Long> findDistinctPostIdsByWriterId(@Param("writerId") Long writerId);
 }

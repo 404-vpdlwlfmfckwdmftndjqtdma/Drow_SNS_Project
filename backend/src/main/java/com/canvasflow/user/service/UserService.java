@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -192,6 +193,15 @@ public class UserService implements UserFacade {
     public void updatePassword(Long userId, String rawPassword) {
         User user = getUserOrThrow(userId);
         user.changePassword(passwordEncoder.encode(rawPassword));
+    }
+
+    // search 모듈이 "유저 검색"용으로 추가함 - user 담당자 확인 부탁드립니다.
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserProfileView> searchByNickname(String keyword) {
+        return userRepository.findByNicknameContainingIgnoreCaseOrderByNicknameAsc(keyword).stream()
+                .map(user -> new UserProfileView(user.getId(), user.getNickname(), user.getProfileImageUrl(), user.getBio()))
+                .toList();
     }
 
     private User getUserOrThrow(Long userId) {

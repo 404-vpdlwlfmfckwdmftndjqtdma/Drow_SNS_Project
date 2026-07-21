@@ -15,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -49,6 +51,16 @@ public class NotificationController {
             @AuthenticationPrincipal AuthMember authMember) {
         requireLogin(authMember);
         notificationService.markAsRead(notificationId, authMember.userId());
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    // 선택 삭제. 여러 개를 한 번에 지울 수 있게 id 목록을 받는다 (건마다 요청 보내지 않도록).
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deleteNotifications(
+            @RequestBody List<Long> notificationIds,
+            @AuthenticationPrincipal AuthMember authMember) {
+        requireLogin(authMember);
+        notificationService.deleteNotifications(notificationIds, authMember.userId());
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 

@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { isLoggedIn } from "@/lib/auth";
+import api from "@/lib/api";
+import { getCurrentUserId, isLoggedIn } from "@/lib/auth";
 import { logout } from "@/lib/authActions";
 import Logo from "@/components/common/Logo";
+import type { ApiResponse } from "@/types";
 import styles from "./Sidebar.module.css";
 
 const ACCOUNT_NAV_ITEMS = [
+  { href: "/mypage/following", label: "팔로우", icon: "group", requiresAuth: true },
   { href: "/mypage/likes", label: "좋아요", icon: "favorite", requiresAuth: true },
   { href: "/mypage/comments", label: "댓글", icon: "chat_bubble", requiresAuth: true },
   { href: "/payment", label: "결제", icon: "credit_card", requiresAuth: true },
@@ -29,12 +32,28 @@ export default function Sidebar() {
   const [fontsReady, setFontsReady] = useState(false);
   // 프로필 풀다운 메뉴 열림 상태
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoggedIn(isLoggedIn());
     setMenuOpen(false); // 화면 이동 시 풀다운 닫기
   }, [pathname]);
+
+  // 프로필 칩 아바타용 이미지 조회. 실패해도 기본 person 아이콘으로 대체되므로 조용히 무시한다.
+  useEffect(() => {
+    if (!loggedIn) {
+      setProfileImageUrl(null);
+      return;
+    }
+    const userId = getCurrentUserId();
+    if (userId == null) return;
+
+    api
+      .get<ApiResponse<{ profileImageUrl: string | null }>>(`/api/v1/users/${userId}`)
+      .then((res) => setProfileImageUrl(res.data.data.profileImageUrl))
+      .catch(() => {});
+  }, [loggedIn]);
 
   // 풀다운 바깥 클릭 시 닫기
   useEffect(() => {
@@ -82,10 +101,17 @@ export default function Sidebar() {
         {loggedIn ? (
           <>
             <button className={styles.profileChip} type="button" onClick={() => setMenuOpen((v) => !v)}>
-              {/* 그라데이션 스토리 링 + 원형 아바타. TODO: 로그인한 사용자 프로필 이미지로 교체 */}
+              {/* 그라데이션 스토리 링 + 원형 아바타. 프로필 이미지가 있으면 그걸, 없으면 기본 person 아이콘 */}
               <span className={styles.avatarRing}>
-                <span className={styles.profileAvatar}>
-                  <span className="material-symbols-outlined">person</span>
+                <span
+                  className={styles.profileAvatar}
+                  style={
+                    profileImageUrl
+                      ? { backgroundImage: `url(${profileImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                      : undefined
+                  }
+                >
+                  {!profileImageUrl && <span className="material-symbols-outlined">person</span>}
                 </span>
               </span>
               <span className={styles.profileCopy}>
