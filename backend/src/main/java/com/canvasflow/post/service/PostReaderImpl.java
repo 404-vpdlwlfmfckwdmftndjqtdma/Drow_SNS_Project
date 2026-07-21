@@ -3,8 +3,6 @@ package com.canvasflow.post.service;
 import com.canvasflow.global.media.MediaType;
 import com.canvasflow.post.PostReader;
 import com.canvasflow.post.entity.PostEntity;
-import com.canvasflow.post.entity.PostMediaEntity;
-import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostProductRepository;
 import com.canvasflow.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +21,6 @@ import java.util.stream.Collectors;
 public class PostReaderImpl implements PostReader {
 
     private final PostRepository postRepository;
-    private final PostMediaRepository postMediaRepository;
     private final PostProductRepository postProductRepository;
     private final PostViewAssembler assembler;
 
@@ -71,34 +68,25 @@ public class PostReaderImpl implements PostReader {
     }
 
     // mypage 모듈이 포트폴리오 그리드용으로 추가함 - post 담당자 확인 부탁드립니다.
-    // PostService.getAllPosts와 같은 방식(postId 목록으로 media를 한 번에 조회)으로 N+1을 피하고,
-    // 각 게시글의 media 중 sortOrder가 가장 앞선 것만 썸네일로 골라서 내려준다.
+    // getViewablePosts/getPostsByAuthorIds와 동일한 렌더 파이프라인(toPostViews)을 거친 뒤,
+    // 그중 첫 번째(sortOrder 기준) 미디어만 썸네일로 골라 반환한다 - viewerId 기준으로 블러 등이
+    // 적용된 결과라서, 잠금 콘텐츠가 마이페이지/타인 프로필 포트폴리오 그리드에서 원문으로 새지 않는다.
     @Override
-    public List<PostSummary> getPostsByAuthorId(Long userId) {
+    public List<PostSummary> getPostsByAuthorId(Long userId, Long viewerId) {
         List<PostEntity> posts = postRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId);
         if (posts.isEmpty()) {
             return List.of();
         }
 
-        List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
-        Map<Long, PostMediaEntity> firstMediaByPostId = postMediaRepository
-                .findByPostIdInOrderByPostIdAscSortOrderAsc(postIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        PostMediaEntity::getPostId,
-                        media -> media,
-                        (existing, replacement) -> existing.getSortOrder() <= replacement.getSortOrder() ? existing : replacement
-                ));
-
-        return posts.stream()
-                .map(post -> {
-                    PostMediaEntity firstMedia = firstMediaByPostId.get(post.getPostId());
+        return toPostViews(posts, viewerId).stream()
+                .map(view -> {
+                    ViewMedia thumbnail = view.media().isEmpty() ? null : view.media().get(0);
                     return new PostSummary(
-                            post.getPostId(),
-                            post.getContent(),
-                            firstMedia != null ? firstMedia.getUrl() : null,
-                            firstMedia != null && firstMedia.getMediaType() == MediaType.VIDEO,
-                            post.getCreatedAt()
+                            view.postId(),
+                            view.content(),
+                            thumbnail != null ? thumbnail.url() : null,
+                            thumbnail != null && thumbnail.mediaType() == MediaType.VIDEO,
+                            view.createdAt()
                     );
                 })
                 .toList();
