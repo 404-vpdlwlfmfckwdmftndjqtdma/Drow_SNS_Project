@@ -13,9 +13,22 @@ import java.util.Optional;
  */
 public interface PostReader {
 
-    Optional<PostPurchaseInfo> getPurchaseInfo(Long postId);
-
     Optional<PostInfo> getPostInfo(Long postId);
+
+    /**
+     * 이 글에서 지금 살 수 있는 상품 목록 (판매자가 정한 기능별 가격).
+     * 결제 화면에 "무엇을 얼마에 살 수 있는지" 띄울 때 쓴다. 없으면 빈 목록.
+     */
+    List<ProductInfo> getProducts(Long postId);
+
+    /**
+     * 구매 직전 가격 확인용. 판매 중지됐거나 없는 상품이면 empty.
+     * 가격은 반드시 이 창구로 서버에서 조회한다(클라이언트가 보낸 금액 신뢰 금지).
+     */
+    Optional<ProductInfo> getProduct(Long postId, String capability);
+
+    /** 판매 상품 한 건. capability 는 PostExtension.key() 와 1:1. */
+    record ProductInfo(Long postId, Long authorId, String capability, BigDecimal price) {}
 
     // mypage 모듈이 마이페이지 "창작물" 통계(postCount)를 채우려고 추가함 - post 담당자 확인 부탁드립니다.
     // (구현은 PostReaderImpl.countByAuthorId 참고, PostRepository.countByUserIdAndDeletedAtIsNull 사용)
@@ -59,8 +72,6 @@ public interface PostReader {
     ) {}
 
     record ViewMedia(String url, MediaType mediaType) {}
-
-    record PostPurchaseInfo(Long authorId, BigDecimal singlePurchasePrice) {}
 
     record PostInfo(Long authorId) {}
 
