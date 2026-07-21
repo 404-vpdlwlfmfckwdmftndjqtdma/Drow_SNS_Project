@@ -27,6 +27,8 @@ export default function NewPostPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [blurRanges, setBlurRanges] = useState<BlurRange[]>([]);
   const [blurredImageIndexes, setBlurredImageIndexes] = useState<Set<number>>(new Set());
+  const [textBlurPrice, setTextBlurPrice] = useState("");
+  const [imageBlurPrice, setImageBlurPrice] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // 사진이 지워지면 뒤 사진들 인덱스가 앞으로 밀리므로, 안전하게 블러 선택을 초기화한다.
@@ -84,6 +86,15 @@ export default function NewPostPage() {
       extensions.imageBlur = { targetIndexes: Array.from(blurredImageIndexes) };
     }
 
+    // 블러를 걸어둔 기능만 가격을 매길 수 있다. 0원 이하는 백엔드가 어차피 "판매 안 함"으로 무시한다.
+    const prices: Record<string, number> = {};
+    if (blurRanges.length > 0 && Number(textBlurPrice) > 0) {
+      prices.textBlur = Number(textBlurPrice);
+    }
+    if (blurredImageIndexes.size > 0 && Number(imageBlurPrice) > 0) {
+      prices.imageBlur = Number(imageBlurPrice);
+    }
+
     setSubmitting(true);
     try {
       await api.post("/api/v1/posts", {
@@ -92,6 +103,7 @@ export default function NewPostPage() {
         tags,
         media,
         extensions: Object.keys(extensions).length > 0 ? extensions : undefined,
+        prices: Object.keys(prices).length > 0 ? prices : undefined,
       });
       router.push("/posts");
     } catch {
@@ -112,6 +124,17 @@ export default function NewPostPage() {
               blurredIndexes={blurredImageIndexes}
               onToggleBlur={handleToggleImageBlur}
             />
+
+            {blurredImageIndexes.size > 0 && (
+              <input
+                className={styles.priceInput}
+                type="number"
+                min={0}
+                placeholder="이미지 블러 해제 가격 (원)"
+                value={imageBlurPrice}
+                onChange={(event) => setImageBlurPrice(event.target.value)}
+              />
+            )}
 
             <textarea
               ref={textareaRef}
@@ -137,16 +160,26 @@ export default function NewPostPage() {
           </button>
 
           {blurRanges.length > 0 && (
-            <ul className={styles.blurList}>
-              {blurRanges.map((range, index) => (
-                <li key={`${range.start}-${range.end}-${index}`}>
-                  <span>“{content.slice(range.start, range.end)}”</span>
-                  <button onClick={() => handleRemoveBlurRange(index)} type="button">
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className={styles.blurList}>
+                {blurRanges.map((range, index) => (
+                  <li key={`${range.start}-${range.end}-${index}`}>
+                    <span>“{content.slice(range.start, range.end)}”</span>
+                    <button onClick={() => handleRemoveBlurRange(index)} type="button">
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <input
+                className={styles.priceInput}
+                type="number"
+                min={0}
+                placeholder="텍스트 블러 해제 가격 (원)"
+                value={textBlurPrice}
+                onChange={(event) => setTextBlurPrice(event.target.value)}
+              />
+            </>
           )}
         </div>
 
