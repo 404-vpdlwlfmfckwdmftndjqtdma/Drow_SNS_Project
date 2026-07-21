@@ -104,8 +104,8 @@ public class PostViewAssembler {
         //         모듈 key 집합"(예: {"imageBlur"})을 물어본다. 정책 미구현이면 전부 잠금(fail-closed).
         Set<String> unlockedKeys = checkUnlockedModules(viewerId, content.postId(), content.authorId());
 
-        // [2단계] 본문 가공 - 텍스트 블러 등 확장 모듈을 차례로 통과 (블러 구간 ● 치환)
-        content.replaceText(renderText(content.postId(), content.text()));
+        // [2단계] 본문 가공 - 텍스트 블러 등 확장 모듈을 차례로 통과 (잠금 해제된 모듈은 원문 유지)
+        content.replaceText(renderText(content.postId(), content.text(), unlockedKeys));
 
         // [3단계] 첨부 가공 - 이미지 블러/워터마크 등 (잠금 해제된 모듈은 원본 그대로 통과)
         content.replaceMedia(renderMedia(content.postId(), unlockedKeys, content.media()));
@@ -119,10 +119,11 @@ public class PostViewAssembler {
     }
 
     // [2단계 구현] 본문을 확장 모듈(텍스트 블러 등)에 순서대로 통과시킨다.
-    private String renderText(Long postId, String text) {
+    // 각 모듈에는 "네 잠금이 풀렸는지"를 함께 알려준다 - 풀렸으면 모듈이 원문을 그대로 돌려준다.
+    private String renderText(Long postId, String text, Set<String> unlockedKeys) {
         String rendered = text;
         for (PostExtension extension : extensions) {
-            rendered = extension.render(postId, rendered);
+            rendered = extension.render(postId, rendered, unlockedKeys.contains(extension.key()));
         }
         return rendered;
     }

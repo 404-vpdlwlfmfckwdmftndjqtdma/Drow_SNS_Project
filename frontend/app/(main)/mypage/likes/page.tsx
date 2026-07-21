@@ -12,6 +12,7 @@ import styles from "../account-list.module.css";
 interface PostListItem {
   postId: number;
   userId: number;
+  nickname: string;
   content: string;
   likeCount?: number;
   commentCount?: number;
@@ -53,7 +54,7 @@ export default function MyLikesPage() {
     setError("");
 
     api
-      .get<ApiResponse<PostListItem[]>>("/api/v1/posts", { params: { activity: "likedByMe" } })
+      .get<ApiResponse<PostListItem[]>>("/api/v1/likes/me/posts")
       .then((res) => setPosts(res.data.data))
       .catch(() => setError("좋아요한 게시글을 불러오지 못했습니다."))
       .finally(() => setLoading(false));
@@ -118,7 +119,7 @@ export default function MyLikesPage() {
                   <div className={styles.cardHeader}>
                     <div className={styles.avatar} />
                     <div>
-                      <p className={styles.authorName}>작성자 #{post.userId}</p>
+                      <p className={styles.authorName}>{post.nickname}</p>
                       <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
                     </div>
                   </div>

@@ -2,17 +2,23 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import PaymentReturnButton from "@/components/modules/payment/PaymentReturnButton";
-import styles from "@/components/modules/payment/PaymentStatus.module.css";
-import {
-  confirmPayment,
-  type PaymentResultData,
-} from "@/components/modules/payment/confirmPayment";
-import PaymentResult from "@/components/modules/payment/PaymentResult";
+import api from "@/lib/api";
+import ChargeResult from "@/components/payment/ChargeResult";
+import PaymentReturnButton from "@/components/payment/PaymentReturnButton";
+import { toErrorMessage } from "@/components/payment/errorMessage";
+import type { OrderConfirmResponse } from "@/components/payment/types";
+import styles from "@/components/payment/PaymentStatus.module.css";
+import type { ApiResponse } from "@/types";
 
+/**
+ * 토스 결제 후 착지 페이지. 여기서 승인 + 지갑 적립이 확정된다.
+ *
+ * orderId는 프론트가 만든 값이 아니라 서버가 발급한 주문번호이고,
+ * 금액도 서버가 주문에 저장해 둔 값을 쓰므로 여기서는 paymentKey만 보낸다.
+ */
 function SuccessInner() {
   const params = useSearchParams();
-  const [data, setData] = useState<PaymentResultData | null>(null);
+  const [data, setData] = useState<OrderConfirmResponse | null>(null);
   const [error, setError] = useState("");
   const done = useRef(false); // 중복 confirm 방지 (StrictMode 등)
 
@@ -22,17 +28,16 @@ function SuccessInner() {
 
     const paymentKey = params.get("paymentKey");
     const orderId = params.get("orderId");
-    const amount = Number(params.get("amount"));
 
-    if (!paymentKey || !orderId || !amount) {
+    if (!paymentKey || !orderId) {
       setError("잘못된 접근입니다. (결제 정보 없음)");
       return;
     }
 
-    // 토스 리다이렉트로 받은 값 → 백엔드에 승인 요청
-    confirmPayment({ paymentKey, orderId, amount })
-      .then(setData)
-      .catch(() => setError("결제 승인에 실패했습니다."));
+    api
+      .post<ApiResponse<OrderConfirmResponse>>(`/api/v1/orders/${orderId}/confirm`, { paymentKey })
+      .then((res) => setData(res.data.data))
+      .catch((err) => setError(toErrorMessage(err, "결제 승인에 실패했습니다.")));
   }, [params]);
 
   if (error) {
@@ -75,7 +80,7 @@ function SuccessInner() {
 
   return (
     <div className={styles.screen}>
-      <PaymentResult data={data} />
+      <ChargeResult data={data} />
     </div>
   );
 }
@@ -83,13 +88,7 @@ function SuccessInner() {
 export default function SuccessPage() {
   // useSearchParams 는 Suspense 경계가 필요 (Next App Router)
   return (
-    <Suspense
-      fallback={(
-        <div className={styles.screen}>
-          <section className={styles.card}>결제 정보를 불러오고 있습니다.</section>
-        </div>
-      )}
-    >
+    <Suspense>
       <SuccessInner />
     </Suspense>
   );

@@ -2,8 +2,8 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import PaymentReturnButton from "@/components/modules/payment/PaymentReturnButton";
-import styles from "@/components/modules/payment/PaymentStatus.module.css";
+import PaymentReturnButton from "@/components/payment/PaymentReturnButton";
+import styles from "@/components/payment/PaymentStatus.module.css";
 
 function FailInner() {
   const params = useSearchParams();

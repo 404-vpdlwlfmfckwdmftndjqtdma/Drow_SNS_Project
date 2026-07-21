@@ -62,7 +62,8 @@ public class SubscriptionService {
 
         // 2) 유료 등급이면 지갑에서 차감 (금액은 서버의 tier 가격 - 조작 불가).
         //    잔액이 모자라면 여기서 예외 → 아무것도 저장되지 않고 화면은 충전을 유도한다.
-        boolean paid = tier != null && tier.getMonthlyPrice().signum() > 0;
+        //    resolveTier가 0원 등급을 이미 null로 걸렀으므로 tier가 있으면 곧 유료다.
+        boolean paid = tier != null;
         if (paid) {
             walletCharger.useForSubscription(
                     subscriberId, tier.getMonthlyPrice().longValueExact(), channelId);
@@ -78,11 +79,18 @@ public class SubscriptionService {
         return createSubscription(subscriberId, channelId, tier, paid);
     }
 
-    /** tierId가 null이면 무료 구독, 있으면 존재하는 등급인지 확인 */
+    /**
+     * tierId가 null이면 무료 구독, 있으면 존재하는 등급인지 확인.
+     *
+     * 0원 등급은 무료 구독(tier=null)으로 취급한다.
+     * 그렇지 않으면 결제가 없어 이용권 기간(expiresAt)이 안 채워지는데 tier는 붙어 있어서,
+     * isBenefitActive()가 false가 되는 "구독은 됐는데 혜택은 없는" 상태에 빠진다.
+     */
     private SubscriptionTier resolveTier(Long tierId) {
         if (tierId == null) return null;
-        return tierRepository.findByIdAndDeletedFalse(tierId)
+        SubscriptionTier tier = tierRepository.findByIdAndDeletedFalse(tierId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.TIER_NOT_FOUND));
+        return tier.getMonthlyPrice().signum() > 0 ? tier : null;
     }
 
     private Long reactivateOrThrow(Subscription existing, SubscriptionTier tier) {

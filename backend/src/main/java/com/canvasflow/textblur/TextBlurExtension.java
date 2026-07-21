@@ -48,7 +48,10 @@ public class TextBlurExtension implements PostExtension {
     }
 
     @Override
-    public String render(Long postId, String text) {
+    public String render(Long postId, String text, boolean unlocked) {
+        if (unlocked) {
+            return text;   // 구매/구독으로 잠금 해제된 뷰어(작성자 포함)에게는 원문 그대로
+        }
         if (text == null || text.isEmpty()) {
             return text;
         }
