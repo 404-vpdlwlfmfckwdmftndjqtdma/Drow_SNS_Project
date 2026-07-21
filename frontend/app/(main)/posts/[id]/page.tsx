@@ -6,6 +6,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
 import CommentThread from "@/components/comment/CommentThread";
+import PurchaseButton from "@/components/payment/PurchaseButton";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
 
@@ -27,6 +28,11 @@ interface PostDetailResponse {
 const VISIBILITY_LABEL: Record<string, string> = {
   PUBLIC: "전체 공개",
   LOCKED: "구독자 전용",
+};
+
+const CAPABILITY_LABEL: Record<"textBlur" | "imageBlur", string> = {
+  textBlur: "텍스트 블러 해제",
+  imageBlur: "이미지 블러 해제",
 };
 
 // ImageBlurExtension이 블러 걸 때 URL에 이 문자열을 끼워넣는다 (백엔드 posts/imageblur 참고).
@@ -66,11 +72,24 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mediaIndex, setMediaIndex] = useState(0);
+  const [purchaseCapability, setPurchaseCapability] = useState<"textBlur" | "imageBlur" | null>(null);
 
-  // TODO(구매 모듈 담당자): 아래 openPurchase(capability)를 실제 구매 모듈(모달/패널)
-  // 여는 걸로 교체. 필요한 정보는 postId(=post.postId)와 capability("textBlur"|"imageBlur")뿐.
   const openPurchase = (capability: "textBlur" | "imageBlur") => {
-    alert(`구매 기능은 준비 중입니다 (postId: ${postId}, capability: ${capability})`);
+    setPurchaseCapability(capability);
+  };
+
+  const fetchPost = () => {
+    api
+      .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`)
+      .then((res) => setPost(res.data.data))
+      .catch(() => setError("게시글을 불러오지 못했습니다."))
+      .finally(() => setLoading(false));
+  };
+
+  // 구매 완료 시 호출 - 잠금 해제된 내용으로 다시 불러오고 모달을 닫는다.
+  const handlePurchaseDone = () => {
+    setPurchaseCapability(null);
+    fetchPost();
   };
 
   useEffect(() => {
@@ -88,11 +107,8 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     setMediaIndex(0);
-    api
-      .get<ApiResponse<PostDetailResponse>>(`/api/v1/posts/${postId}`)
-      .then((res) => setPost(res.data.data))
-      .catch(() => setError("게시글을 불러오지 못했습니다."))
-      .finally(() => setLoading(false));
+    setLoading(true);
+    fetchPost();
   }, [postId]);
 
   const handleDelete = async () => {
@@ -220,6 +236,26 @@ export default function PostDetailPage() {
         <h2 className={styles.commentTitle}>댓글</h2>
         <CommentThread postId={post.postId} userId={currentUserId} />
       </section>
+
+      {purchaseCapability && (
+        <div className={styles.purchaseOverlay} onClick={() => setPurchaseCapability(null)}>
+          <div className={styles.purchaseModal} onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.purchaseModalClose}
+              onClick={() => setPurchaseCapability(null)}
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <PurchaseButton
+              capability={purchaseCapability}
+              title={CAPABILITY_LABEL[purchaseCapability]}
+              description={`게시글 ID: ${post.postId}`}
+              onDone={handlePurchaseDone}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
