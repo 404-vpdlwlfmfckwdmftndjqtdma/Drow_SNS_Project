@@ -112,6 +112,16 @@ public class FollowService implements FollowFacade {
                 .toList();
     }
 
+    // feed 모듈이 "팔로우한 사람들 피드"용으로 추가함 - follow 담당자 확인 부탁드립니다.
+    // 프로필 조회 없이 id만 반환한다 (feed는 이 id로 PostReader만 호출하면 되므로 불필요한 조회 생략).
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getFollowingIds(Long userId) {
+        return followRepository.findByFollowerIdOrderByCreatedAtDesc(userId).stream()
+                .map(Follow::getFollowingId)
+                .toList();
+    }
+
     /**
      * 이 userId를 팔로우하고 있는 사람 목록 (팔로워 목록 화면용, 본인/타인 공용).
      * getFollowingList와 대칭 구조 - followerId/followingId만 반대로 조회하고, 마찬가지로
