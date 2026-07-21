@@ -29,6 +29,11 @@ public class Subscription extends BaseTimeEntity {
     @Column(name = "subscriber_id", nullable = false)
     private Long subscriberId;
 
+    /**
+     * 구독 대상 채널 ID.
+     * 별도 Channel Entity가 없으므로 channelId = 채널 주인(작가)의 userId.
+     * 추후 Channel 독림 Entity가 되면 이 필드만 실제 채널 PK로 마이그레이션 하면됩니다.
+     */
     @Column(name = "channel_id", nullable = false)
     private Long channelId;
 

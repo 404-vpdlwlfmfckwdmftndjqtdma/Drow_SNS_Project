@@ -1,7 +1,11 @@
 package com.canvasflow.post.service;
 
+import com.canvasflow.global.common.ContentVisibility;
 import com.canvasflow.global.exception.CanvasflowException;
 import com.canvasflow.global.exception.ErrorCode;
+import com.canvasflow.post.ContentAccessPolicy;
+import com.canvasflow.post.dto.LockedPostResponse;
+import com.canvasflow.post.dto.PostDetailResponse;
 import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.dto.PostViewDto;
 import com.canvasflow.post.entity.PostEntity;
@@ -10,6 +14,7 @@ import com.canvasflow.post.entity.PostProduct;
 import com.canvasflow.post.repository.PostMediaRepository;
 import com.canvasflow.post.repository.PostProductRepository;
 import com.canvasflow.post.repository.PostRepository;
+import com.canvasflow.subscription.ContentAccessService;
 import com.canvasflow.user.UserFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +24,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import com.canvasflow.post.PostExtension;
 
@@ -38,6 +45,7 @@ public class PostService {
     private final PostProductRepository postProductRepository;
     private final UserFacade userFacade;
     private final List<PostExtension> extensions;
+    private final ContentAccessService contentAccessService;
     private final PostViewAssembler postViewAssembler;
 
 
@@ -117,31 +125,64 @@ public class PostService {
 
     //글 상세 페이지
     @Transactional
-    public PostViewDto getDetail(Long viewerId, Long postId){
+    public PostDetailResponse getDetail(Long viewerId, Long postId) {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.POST_NOT_FOUND));
 
-        if(post.getDeletedAt() != null){
+        if (post.getDeletedAt() != null) {
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
+        }
+        // 2026.07.21 이희경 추가 : 열람 판정
+        if (post.getVisibility() == ContentVisibility.PRIVATE && !post.getUserId().equals(viewerId)) {
+            throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        // ==== 열람 판정 (LOCKED 글만) ====
+        Long channelId = post.getUserId();
+        boolean canView = true;
+        if (post.getVisibility() == ContentVisibility.LOCKED) {
+            canView = contentAccessService.canView(
+                    viewerId, channelId, postId, post.getUserId(), post.getRequiredLevel());
         }
 
         post.increaseViewCount();
 
+        // ==== 열람 가능 : 원문 그대로 ====
+        String content = post.getContent();
+        if (!canView) {
+            for (PostExtension extension : extensions) {
+                content = extension.render(post.getPostId(), content);
+                // TODO 어떻게 고치는지 모르겠슨...
+            }
+            // 블러 구간도 없는 완전 잠금 글 -> 잠금 응답으로 조기 반환
+            if (content.equals(post.getContent())) {
+                return new LockedPostResponse(
+                        post.getPostId(), true,
+                        null,     // TODO: imageblur
+                        channelId,
+                        userFacade.findNicknameById(post.getUserId()),
+                        post.getRequiredLevel(),
+                        contentAccessService.minUnlockTierName(channelId, post.getRequiredLevel()).orElse(null),
+                        post.getSinglePurchasePrice());
+            }
+        }
+
+        // 기존 미디어/응답 삭제 및 조립
         List<PostRequestDto.MediaItem> mediaItems = postMediaRepository
                 .findByPostIdInOrderByPostIdAscSortOrderAsc(List.of(postId)).stream()
-                .map(m-> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()))
+                .map(m -> new PostRequestDto.MediaItem(m.getUrl(), m.getMediaType()))
                 .toList();
 
-        // 카트에 싣고 → 렌더 파이프라인(구독확인→본문블러→첨부블러) 통과 → 완성품으로 봉인
-        PostViewContent content = PostViewContent.from(
-                post,
-                mediaItems,
+        Set<String> unlockedKeys = canView ? extensions.stream().map(PostExtension::key).collect(Collectors.toSet()) : Set.of();
+        mediaItems = postViewAssembler.renderMedia(post.getPostId(), unlockedKeys, mediaItems);
+
+        return new PostViewDto(
+                post.getUserId(), post.getPostId(),
+                content,                             // ← 호출자가 결정한 본문 (원문 or 블러본)
+                post.getVisibility(), List.copyOf(post.getTags()), mediaItems,
+                post.getViewCount(), post.getCreatedAt(), post.getUpdatedAt(),
                 userFacade.findNicknameById(post.getUserId()),
                 userFacade.getProfileView(post.getUserId()).profileImageUrl());
-
-        postViewAssembler.renderForViewer(content, viewerId);
-
-        return content.toDto();
     }
 
     //게시글 수정
@@ -171,9 +212,6 @@ public class PostService {
         for(PostExtension extension : extensions) {
             extension.apply(post.getPostId(), extensionData.get(extension.key()));
         }
-
-        //가격표도 전체 교체 (미디어와 같은 규칙)
-        replaceProducts(postId, postRequestDto.prices());
 
         //이미지 수정은 지우고 새로 저장 방식으로(프론트에서는 기존의 사진들도 떠 추가/삭제 가능, 서버에서는 지우고 새로 채워넣는 방식)
         postMediaRepository.deleteAllByPostId(postId);

@@ -21,5 +21,5 @@ public record PostViewDto(
         String profileImageUrl  //프로필 사진 조회
 
 
-        ) {
+        ) implements PostDetailResponse {
 }
