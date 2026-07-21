@@ -34,11 +34,14 @@ public interface PostReader {
     // (구현은 PostReaderImpl.countByAuthorId 참고, PostRepository.countByUserIdAndDeletedAtIsNull 사용)
     long countByAuthorId(Long userId);
 
-    // mypage 모듈이 마이페이지/타인 프로필의 포트폴리오 그리드(PortfolioGrid)를 실제 게시글로 채우려고 추가함
-    // - post 담당자 확인 부탁드립니다. 최신 작성순으로 반환하고, 썸네일은 media의 첫 번째(sortOrder 기준) 항목이다.
-    // viewerId 기준으로 PostViewAssembler 렌더 파이프라인(블러 등)을 거친 뒤 썸네일/본문을 고른다 -
-    // 잠금 콘텐츠가 타인 프로필/마이페이지 포트폴리오 그리드에서 원문으로 새지 않도록 하기 위함.
-    // (구현은 PostReaderImpl.getPostsByAuthorId 참고, PostRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc 사용)
+    /**
+     * 마이페이지/타인 프로필의 포트폴리오 그리드(PortfolioGrid)용 게시글 목록 (최신 작성순).
+     * 썸네일은 media의 첫 번째(sortOrder 기준) 항목이다.
+     *
+     * ★ viewerId(지금 보는 사람)를 반드시 넘길 것. 목록도 피드와 똑같이 렌더 파이프라인을 거치므로
+     *   비구독자에게는 블러 처리된 content/썸네일이 나간다. 비로그인이면 null.
+     *   (실제로 이 창구가 파이프라인을 건너뛰어 타인 프로필로 원문이 유출된 사고가 있었다.)
+     */
     List<PostSummary> getPostsByAuthorId(Long userId, Long viewerId);
 
     // mypage 모듈이 마이페이지 "조회수" 통계를 채우려고 추가함 - post 담당자 확인 부탁드립니다.

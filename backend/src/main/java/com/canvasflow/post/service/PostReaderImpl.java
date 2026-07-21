@@ -2,6 +2,7 @@ package com.canvasflow.post.service;
 
 import com.canvasflow.global.media.MediaType;
 import com.canvasflow.post.PostReader;
+import com.canvasflow.post.dto.PostRequestDto;
 import com.canvasflow.post.entity.PostEntity;
 import com.canvasflow.post.repository.PostProductRepository;
 import com.canvasflow.post.repository.PostRepository;
@@ -67,10 +68,11 @@ public class PostReaderImpl implements PostReader {
         return postRepository.countByUserIdAndDeletedAtIsNull(userId);
     }
 
-    // mypage 모듈이 포트폴리오 그리드용으로 추가함 - post 담당자 확인 부탁드립니다.
+    // mypage 포트폴리오 그리드용 목록.
     // getViewablePosts/getPostsByAuthorIds와 동일한 렌더 파이프라인(toPostViews)을 거친 뒤,
-    // 그중 첫 번째(sortOrder 기준) 미디어만 썸네일로 골라 반환한다 - viewerId 기준으로 블러 등이
-    // 적용된 결과라서, 잠금 콘텐츠가 마이페이지/타인 프로필 포트폴리오 그리드에서 원문으로 새지 않는다.
+    // 그중 첫 번째(sortOrder 기준) 미디어만 썸네일로 골라 반환한다.
+    // 예전에 이 메서드가 파이프라인을 건너뛰고 엔티티 원문을 그대로 내보내서, 프로필/채널 화면으로
+    // 블러 원문과 원본 이미지 URL이 유출된 적이 있다. 목록도 반드시 파이프라인을 거칠 것.
     @Override
     public List<PostSummary> getPostsByAuthorId(Long userId, Long viewerId) {
         List<PostEntity> posts = postRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId);
@@ -80,10 +82,11 @@ public class PostReaderImpl implements PostReader {
 
         return toPostViews(posts, viewerId).stream()
                 .map(view -> {
+                    // 렌더된 media 중 첫 번째가 썸네일 (파이프라인이 sortOrder 순서를 유지해 준다)
                     ViewMedia thumbnail = view.media().isEmpty() ? null : view.media().get(0);
                     return new PostSummary(
                             view.postId(),
-                            view.content(),
+                            view.content(),   // 블러 등 렌더 적용본
                             thumbnail != null ? thumbnail.url() : null,
                             thumbnail != null && thumbnail.mediaType() == MediaType.VIDEO,
                             view.createdAt()
