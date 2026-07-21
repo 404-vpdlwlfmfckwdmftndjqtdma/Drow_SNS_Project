@@ -1,40 +1,53 @@
-import PayButton from "@/components/modules/payment/PayButton";
+"use client";
+
+import { useState } from "react";
+import ChargeButton from "@/components/payment/ChargeButton";
+import PurchaseButton from "@/components/payment/PurchaseButton";
+import SubscribeButton from "@/components/payment/SubscribeButton";
+import WalletBalance from "@/components/payment/WalletBalance";
 import styles from "./page.module.css";
 
-const PAYMENT_AMOUNT = 1_000;
-
+/**
+ * 결제 테스트 화면.
+ * 모든 결제는 지갑을 거친다 - 토스 결제는 "충전"에서만 일어나고,
+ * 상품/구독 구매는 충전된 잔액에서 차감된다.
+ */
 export default function PaymentPage() {
+  // 충전·구매 후 잔액을 다시 불러오기 위한 신호
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refreshBalance = () => setRefreshKey((key) => key + 1);
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <p className={styles.eyebrow}>PAYMENT</p>
         <h1 className={styles.title}>결제</h1>
-        <p className={styles.description}>안전한 결제를 위해 결제 금액을 확인한 뒤 진행해 주세요.</p>
+        <p className={styles.description}>
+          충전한 토큰으로 개별 상품과 채널을 구매합니다. 외부 결제는 충전에서만 일어납니다.
+        </p>
       </header>
 
-      <section className={styles.card} aria-labelledby="payment-order-title">
-        <div className={styles.iconWrap}>
-          <span className="material-symbols-outlined">credit_card</span>
-        </div>
+      <div className={styles.grid}>
+        <WalletBalance refreshKey={refreshKey} />
 
-        <div className={styles.orderInfo}>
-          <div>
-            <p className={styles.orderLabel}>결제 항목</p>
-            <h2 className={styles.orderTitle} id="payment-order-title">4NF 결제</h2>
-          </div>
-          <strong className={styles.amount}>{PAYMENT_AMOUNT.toLocaleString("ko-KR")}원</strong>
-        </div>
+        <ChargeButton returnUrl="/payment" />
 
-        <div className={styles.divider} />
+        <SubscribeButton onDone={refreshBalance} />
 
-        <div className={styles.payButtonWrap}>
-          <PayButton amount={PAYMENT_AMOUNT} orderName="4NF 결제" returnUrl="/payment">
-            {PAYMENT_AMOUNT.toLocaleString("ko-KR")}원 결제하기
-          </PayButton>
-        </div>
+        <PurchaseButton
+          capability="textBlur"
+          title="텍스트 블러 구매"
+          description="그 글의 가려진 본문만 해제합니다."
+          onDone={refreshBalance}
+        />
 
-        <p className={styles.notice}>결제 버튼을 누르면 카드 결제 화면으로 이동합니다.</p>
-      </section>
+        <PurchaseButton
+          capability="imageBlur"
+          title="이미지 블러 구매"
+          description="그 글의 가려진 사진만 해제합니다."
+          onDone={refreshBalance}
+        />
+      </div>
     </div>
   );
 }

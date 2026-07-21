@@ -28,8 +28,11 @@ public interface PostExtension {
      * 게시글 조회 시 본문 텍스트를 가공할 기회. 기본은 그대로 통과.
      * 예) 텍스트 블러는 자기 테이블의 구간을 읽어 ● 로 치환한 텍스트를 반환한다.
      * 여러 기능이 있으면 순서대로 통과하며 가공된다(파이프라인).
+     *
+     * @param unlocked 이 열람자가 이 기능의 잠금을 풀었는지(구독/구매/작성자 본인).
+     *                 true 면 원문을 그대로 돌려줘야 한다. renderMedia 와 동일한 규칙.
      */
-    default String render(Long postId, String text) {
+    default String render(Long postId, String text, boolean unlocked) {
         return text;
     }
 
