@@ -22,25 +22,20 @@ import java.util.List;
 @Transactional
 public class SubscriptionTierService {
 
-    private static final int MAX_TIERS_PER_CHANNEL = 5;
-
     private final SubscriptionTierRepository tierRepository;
 
-    /** 등급 생성 - 자동으로 내 채널에 생성됨 */
+    /** 구독 상품 생성 - 자동으로 내 채널에 생성됨 */
     public TierResponse create(Long loginUserId, TierCreateRequest request) {
         Long channelId = resolveMyChannelId(loginUserId);
 
-        if (tierRepository.existsByChannelIdAndLevelAndDeletedFalse(channelId, request.level())) {
-            throw new CanvasflowException(ErrorCode.TIER_LEVEL_DUPLICATED);
-        }
-        if (tierRepository.countByChannelIdAndDeletedFalse(channelId) >= MAX_TIERS_PER_CHANNEL) {
-            throw new CanvasflowException(ErrorCode.TIER_LIMIT_EXCEEDED);
+        // 개수 제한은 두지 않는다 - 상품 구성은 판매자가 알아서 설계할 일이다.
+        if (tierRepository.existsByChannelIdAndNameAndDeletedFalse(channelId, request.name())) {
+            throw new CanvasflowException(ErrorCode.TIER_NAME_DUPLICATED);
         }
 
         SubscriptionTier tier = SubscriptionTier.builder()
                 .channelId(channelId)
                 .name(request.name())
-                .level(request.level())
                 .monthlyPrice(request.monthlyPrice())
                 .description(request.description())
                 .build();
@@ -48,16 +43,20 @@ public class SubscriptionTierService {
         return TierResponse.from(tierRepository.save(tier));
     }
 
-    /** 채널의 등급 목록 - 공개 (채널 페이지의 구독 유도 UI용) */
+    /** 채널의 구독 상품 목록 - 공개 (구독 버튼의 상품 선택 UI용) */
     @Transactional(readOnly = true)
     public List<TierResponse> getTiers(Long channelId) {
         return TierResponse.from(
-                tierRepository.findByChannelIdAndDeletedFalseOrderByLevelAsc(channelId));
+                tierRepository.findByChannelIdAndDeletedFalseOrderByMonthlyPriceAsc(channelId));
     }
 
-    /** 등급 수정 - level 변경 불가 */
+    /** 구독 상품 수정 (이름·금액·설명) */
     public TierResponse update(Long loginUserId, Long tierId, TierUpdateRequest request) {
         SubscriptionTier tier = getMyTierOrThrow(loginUserId, tierId);
+        if (tierRepository.existsByChannelIdAndNameAndDeletedFalseAndIdNot(
+                tier.getChannelId(), request.name(), tierId)) {
+            throw new CanvasflowException(ErrorCode.TIER_NAME_DUPLICATED);
+        }
         tier.update(request.name(), request.monthlyPrice(), request.description());
         return TierResponse.from(tier);
     }

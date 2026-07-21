@@ -4,6 +4,7 @@ import com.canvasflow.global.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,6 +44,18 @@ public class GlobalExceptionHandler {
         log.warn("[404] {} {} - 매핑된 핸들러 없음", request.getMethod(), request.getRequestURI());
         return ResponseEntity.status(ErrorCode.ENDPOINT_NOT_FOUND.getStatus())
                 .body(ApiResponse.fail(ErrorCode.ENDPOINT_NOT_FOUND.getMessage()));
+    }
+
+    /**
+     * 요청 본문을 읽을 수 없는 경우(깨진 JSON, 잘못된 인코딩, 타입 불일치 등).
+     * 서버 잘못이 아니라 잘못된 요청이므로 500이 아니라 400으로 돌려준다.
+     * (예: Windows 콘솔에서 CP949로 인코딩된 한글 본문 → "Invalid UTF-8 start byte")
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e, HttpServletRequest request) {
+        log.warn("[400] {} {} - 요청 본문을 읽을 수 없음: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+        return ResponseEntity.status(ErrorCode.INVALID_INPUT_VALUE.getStatus())
+                .body(ApiResponse.fail(ErrorCode.INVALID_INPUT_VALUE.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

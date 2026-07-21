@@ -7,14 +7,6 @@ import MediaUploader, { type MediaItem } from "@/components/post/MediaUploader";
 import type { BlurRange } from "@/types";
 import styles from "./page.module.css";
 
-type Visibility = "public" | "subscribers";
-
-// 프론트 표시용 값 -> 백엔드 ContentVisibility(PUBLIC/LOCKED) 매핑
-const VISIBILITY_MAP: Record<Visibility, string> = {
-  public: "PUBLIC",
-  subscribers: "LOCKED",
-};
-
 // 백엔드 PostEntity.content 컬럼 길이(@Lob, length=800)와 맞춤
 const CONTENT_MAX_LENGTH = 800;
 
@@ -51,17 +43,22 @@ function renderHighlightedContent(content: string, ranges: BlurRange[]) {
   return parts;
 }
 
+// 공개 범위 선택은 두지 않는다.
+// 접근 제어는 전적으로 블러(가린 부분) + 가격으로 표현한다 - 구독자는 블러가 전부 풀리고,
+// 비구독자는 가격이 매겨진 부분만 개별 구매할 수 있다.
+// (예전엔 "전체 공개 / 구독자 전용" 라디오와 등급 드롭다운이 있었지만, 고른 값이 서버로
+//  가지도 않고 백엔드 판정에도 쓰이지 않는 장식이었다.)
 export default function NewPostPage() {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const blurPopupRef = useRef<HTMLButtonElement>(null);
-  const [visibility, setVisibility] = useState<Visibility>("public");
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [blurRanges, setBlurRanges] = useState<BlurRange[]>([]);
   const [blurredImageIndexes, setBlurredImageIndexes] = useState<Set<number>>(new Set());
+  // 가린 부분을 얼마에 팔지. 비워두면 판매하지 않는다(구독자만 열람 가능).
   const [textBlurPrice, setTextBlurPrice] = useState("");
   const [imageBlurPrice, setImageBlurPrice] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -171,9 +168,9 @@ export default function NewPostPage() {
 
     setSubmitting(true);
     try {
+      // visibility는 보내지 않는다 - 서버가 PUBLIC으로 저장한다
       await api.post("/api/v1/posts", {
         content,
-        visibility: VISIBILITY_MAP[visibility],
         tags,
         media,
         extensions: Object.keys(extensions).length > 0 ? extensions : undefined,
@@ -237,37 +234,6 @@ export default function NewPostPage() {
         </div>
 
         <div>
-          <div data-panel="settings">
-            <h3>
-              <span data-icon data-tone="primary">visibility</span>
-              공개 설정
-            </h3>
-
-            <label>
-              <input type="radio" name="visibility" checked={visibility === "public"} onChange={() => setVisibility("public")} />
-              <div>
-                <p>전체 공개</p>
-                <p>누구나 볼 수 있습니다.</p>
-              </div>
-            </label>
-
-            <label>
-              <input type="radio" name="visibility" checked={visibility === "subscribers"} onChange={() => setVisibility("subscribers")} />
-              <div>
-                <p>구독자 전용</p>
-                <p>선택한 등급의 구독자만 가능.</p>
-              </div>
-            </label>
-
-            {visibility === "subscribers" && (
-              <select defaultValue="basic">
-                <option value="basic">Tier 1 (베이직)</option>
-                <option value="premium">Tier 2 (프리미엄)</option>
-                <option value="vip">Tier 3 (VIP)</option>
-              </select>
-            )}
-          </div>
-
           {(blurRanges.length > 0 || blurredImageIndexes.size > 0) && (
             <div data-panel="settings">
               <h3>
@@ -283,7 +249,7 @@ export default function NewPostPage() {
                     className={styles.priceInput}
                     type="number"
                     min={0}
-                    placeholder="가격 (원)"
+                    placeholder="가격 (원, 비우면 판매 안 함)"
                     value={textBlurPrice}
                     onChange={(event) => setTextBlurPrice(event.target.value)}
                   />
@@ -298,7 +264,7 @@ export default function NewPostPage() {
                     className={styles.priceInput}
                     type="number"
                     min={0}
-                    placeholder="가격 (원)"
+                    placeholder="가격 (원, 비우면 판매 안 함)"
                     value={imageBlurPrice}
                     onChange={(event) => setImageBlurPrice(event.target.value)}
                   />
