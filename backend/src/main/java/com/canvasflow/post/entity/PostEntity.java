@@ -76,6 +76,10 @@ public class PostEntity extends BaseTimeEntity {
         this.singlePurchasePrice = singlePurchasePrice;
     }
 
+    public PostEntity(Long userId, String content, ContentVisibility visibility, List<String> tags) {
+        super();
+    }
+
     public void update(String content, ContentVisibility visibility, List<String> tags){
         this.content = content;
         this.visibility = visibility == null ? ContentVisibility.PUBLIC : visibility;

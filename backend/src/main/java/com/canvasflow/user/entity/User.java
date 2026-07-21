@@ -50,4 +50,9 @@ public class User extends BaseTimeEntity {
     public void changeBio(String bio) {
         this.bio = bio;
     }
+
+    /** 비밀번호 재설정용. 호출하는 쪽(UserService)에서 이미 암호화한 값을 넘겨준다. */
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

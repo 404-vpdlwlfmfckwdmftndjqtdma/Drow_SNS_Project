@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ public class PostReaderImpl implements PostReader {
 
     private final PostRepository postRepository;
     private final PostMediaRepository postMediaRepository;
+    private final PostViewAssembler assembler;
 
     @Override
     public Optional<PostPurchaseInfo> getPurchaseInfo(Long postId) {
@@ -80,5 +82,40 @@ public class PostReaderImpl implements PostReader {
     @Override
     public long sumViewCountByAuthorId(Long userId) {
         return postRepository.sumViewCountByUserId(userId);
+    }
+
+    // mypage의 "내가 좋아요한 글 / 댓글 단 글" 목록용 창구.
+    // 렌더 파이프라인(블러 등)은 PostViewAssembler 한 곳에만 두고 여기서는 조회+순서 보존+변환만 한다.
+    @Override
+    public List<PostView> getViewablePosts(List<Long> postIds, Long viewerId) {
+        if (postIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<PostEntity> posts = postRepository.findByPostIdInAndDeletedAtIsNull(postIds);
+
+        // IN 쿼리는 순서를 보장하지 않으므로 호출자가 넘긴 id 순서(예: 좋아요 누른 순)대로 재정렬.
+        // 삭제된 글의 id는 조회 결과에 없으므로 여기서 자연스럽게 걸러진다.
+        Map<Long, PostEntity> byId = posts.stream()
+                .collect(Collectors.toMap(PostEntity::getPostId, post -> post));
+        List<PostEntity> ordered = postIds.stream()
+                .map(byId::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        return assembler.toViewDtos(ordered, viewerId).stream()
+                .map(dto -> new PostView(
+                        dto.postId(),
+                        dto.userId(),
+                        dto.content(),
+                        dto.tags(),
+                        dto.media().stream()
+                                .map(m -> new ViewMedia(m.url(), m.mediaType()))
+                                .toList(),
+                        dto.viewCount(),
+                        dto.createdAt(),
+                        dto.nickname()
+                ))
+                .toList();
     }
 }

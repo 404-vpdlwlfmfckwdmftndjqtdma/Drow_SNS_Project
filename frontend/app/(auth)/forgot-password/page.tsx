@@ -2,17 +2,32 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import axios from "axios";
+import api from "@/lib/api";
 import styles from "./page.module.css";
 
-// TODO: 백엔드에 비밀번호 재설정 API가 아직 없음 (예: POST /api/v1/auth/password/reset-request).
-// 백엔드 준비되면 이 폼의 onSubmit에서 실제 API 호출로 교체하고, 실패 시 에러 메시지도 표시할 것.
+// POST /api/v1/auth/password/reset-request 로 연동.
+// 가입 여부와 무관하게 백엔드가 항상 같은 성공 메시지를 주기 때문에(이메일 존재 여부 비노출),
+// 실패는 네트워크 오류 등 진짜 예외 상황에서만 표시한다.
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError("");
+    setSubmitting(true);
+    try {
+      await api.post("/api/v1/auth/password/reset-request", { email });
+      setSubmitted(true);
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
+      setError(message ?? "요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -46,8 +61,10 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <button className={styles.submit} type="submit">
-                  재설정 링크 보내기
+                {error && <p className={styles.errorText}>{error}</p>}
+
+                <button className={styles.submit} type="submit" disabled={submitting}>
+                  {submitting ? "전송 중..." : "재설정 링크 보내기"}
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
               </form>

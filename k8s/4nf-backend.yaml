@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: 4nf-backend
-          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:54de9e77c329c3549c85c08d51eb775fb95ab9b5
+          image: ghcr.io/404-vpdlwlfmfckwdmftndjqtdma/4nf-backend:20ce97e9230e6b038162a2a0f8334f3b70dc4f75
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -47,6 +47,8 @@ spec:
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: "none"
           # JWT_SECRET / CLOUDINARY_* 는 별도 Secret(4nf-secret)에서 주입 (값은 git에 없음)
+            - name: FRONTEND_URL
+              value: "https://4nf.coder-han.com"
           envFrom:
             - secretRef:
                 name: 4nf-secret
@@ -77,6 +79,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     external-dns.alpha.kubernetes.io/target: viinac.iptime.org
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
 spec:
   ingressClassName: nginx
   tls:
