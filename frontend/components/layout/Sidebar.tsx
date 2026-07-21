@@ -23,7 +23,7 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 // 데스크톱 좌측 레일 네비게이션. 기본 화면에서는 메뉴를 비우고,
-// 내 프로필/결제 영역에서만 계정 관련 메뉴를 보여준다.
+// 내 프로필/결제/채널/유저 프로필(팔로워 목록 포함) 영역에서만 계정 관련 메뉴를 보여준다.
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -88,7 +88,11 @@ export default function Sidebar() {
     router.push("/posts");
   };
 
-  const isAccountSection = pathname.startsWith("/mypage") || pathname.startsWith("/payment");
+  const isAccountSection =
+    pathname.startsWith("/mypage") ||
+    pathname.startsWith("/payment") ||
+    pathname.startsWith("/channels") ||
+    pathname.startsWith("/users");
   const navItems = isAccountSection ? ACCOUNT_NAV_ITEMS : [];
 
   return (
