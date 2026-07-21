@@ -80,7 +80,14 @@ public class SubscriptionTierService {
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.TIER_NOT_FOUND));
     }
 
+    /**
+     * 로그인 유저의 채널 ID.
+     *
+     * 채널은 별도 개체가 아니라 작가(유저) 자신이다 - 유저 한 명이 곧 채널 하나이므로
+     * channelId 는 그 유저의 userId 를 그대로 쓴다. 별도 채널 생성 절차도 없다.
+     * (구독 판정도 SubscriptionReader.isSubscribed(viewerId, authorId) 로 같은 규칙을 쓴다.)
+     */
     private Long resolveMyChannelId(Long loginUserId) {
-        return loginUserId;     // ChannelId = userId
+        return loginUserId;
     }
 }
