@@ -49,6 +49,7 @@ public class SubscriptionTier extends BaseTimeEntity {
     @Builder
     public SubscriptionTier(Long channelId, String name,
                             BigDecimal monthlyPrice, String description) {
+        validateMonthlyPrice(monthlyPrice);
         this.channelId = channelId;
         this.name = name;
         this.monthlyPrice = monthlyPrice;
@@ -57,9 +58,16 @@ public class SubscriptionTier extends BaseTimeEntity {
     }
 
     public void update(String name, BigDecimal monthlyPrice, String description) {
+        validateMonthlyPrice(monthlyPrice);
         this.name = name;
         this.monthlyPrice = monthlyPrice;
         this.description = description;
+    }
+
+    private static void validateMonthlyPrice(BigDecimal monthlyPrice) {
+        if (monthlyPrice == null || monthlyPrice.signum() <= 0) {
+            throw new IllegalArgumentException("월 구독료는 0보다 커야 합니다.");
+        }
     }
 
     public void delete() {

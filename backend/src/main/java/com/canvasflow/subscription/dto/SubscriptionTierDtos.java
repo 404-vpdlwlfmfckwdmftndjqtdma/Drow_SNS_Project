@@ -10,13 +10,13 @@ public class SubscriptionTierDtos {
 
     public record TierCreateRequest(
             @NotBlank @Size(max = 30) String name,
-            @NotNull @DecimalMin("0") BigDecimal monthlyPrice,
+            @NotNull @DecimalMin("1") BigDecimal monthlyPrice,
             @Size(max = 200) String description
     ) {}
 
     public record TierUpdateRequest(
             @NotBlank @Size(max = 30) String name,
-            @NotNull @DecimalMin("0") BigDecimal monthlyPrice,
+            @NotNull @DecimalMin("1") BigDecimal monthlyPrice,
             @Size(max = 200) String description
     ) {}
 

@@ -1,82 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
 import type { ApiResponse } from "@/types";
-import type { ProductOfferResponse, PurchaseResponse } from "./types";
+import type { ProductOffer, ProductOfferResponse, PurchaseResponse } from "./types";
 import { toErrorMessage } from "./errorMessage";
+import { savePendingAction } from "./pendingAction";
+import { startCharge } from "./startCharge";
+import { notifyWalletChanged } from "@/lib/uiEvents";
 import styles from "./PaymentPanel.module.css";
 
 interface PurchaseButtonProps {
-  capability: string;   // 구매할 기능 key ("textBlur" | "imageBlur")
-  title: string;        // 카드 제목
-  description?: string;
-  onDone?: () => void;  // 구매 성공 시 부모에게 알림 (잔액 갱신용)
+  postId: number;
+  capability: string;   // "textBlur" | "imageBlur" - 감싸는 쪽에서 못 박는다
+  label: string;        // 버튼/안내에 쓸 이름 (예: "텍스트 블러")
+  onDone?: () => void;  // 구매 성공 시 부모 갱신 (블러 풀린 화면 다시 그리기). 없어도 동작한다.
 }
 
 /**
- * [개별 상품 구매 버튼] 특정 글의 특정 기능 잠금을 지갑 잔액으로 산다.
+ * [블러 구매 버튼 - 공용 구현] postId만 있으면 알아서 굴러간다.
  *
- * 가격은 판매자가 글에 등록해 둔 가격표에서 서버가 조회하므로 프론트가 보내지 않는다.
- * "가격 확인"으로 먼저 조회하면 이 글에서 이 기능이 얼마인지 / 이미 샀는지 알 수 있다.
+ * 마운트 시 이 글에서 이 기능이 얼마인지·이미 샀는지·파는지 조회한다.
+ *  - 판매 안 하는 글 → 아무것도 안 그린다.
+ *  - 이미 구매 → "구매함" 표시.
+ *  - 살 수 있음 → "○○ 구매 (가격)" 버튼. 잔액이 모자라면 부족분(가격-잔액)을
+ *    자동 충전한 뒤 돌아와서 구매까지 이어진다(success 페이지가 마무리).
+ *
+ * 캡ability는 감싸는 컴포넌트(TextBlur/ImageBlurPurchaseButton)가 고정하므로
+ * 쓰는 쪽은 postId만 넘기면 된다.
  */
-export default function PurchaseButton({
-  capability,
-  title,
-  description,
-  onDone,
-}: PurchaseButtonProps) {
-  const [postId, setPostId] = useState("");
+export default function PurchaseButton({ postId, capability, label, onDone }: PurchaseButtonProps) {
+  const [offer, setOffer] = useState<ProductOffer | null>(null);
+  const [balance, setBalance] = useState(0);
+  const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // 이 글에서 파는 상품 목록을 조회해 해당 기능의 가격/구매여부만 뽑아 보여준다
-  const checkPrice = async () => {
-    if (!postId) {
-      setError("게시글 ID를 입력하세요.");
+  // 이 글에서 이 기능의 가격/구매여부/잔액을 조회한다
+  const load = useCallback(async () => {
+    if (!Number.isInteger(postId) || postId <= 0) {
+      setState("unavailable");
       return;
     }
-    setPending(true);
-    setError("");
+    setState("loading");
     setMessage("");
+    setError("");
     try {
-      const res = await api.get<ApiResponse<ProductOfferResponse>>(
-        `/api/v1/posts/${postId}/products`
-      );
-      const data = res.data.data;
-      const offer = data.offers.find((o) => o.capability === capability);
-      if (!offer) {
-        setMessage(`이 글은 ${capability}를 판매하지 않습니다. (보유 ${data.balance.toLocaleString("ko-KR")}원)`);
-        return;
-      }
-      setMessage(
-        `가격 ${offer.price.toLocaleString("ko-KR")}원 · 보유 ${data.balance.toLocaleString("ko-KR")}원` +
-          (offer.purchased ? " · 이미 구매함" : offer.price > data.balance ? " · 잔액 부족" : "")
-      );
-    } catch (err) {
-      setError(toErrorMessage(err, "가격을 불러오지 못했습니다."));
-    } finally {
-      setPending(false);
+      const res = await api.get<ApiResponse<ProductOfferResponse>>(`/api/v1/posts/${postId}/products`);
+      const found = res.data.data.offers.find((o) => o.capability === capability) ?? null;
+      setOffer(found);
+      setBalance(res.data.data.balance);
+      setState(found ? "ready" : "unavailable");
+    } catch {
+      setState("unavailable");
     }
-  };
+  }, [postId, capability]);
 
-  const handlePurchase = async () => {
-    if (!postId) {
-      setError("게시글 ID를 입력하세요.");
-      return;
-    }
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleClick = async () => {
+    if (!offer) return;
     setPending(true);
-    setError("");
     setMessage("");
+    setError("");
     try {
+      // 잔액이 모자라면 부족분만 충전 → 돌아오면 success 페이지가 이 구매를 자동 완료한다
+      if (offer.price > balance) {
+        const shortfall = offer.price - balance;
+        savePendingAction({ type: "purchase", postId, capability, label: `${label} 구매` });
+        await startCharge(shortfall, window.location.pathname + window.location.search);
+        return; // 결제창으로 리다이렉트됨
+      }
+
       const res = await api.post<ApiResponse<PurchaseResponse>>(
         `/api/v1/posts/${postId}/purchase`,
         { capability }
       );
-      const purchase = res.data.data;
-      setMessage(`구매 완료 - ${purchase.price.toLocaleString("ko-KR")}원 차감됨 (잠금 해제)`);
+      setMessage(`${res.data.data.price.toLocaleString("ko-KR")}원 결제 완료 · 잠금 해제`);
+      notifyWalletChanged();
       onDone?.();
+      await load(); // "구매함" 상태로 갱신
     } catch (err) {
       setError(toErrorMessage(err, "구매에 실패했습니다."));
     } finally {
@@ -84,45 +90,53 @@ export default function PurchaseButton({
     }
   };
 
+  if (state === "loading") {
+    return <p className={styles.info}>{label} 확인 중...</p>;
+  }
+  // 판매하지 않는 글이면 버튼 자체를 그리지 않는다 (게시글 상세에 붙여도 깔끔)
+  if (state === "unavailable" || !offer) {
+    return null;
+  }
+  if (offer.purchased) {
+    return (
+      <span className={styles.ownedTag}>
+        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>lock_open</span>
+        {label} 구매함
+      </span>
+    );
+  }
+
+  const short = offer.price > balance;
+  const shortfall = offer.price - balance;
+
   return (
-    <section className={styles.card}>
-      <div className={styles.cardHeader}>
-        <h2 className={styles.cardTitle}>{title}</h2>
-        <span className={styles.endpoint}>POST /api/v1/posts/{"{id}"}/purchase</span>
-      </div>
-      {description && <p className={styles.cardDesc}>{description}</p>}
+    <div className={styles.field}>
+      {/* 상품가 / 보유토큰 / 결제할 금액을 위아래로 */}
+      <dl className={styles.breakdown}>
+        <div>
+          <dt>{label} 가격</dt>
+          <dd>{offer.price.toLocaleString("ko-KR")}원</dd>
+        </div>
+        <div>
+          <dt>보유 토큰</dt>
+          <dd>{balance.toLocaleString("ko-KR")}원</dd>
+        </div>
+        <div className={styles.breakdownTotal}>
+          <dt>{short ? "충전 후 결제" : "결제 금액"}</dt>
+          <dd>{(short ? shortfall : offer.price).toLocaleString("ko-KR")}원</dd>
+        </div>
+      </dl>
 
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor={`purchase-post-${capability}`}>
-          게시글 ID
-        </label>
-        <input
-          id={`purchase-post-${capability}`}
-          className={styles.input}
-          type="number"
-          min={1}
-          placeholder="예: 27"
-          value={postId}
-          onChange={(e) => setPostId(e.target.value)}
-        />
-      </div>
-
-      <div className={styles.row}>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={checkPrice}
-          disabled={pending}
-        >
-          가격 확인
-        </button>
-        <button type="button" className={styles.button} onClick={handlePurchase} disabled={pending}>
-          {pending ? "처리 중..." : "구매하기"}
-        </button>
-      </div>
+      <button type="button" className={styles.buyButton} onClick={handleClick} disabled={pending}>
+        {pending
+          ? "처리 중..."
+          : short
+            ? `${shortfall.toLocaleString("ko-KR")}원 충전하고 구매하기`
+            : `${offer.price.toLocaleString("ko-KR")}원 결제하고 구매하기`}
+      </button>
 
       {message && <p className={styles.success}>{message}</p>}
       {error && <p className={styles.error}>{error}</p>}
-    </section>
+    </div>
   );
 }

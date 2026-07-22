@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { getCurrentUserId, isLoggedIn } from "@/lib/auth";
 import { logout } from "@/lib/authActions";
+import { requestFeedRefresh } from "@/lib/uiEvents";
 import Logo from "@/components/common/Logo";
 import type { ApiResponse } from "@/types";
 import styles from "./Sidebar.module.css";
@@ -98,7 +99,17 @@ export default function Sidebar() {
 
   return (
     <aside className={`${styles.sidebar} ${fontsReady ? styles.sidebarReady : ""} glass`}>
-      <Link href="/posts" className={styles.logo}>
+      <Link
+        href="/posts"
+        className={styles.logo}
+        onClick={() => {
+          // 이미 피드에 있으면 Link 이동이 아무 일도 안 하므로, 직접 재조회 신호를 보낸다.
+          if (pathname === "/posts") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            requestFeedRefresh();
+          }
+        }}
+      >
         <Logo />
       </Link>
 

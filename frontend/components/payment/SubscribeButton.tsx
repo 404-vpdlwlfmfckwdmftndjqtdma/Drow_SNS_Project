@@ -12,12 +12,11 @@ import styles from "./PaymentPanel.module.css";
  *
  * 채널은 별도 개체가 아니라 작가(유저) 자신이므로 channelId = 작가의 userId 다.
  * 유료 구독은 등급(tier)이 있어야 하고 그 등급의 월 가격만큼 지갑에서 차감된다.
- * 등급을 고르지 않으면 무료 구독(팔로우)이라 차감이 없다.
  */
 export default function SubscribeButton({ onDone }: { onDone?: () => void }) {
   const [channelId, setChannelId] = useState("");
   const [tiers, setTiers] = useState<TierResponse[] | null>(null);
-  const [tierId, setTierId] = useState("");   // "" = 무료 구독
+  const [tierId, setTierId] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -36,7 +35,7 @@ export default function SubscribeButton({ onDone }: { onDone?: () => void }) {
       setTiers(res.data);
       setTierId("");
       if (res.data.length === 0) {
-        setMessage("등록된 유료 등급이 없습니다. 무료 구독만 가능합니다.");
+        setMessage("등록된 구독 상품이 없습니다.");
       }
     } catch (err) {
       setError(toErrorMessage(err, "등급 목록을 불러오지 못했습니다."));
@@ -50,20 +49,21 @@ export default function SubscribeButton({ onDone }: { onDone?: () => void }) {
       setError("채널 ID(작가 userId)를 입력하세요.");
       return;
     }
+    if (!tierId) {
+      setError("구독 상품을 선택하세요.");
+      return;
+    }
     setPending(true);
     setError("");
     setMessage("");
     try {
-      // tierId가 없으면 null → 무료 구독. 금액은 서버가 등급에서 조회하므로 보내지 않는다.
       await api.post<number>(`/api/v1/channels/${channelId}/subscriptions`, {
-        tierId: tierId ? Number(tierId) : null,
+        tierId: Number(tierId),
       });
       const tier = tiers?.find((t) => String(t.id) === tierId);
-      setMessage(
-        tier
-          ? `구독 완료 - ${tier.name}(월 ${tier.monthlyPrice.toLocaleString("ko-KR")}원) 차감됨`
-          : "무료 구독 완료 (차감 없음)"
-      );
+      if (tier) {
+        setMessage(`구독 완료 - ${tier.name}(월 ${tier.monthlyPrice.toLocaleString("ko-KR")}원) 차감됨`);
+      }
       onDone?.();
     } catch (err) {
       setError(toErrorMessage(err, "구독에 실패했습니다."));
@@ -112,7 +112,7 @@ export default function SubscribeButton({ onDone }: { onDone?: () => void }) {
           onChange={(e) => setTierId(e.target.value)}
           disabled={tiers === null}
         >
-          <option value="">무료 구독 (등급 없음 · 차감 없음)</option>
+          <option value="">구독 상품을 선택하세요</option>
           {tiers?.map((tier) => (
             <option key={tier.id} value={tier.id}>
               {tier.name} · 월 {tier.monthlyPrice.toLocaleString("ko-KR")}원
@@ -121,7 +121,12 @@ export default function SubscribeButton({ onDone }: { onDone?: () => void }) {
         </select>
       </div>
 
-      <button type="button" className={styles.button} onClick={handleSubscribe} disabled={pending}>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={handleSubscribe}
+        disabled={pending || !tierId}
+      >
         {pending ? "처리 중..." : "구독하기"}
       </button>
 

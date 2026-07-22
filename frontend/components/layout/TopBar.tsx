@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_CHANGE_EVENT, getCurrentUserId, isLoggedIn } from "@/lib/auth";
 import NotificationButton from "@/components/notification/NotificationButton";
+import WalletChip from "@/components/payment/WalletChip";
 import styles from "./TopBar.module.css";
 
 // 검색창(중앙) + 업로드/알림(우측)을 담는 상단 고정 바. 어느 화면에서든 항상 떠 있는 전역 액션이라
@@ -55,6 +56,8 @@ export default function TopBar() {
 
       <div className={styles.actions}>
         {currentUserId != null && <NotificationButton userId={currentUserId} />}
+        {/* 업로드 버튼 왼쪽에 보유 토큰 표시 (누르면 충전으로 이동) */}
+        <WalletChip />
         <Link
           href="/posts/new"
           className={styles.uploadBtn}

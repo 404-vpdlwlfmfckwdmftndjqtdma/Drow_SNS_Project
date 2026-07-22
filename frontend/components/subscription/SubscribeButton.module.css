@@ -107,6 +107,61 @@
   font-weight: 700;
 }
 
+/* 부족분 결제 내역 (상품가 - 보유토큰 = 결제할 금액) */
+.breakdown {
+  margin: var(--space-sm) 0 var(--space-md);
+  padding: 0;
+}
+
+.breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-xs) 0;
+  font-size: 14px;
+  color: var(--color-on-surface-variant);
+}
+
+.breakdown dt,
+.breakdown dd {
+  margin: 0;
+}
+
+.breakdownTotal {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-sm) !important;
+  border-top: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface) !important;
+  font-weight: 800;
+}
+
+.breakdownTotal dd {
+  color: var(--color-primary);
+}
+
+.payButton {
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: var(--space-sm);
+  padding: 0 var(--space-md);
+  color: var(--color-on-primary);
+  background: var(--gradient-brand);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.payButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.confirmCancelBtn {
+  width: 100%;
+}
+
 .tierPrice {
   color: var(--color-on-surface-variant);
   font-size: 13px;

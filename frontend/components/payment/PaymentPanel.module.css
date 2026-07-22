@@ -121,6 +121,73 @@
   background: var(--color-surface-container-high);
 }
 
+/* 전체폭 결제 버튼 (구매/충전) */
+.buyButton {
+  composes: button;
+  width: 100%;
+}
+
+/* 가격 내역 - 상품가 / 보유토큰 / 결제할금액을 위아래로 */
+.breakdown {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface-container);
+  border-radius: var(--radius-md);
+}
+
+.breakdown > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 7px 0;
+  font-size: 14px;
+  color: var(--color-on-surface-variant);
+}
+
+.breakdown dt,
+.breakdown dd {
+  margin: 0;
+}
+
+.breakdown dd {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.breakdownTotal {
+  margin-top: 2px;
+  padding-top: var(--space-sm) !important;
+  border-top: 1px dashed var(--color-outline-variant);
+}
+
+.breakdownTotal dt {
+  font-weight: 800;
+  color: var(--color-on-surface);
+}
+
+.breakdownTotal dd {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+/* 이미 구매한 상품 표시 */
+.ownedTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 /* 결과 표시 - 성공/실패를 색으로 구분해 테스트 결과를 한눈에 본다 */
 .result {
   margin: 0;

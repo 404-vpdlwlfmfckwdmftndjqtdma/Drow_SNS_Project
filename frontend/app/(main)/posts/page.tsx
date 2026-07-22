@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
+import { FEED_REFRESH_EVENT } from "@/lib/uiEvents";
 import CommentButton from "@/components/comment/CommentButton";
 import PostLikeButton from "@/components/post/PostLikeButton";
 import type { ApiResponse } from "@/types";
@@ -79,12 +80,22 @@ export default function PostListPage() {
     };
   }, []);
 
-  useEffect(() => {
+  const loadPosts = useCallback(() => {
     api
       .get<ApiResponse<PostListItem[]>>("/api/v1/posts")
-      .then((res) => setPosts(res.data.data))
+      .then((res) => {
+        setPosts(res.data.data);
+        setError("");
+      })
       .catch(() => setError("목록을 불러오지 못했습니다."));
   }, []);
+
+  useEffect(() => {
+    loadPosts();
+    // 로고를 다시 눌렀을 때 등, 같은 화면에서 새로고침 신호가 오면 다시 불러온다.
+    window.addEventListener(FEED_REFRESH_EVENT, loadPosts);
+    return () => window.removeEventListener(FEED_REFRESH_EVENT, loadPosts);
+  }, [loadPosts]);
 
   // 카드 전체가 상세페이지로 가는 링크라서, 더보기 버튼 클릭이 그 링크 이동으로 안 번지게 막아야 함
   const toggleExpand = (event: React.MouseEvent, postId: number) => {

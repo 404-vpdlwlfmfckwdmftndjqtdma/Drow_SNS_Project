@@ -248,9 +248,9 @@ export default function PostDetailPage() {
               <span className="material-symbols-outlined">close</span>
             </button>
             <PurchaseButton
+              postId={post.postId}
               capability={purchaseCapability}
-              title={CAPABILITY_LABEL[purchaseCapability]}
-              description={`게시글 ID: ${post.postId}`}
+              label={CAPABILITY_LABEL[purchaseCapability]}
               onDone={handlePurchaseDone}
             />
           </div>
