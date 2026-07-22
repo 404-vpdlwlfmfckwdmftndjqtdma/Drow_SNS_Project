@@ -60,54 +60,40 @@ public class SubscriptionService {
             throw new CanvasflowException(ErrorCode.ALREADY_SUBSCRIBED);
         }
 
-        // 2) 유료 등급이면 지갑에서 차감 (금액은 서버의 tier 가격 - 조작 불가).
+        // 2) 지갑에서 차감 (금액은 서버의 tier 가격 - 조작 불가).
         //    잔액이 모자라면 여기서 예외 → 아무것도 저장되지 않고 화면은 충전을 유도한다.
-        //    resolveTier가 0원 등급을 이미 null로 걸렀으므로 tier가 있으면 곧 유료다.
-        boolean paid = tier != null;
-        if (paid) {
-            walletCharger.useForSubscription(
-                    subscriberId, tier.getMonthlyPrice().longValueExact(), channelId);
-        }
+        walletCharger.useForSubscription(
+                subscriberId, tier.getMonthlyPrice().longValueExact(), channelId);
 
         // 3) 저장 or 재시작
         if (existing.isPresent()) {
             Subscription sub = existing.get();
-            if (paid) sub.startPaidPeriod(tier);
-            else sub.reactivate(tier);  // 무료 구독 복귀
+            sub.startPaidPeriod(tier);
             return sub.getId();
         }
-        return createSubscription(subscriberId, channelId, tier, paid);
+        return createSubscription(subscriberId, channelId, tier);
     }
 
-    /**
-     * tierId가 null이면 무료 구독, 있으면 존재하는 등급인지 확인.
-     *
-     * 0원 등급은 무료 구독(tier=null)으로 취급한다.
-     * 그렇지 않으면 결제가 없어 이용권 기간(expiresAt)이 안 채워지는데 tier는 붙어 있어서,
-     * isBenefitActive()가 false가 되는 "구독은 됐는데 혜택은 없는" 상태에 빠진다.
-     */
+    /** 유료 구독 등급이 존재하고 가격이 0보다 큰지 확인한다. */
     private SubscriptionTier resolveTier(Long tierId) {
-        if (tierId == null) return null;
+        if (tierId == null) {
+            throw new CanvasflowException(ErrorCode.INVALID_INPUT_VALUE);
+        }
         SubscriptionTier tier = tierRepository.findByIdAndDeletedFalse(tierId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.TIER_NOT_FOUND));
-        return tier.getMonthlyPrice().signum() > 0 ? tier : null;
-    }
-
-    private Long reactivateOrThrow(Subscription existing, SubscriptionTier tier) {
-        if (existing.getStatus() == SubscriptionStatus.ACTIVE) {
-            throw new CanvasflowException(ErrorCode.ALREADY_SUBSCRIBED);
+        if (tier.getMonthlyPrice().signum() <= 0) {
+            throw new CanvasflowException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        existing.reactivate(tier);
-        return existing.getId();
+        return tier;
     }
 
-    private Long createSubscription(Long subscriberId, Long channelId, SubscriptionTier tier, boolean paid) {
+    private Long createSubscription(Long subscriberId, Long channelId, SubscriptionTier tier) {
         Subscription subscription = Subscription.builder()
                 .subscriberId(subscriberId)
                 .channelId(channelId)
                 .tier(tier)   // 엔티티 생성자에서 채널-등급 일치 검증됨
                 .build();
-        if (paid) subscription.startPaidPeriod(tier);
+        subscription.startPaidPeriod(tier);
 
         // TODO: NotificationService 연동 - 채널 주인에게 "새 구독자" 알림
         return subscriptionRepository.save(subscription).getId();

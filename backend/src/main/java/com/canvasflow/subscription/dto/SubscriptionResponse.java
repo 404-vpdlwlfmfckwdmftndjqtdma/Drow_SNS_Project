@@ -6,8 +6,8 @@ import com.canvasflow.subscription.entity.SubscriptionStatus;
 public record SubscriptionResponse(
         Long id,
         Long channelId,
-        Long tierId,        // 무료 구독이면 null
-        String tierName,    // 무료 구독이면 null
+        Long tierId,
+        String tierName,
         SubscriptionStatus status
 ) {
     public static SubscriptionResponse from(Subscription subscription) {
@@ -15,8 +15,8 @@ public record SubscriptionResponse(
         return new SubscriptionResponse(
                 subscription.getId(),
                 subscription.getChannelId(),
-                tier == null ? null : tier.getId(),
-                tier == null ? null : tier.getName(),
+                tier.getId(),
+                tier.getName(),
                 subscription.getStatus()
         );
     }

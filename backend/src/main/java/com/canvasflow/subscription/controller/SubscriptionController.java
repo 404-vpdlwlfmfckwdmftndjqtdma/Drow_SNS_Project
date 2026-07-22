@@ -6,6 +6,7 @@ import com.canvasflow.global.security.AuthMember;
 import com.canvasflow.subscription.dto.SubscribeRequest;
 import com.canvasflow.subscription.dto.SubscriptionResponse;
 import com.canvasflow.subscription.service.SubscriptionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +26,7 @@ public class SubscriptionController {
     public ResponseEntity<Long> subscribe(
             @AuthenticationPrincipal AuthMember authMember,
             @PathVariable Long channelId,
-            @RequestBody SubscribeRequest request) {
+            @Valid @RequestBody SubscribeRequest request) {
         Long subscriptionId = subscriptionService.subscribe(requireLogin(authMember), channelId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(subscriptionId);
     }

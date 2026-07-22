@@ -61,8 +61,8 @@ export default function TierManagePage() {
       setError("상품 이름을 입력하세요.");
       return;
     }
-    if (!Number.isInteger(value) || value < 0) {
-      setError("금액은 0 이상의 정수여야 합니다.");
+    if (!Number.isInteger(value) || value <= 0) {
+      setError("금액은 0보다 큰 정수여야 합니다.");
       return;
     }
 
@@ -98,12 +98,22 @@ export default function TierManagePage() {
   };
 
   const handleUpdate = async (tierId: number) => {
+    const value = Number(editPrice);
+    if (!editName.trim()) {
+      setError("상품 이름을 입력하세요.");
+      return;
+    }
+    if (!Number.isInteger(value) || value <= 0) {
+      setError("금액은 0보다 큰 정수여야 합니다.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     try {
       await api.put(`/api/v1/channels/me/tiers/${tierId}`, {
         name: editName.trim(),
-        monthlyPrice: Number(editPrice),
+        monthlyPrice: value,
         description: editDescription.trim() || null,
       });
       setEditingId(null);
@@ -164,13 +174,12 @@ export default function TierManagePage() {
             id="tier-price"
             className={styles.input}
             type="number"
-            min={0}
-            step={1000}
+            min={1}
+            step={1}
             placeholder="예: 5000"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
           />
-          <p className={styles.hint}>0원으로 두면 무료 구독(팔로우)이 되고 블러는 풀리지 않습니다.</p>
         </div>
 
         <div className={styles.field}>
@@ -224,8 +233,8 @@ export default function TierManagePage() {
                     <input
                       className={styles.input}
                       type="number"
-                      min={0}
-                      step={1000}
+                      min={1}
+                      step={1}
                       value={editPrice}
                       onChange={(e) => setEditPrice(e.target.value)}
                     />
@@ -266,7 +275,6 @@ export default function TierManagePage() {
                       </p>
                       <p className={styles.tierPrice}>
                         월 {tier.monthlyPrice.toLocaleString("ko-KR")}원
-                        {tier.monthlyPrice === 0 && " · 무료 구독"}
                       </p>
                       {tier.description && <p className={styles.tierDesc}>{tier.description}</p>}
                     </div>

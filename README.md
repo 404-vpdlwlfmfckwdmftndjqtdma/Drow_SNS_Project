@@ -153,7 +153,7 @@ canvasFlow/
 │       │   ├── user/            # 회원정보, 닉네임·프로필 수정, 마이페이지 요약
 │       │   ├── post/            # 게시글 CRUD, 그림/글/영상 혼합 첨부, 조회수, 검색 쿼리
 │       │   ├── follow/          # 팔로우 / 언팔로우
-│       │   ├── channel/         # 채널 개설 / 채널 추가(무료 구독)
+│       │   ├── channel/         # 채널 개설 / 구독 상품 관리
 │       │   ├── subscription/    # 구독 신청/해지, 등급, 콘텐츠 잠금 판정(ContentAccessService)
 │       │   ├── comment/         # 댓글 CRUD
 │       │   ├── like/            # 게시글/댓글 좋아요 (중복 방지)

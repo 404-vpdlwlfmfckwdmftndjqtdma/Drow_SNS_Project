@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { isLoggedIn } from "@/lib/auth";
 import { toErrorMessage } from "@/components/payment/errorMessage";
+import { savePendingAction } from "@/components/payment/pendingAction";
+import { startCharge } from "@/components/payment/startCharge";
+import { notifyWalletChanged } from "@/lib/uiEvents";
 import type { TierResponse, WalletBalance } from "@/components/payment/types";
 import type { ApiResponse, PageResponse } from "@/types";
 import styles from "./SubscribeButton.module.css";
@@ -19,16 +22,17 @@ interface SubscribeButtonProps {
 interface MySubscription {
   id: number;
   channelId: number;
-  tierId: number | null;
-  tierName: string | null;
+  tierId: number;
+  tierName: string;
   status: "ACTIVE" | "CANCELED";
 }
 
 /**
  * 채널(작가) 구독 토글 버튼. FollowButton과 같은 사용법 - channelId만 넘기면 된다.
  *
- * 구독하면 그 작가 글의 블러가 전부 풀린다. 결제는 지갑 차감이라 외부 결제창이 뜨지 않고,
- * 잔액이 모자라면 충전 화면으로 유도한다.
+ * 구독하면 그 작가 글의 블러가 전부 풀린다. 결제는 지갑 차감이다.
+ * 잔액이 모자라면 "부족분(상품가 - 잔액)"만 충전하도록 안내하고, 충전이 끝나면
+ * 원래 하려던 구독이 자동으로 완료된다(success 페이지가 pendingAction을 실행).
  */
 export default function SubscribeButton({ channelId, onSubscribeChange }: SubscribeButtonProps) {
   const router = useRouter();
@@ -36,11 +40,14 @@ export default function SubscribeButton({ channelId, onSubscribeChange }: Subscr
   const [tierName, setTierName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // 등급 선택 모달 상태
+  // 등급 선택 모달
   const [pickerOpen, setPickerOpen] = useState(false);
   const [tiers, setTiers] = useState<TierResponse[]>([]);
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState("");
+
+  // 잔액이 모자란 등급을 고르면 이 값이 채워지고 "부족분 결제" 화면으로 바뀐다
+  const [payingTier, setPayingTier] = useState<TierResponse | null>(null);
 
   // 해지 확인 모달
   const [showConfirm, setShowConfirm] = useState(false);
@@ -78,6 +85,7 @@ export default function SubscribeButton({ channelId, onSubscribeChange }: Subscr
     }
     setBusy(true);
     setError("");
+    setPayingTier(null);
     try {
       const [tierRes, walletRes] = await Promise.all([
         api.get<TierResponse[]>(`/api/v1/channels/${channelId}/tiers`),
@@ -93,8 +101,16 @@ export default function SubscribeButton({ channelId, onSubscribeChange }: Subscr
     }
   };
 
-  // tierId가 null이면 무료 구독(차감 없음, 블러 해제 혜택도 없음)
-  const handleSubscribe = async (tierId: number | null, name: string | null) => {
+  // 등급 클릭: 잔액이 넉넉하면 바로 구독, 모자라면 부족분 결제 화면으로
+  const pickTier = (tier: TierResponse) => {
+    if (tier.monthlyPrice > balance) {
+      setPayingTier(tier);
+    } else {
+      subscribe(tier.id, tier.name);
+    }
+  };
+
+  const subscribe = async (tierId: number, name: string) => {
     setBusy(true);
     setError("");
     try {
@@ -102,9 +118,29 @@ export default function SubscribeButton({ channelId, onSubscribeChange }: Subscr
       setTierName(name);
       applyChange(true);
       setPickerOpen(false);
+      notifyWalletChanged();   // 유료 구독이면 잔액이 줄었으니 상단 칩 갱신
     } catch (err) {
       setError(toErrorMessage(err, "구독에 실패했습니다."));
     } finally {
+      setBusy(false);
+    }
+  };
+
+  // 부족분만 충전 → 토스로 이동. 돌아오면 success 페이지가 이 구독을 자동 완료한다.
+  const chargeAndSubscribe = async (tier: TierResponse) => {
+    setBusy(true);
+    setError("");
+    try {
+      savePendingAction({
+        type: "subscribe",
+        channelId,
+        tierId: tier.id,
+        label: `${tier.name} 구독`,
+      });
+      const shortfall = tier.monthlyPrice - balance;
+      await startCharge(shortfall, window.location.pathname + window.location.search);
+    } catch (err) {
+      setError(toErrorMessage(err, "충전을 시작하지 못했습니다."));
       setBusy(false);
     }
   };
@@ -123,6 +159,11 @@ export default function SubscribeButton({ channelId, onSubscribeChange }: Subscr
     }
   };
 
+  const closePicker = () => {
+    setPickerOpen(false);
+    setPayingTier(null);
+  };
+
   return (
     <>
       <button
@@ -139,67 +180,81 @@ export default function SubscribeButton({ channelId, onSubscribeChange }: Subscr
 
       {error && !pickerOpen && <p className={styles.error}>{error}</p>}
 
-      {/* 등급 선택 모달 - 보유 토큰과 각 등급 가격을 비교해 부족하면 충전으로 보낸다 */}
       {pickerOpen && (
-        <div className={styles.confirmOverlay} onClick={() => setPickerOpen(false)}>
+        <div className={styles.confirmOverlay} onClick={closePicker}>
           <div className={styles.pickerPanel} onClick={(e) => e.stopPropagation()}>
-            <p className={styles.pickerTitle}>구독 등급 선택</p>
-            <p className={styles.balance}>보유 토큰 {balance.toLocaleString("ko-KR")}원</p>
+            {payingTier ? (
+              /* ── 부족분 결제 화면 ── */
+              <>
+                <p className={styles.pickerTitle}>{payingTier.name} 구독</p>
+                <dl className={styles.breakdown}>
+                  <div>
+                    <dt>상품 금액</dt>
+                    <dd>{payingTier.monthlyPrice.toLocaleString("ko-KR")}원</dd>
+                  </div>
+                  <div>
+                    <dt>보유 토큰</dt>
+                    <dd>- {balance.toLocaleString("ko-KR")}원</dd>
+                  </div>
+                  <div className={styles.breakdownTotal}>
+                    <dt>결제할 금액</dt>
+                    <dd>{(payingTier.monthlyPrice - balance).toLocaleString("ko-KR")}원</dd>
+                  </div>
+                </dl>
 
-            <ul className={styles.tierList}>
-              {tiers.map((tier) => {
-                const short = tier.monthlyPrice > balance;
-                return (
-                  <li key={tier.id}>
-                    <button
-                      className={styles.tierItem}
-                      type="button"
-                      disabled={busy || short}
-                      onClick={() => handleSubscribe(tier.id, tier.name)}
-                    >
-                      <span className={styles.tierName}>
-                        {tier.name}
-                      </span>
-                      <span className={styles.tierPrice}>
-                        월 {tier.monthlyPrice.toLocaleString("ko-KR")}원
-                        {short && " · 잔액 부족"}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
+                {error && <p className={styles.error}>{error}</p>}
 
-              <li>
                 <button
-                  className={styles.tierItem}
+                  className={styles.payButton}
                   type="button"
                   disabled={busy}
-                  onClick={() => handleSubscribe(null, null)}
+                  onClick={() => chargeAndSubscribe(payingTier)}
                 >
-                  <span className={styles.tierName}>무료 구독</span>
-                  <span className={styles.tierPrice}>차감 없음 · 블러 해제 안 됨</span>
+                  {(payingTier.monthlyPrice - balance).toLocaleString("ko-KR")}원 결제하고 구독하기
                 </button>
-              </li>
-            </ul>
+                <button className={styles.confirmCancelBtn} type="button" onClick={() => setPayingTier(null)}>
+                  뒤로
+                </button>
+              </>
+            ) : (
+              /* ── 등급 선택 화면 ── */
+              <>
+                <p className={styles.pickerTitle}>구독 상품 선택</p>
+                <p className={styles.balance}>보유 토큰 {balance.toLocaleString("ko-KR")}원</p>
 
-            {error && <p className={styles.error}>{error}</p>}
+                {tiers.length === 0 && (
+                  <p className={styles.error}>등록된 구독 상품이 없습니다.</p>
+                )}
 
-            <div className={styles.confirmActions}>
-              <button
-                className={styles.confirmCancelBtn}
-                type="button"
-                onClick={() => router.push("/payment")}
-              >
-                충전하러 가기
-              </button>
-              <button
-                className={styles.confirmCancelBtn}
-                type="button"
-                onClick={() => setPickerOpen(false)}
-              >
-                닫기
-              </button>
-            </div>
+                <ul className={styles.tierList}>
+                  {tiers.map((tier) => {
+                    const short = tier.monthlyPrice > balance;
+                    return (
+                      <li key={tier.id}>
+                        <button
+                          className={styles.tierItem}
+                          type="button"
+                          disabled={busy}
+                          onClick={() => pickTier(tier)}
+                        >
+                          <span className={styles.tierName}>{tier.name}</span>
+                          <span className={styles.tierPrice}>
+                            월 {tier.monthlyPrice.toLocaleString("ko-KR")}원
+                            {short && " · 충전 필요"}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {error && <p className={styles.error}>{error}</p>}
+
+                <button className={styles.confirmCancelBtn} type="button" onClick={closePicker}>
+                  닫기
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

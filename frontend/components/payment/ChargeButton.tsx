@@ -1,17 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
-import api from "@/lib/api";
-import type { ApiResponse } from "@/types";
-import type { OrderCreateResponse } from "./types";
 import { toErrorMessage } from "./errorMessage";
-import {
-  PAYMENT_FAIL_PATH,
-  PAYMENT_RETURN_URL_KEY,
-  PAYMENT_SUCCESS_PATH,
-  TOSS_CLIENT_KEY,
-} from "./config";
+import { startCharge } from "./startCharge";
 import styles from "./PaymentPanel.module.css";
 
 /**
@@ -36,30 +27,11 @@ export default function ChargeButton({ returnUrl = "/payment" }: { returnUrl?: s
     setPending(true);
     setError("");
     try {
-      // ① 주문 생성 - 금액은 서버가 저장하므로 이후 조작이 불가능하다
-      const res = await api.post<ApiResponse<OrderCreateResponse>>("/api/v1/orders/charge", {
-        amount: value,
-      });
-      const order = res.data.data;
-
-      // 토스에서 돌아온 뒤 어느 화면으로 복귀할지 기억해 둔다
-      sessionStorage.setItem(PAYMENT_RETURN_URL_KEY, returnUrl);
-
-      // ② 서버가 발급한 orderId·amount 로 결제창 호출
-      const toss = await loadTossPayments(TOSS_CLIENT_KEY);
-      const payment = toss.payment({ customerKey: crypto.randomUUID() });
-      await payment.requestPayment({
-        method: "CARD",
-        amount: { currency: "KRW", value: order.amount },
-        orderId: order.orderId,
-        orderName: "4NF 토큰 충전",
-        successUrl: window.location.origin + PAYMENT_SUCCESS_PATH,
-        failUrl: window.location.origin + PAYMENT_FAIL_PATH,
-      });
+      // 결제창으로 리다이렉트된다 (정상 흐름에서는 이 아래가 실행되지 않는다)
+      await startCharge(value, returnUrl);
     } catch (err) {
-      // 결제창을 못 열거나 사용자가 닫은 경우 (정상 결제는 페이지가 넘어가므로 여기 안 옴)
+      // 결제창을 못 열거나 사용자가 닫은 경우
       setError(toErrorMessage(err, "충전을 시작하지 못했습니다."));
-      sessionStorage.removeItem(PAYMENT_RETURN_URL_KEY);
     } finally {
       setPending(false);
     }

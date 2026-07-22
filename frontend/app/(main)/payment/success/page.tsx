@@ -6,6 +6,8 @@ import api from "@/lib/api";
 import ChargeResult from "@/components/payment/ChargeResult";
 import PaymentReturnButton from "@/components/payment/PaymentReturnButton";
 import { toErrorMessage } from "@/components/payment/errorMessage";
+import { runPendingAction, takePendingAction } from "@/components/payment/pendingAction";
+import { notifyWalletChanged } from "@/lib/uiEvents";
 import type { OrderConfirmResponse } from "@/components/payment/types";
 import styles from "@/components/payment/PaymentStatus.module.css";
 import type { ApiResponse } from "@/types";
@@ -20,6 +22,8 @@ function SuccessInner() {
   const params = useSearchParams();
   const [data, setData] = useState<OrderConfirmResponse | null>(null);
   const [error, setError] = useState("");
+  // 충전이 "부족분 결제 → 구매 완료" 흐름의 일부였다면 그 결과 메시지
+  const [followUp, setFollowUp] = useState<string | null>(null);
   const done = useRef(false); // 중복 confirm 방지 (StrictMode 등)
 
   useEffect(() => {
@@ -34,10 +38,31 @@ function SuccessInner() {
       return;
     }
 
-    api
-      .post<ApiResponse<OrderConfirmResponse>>(`/api/v1/orders/${orderId}/confirm`, { paymentKey })
-      .then((res) => setData(res.data.data))
-      .catch((err) => setError(toErrorMessage(err, "결제 승인에 실패했습니다.")));
+    (async () => {
+      try {
+        // ① 충전 승인 + 지갑 적립
+        const res = await api.post<ApiResponse<OrderConfirmResponse>>(
+          `/api/v1/orders/${orderId}/confirm`,
+          { paymentKey }
+        );
+        setData(res.data.data);
+        notifyWalletChanged();   // 충전으로 잔액 증가 → 상단 칩 갱신
+
+        // ② 부족분 충전이었다면, 원래 하려던 구매를 이어서 완료한다
+        const pending = takePendingAction();
+        if (pending) {
+          try {
+            await runPendingAction(pending);
+            setFollowUp(`${pending.label} 완료`);
+          } catch (err) {
+            // 충전은 됐지만 구매가 실패한 경우(이미 구독 중 등) - 잔액은 지갑에 남는다
+            setFollowUp(toErrorMessage(err, `${pending.label}은(는) 완료하지 못했습니다.`));
+          }
+        }
+      } catch (err) {
+        setError(toErrorMessage(err, "결제 승인에 실패했습니다."));
+      }
+    })();
   }, [params]);
 
   if (error) {
@@ -80,7 +105,7 @@ function SuccessInner() {
 
   return (
     <div className={styles.screen}>
-      <ChargeResult data={data} />
+      <ChargeResult data={data} followUp={followUp} />
     </div>
   );
 }

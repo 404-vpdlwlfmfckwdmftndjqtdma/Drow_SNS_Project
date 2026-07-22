@@ -121,19 +121,6 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    @DisplayName("무료 구독은 지갑을 차감하지 않는다")
-    void 무료_구독은_차감_없음() {
-        userExists();
-        noExistingSubscription();
-        willAnswer(inv -> inv.getArgument(0))
-                .given(subscriptionRepository).save(any(Subscription.class));
-
-        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(null));
-
-        verify(walletCharger, never()).useForSubscription(anyLong(), anyLong(), anyLong());
-    }
-
-    @Test
     @DisplayName("잔액 부족: 구독이 저장되지 않는다")
     void 잔액_부족() {
         userExists();
@@ -150,29 +137,14 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    @DisplayName("0원 등급은 무료 구독으로 처리된다 (차감 없이 혜택도 없음)")
-    void 영원_등급은_무료_구독() {
-        userExists();
-        noExistingSubscription();
-        SubscriptionTier freeTier = SubscriptionTier.builder()
-                .channelId(CHANNEL_ID).name("무료팬")
-                .monthlyPrice(BigDecimal.ZERO).build();
-        given(tierRepository.findByIdAndDeletedFalse(TIER_ID)).willReturn(Optional.of(freeTier));
-        willAnswer(inv -> inv.getArgument(0))
-                .given(subscriptionRepository).save(any(Subscription.class));
-
-        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(TIER_ID));
-
-        // 0원이니 차감이 없어야 하고,
-        verify(walletCharger, never()).useForSubscription(anyLong(), anyLong(), anyLong());
-
-        // tier를 붙이지 않아야 "구독은 됐는데 혜택은 없는" 상태에 빠지지 않는다
-        ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
-        verify(subscriptionRepository).save(captor.capture());
-        Subscription saved = captor.getValue();
-        assertThat(saved.getTier()).isNull();
-        assertThat(saved.isBenefitActive()).isTrue();   // 팔로우로서는 유효
-        assertThat(saved.hasPaidBenefit()).isFalse();   // 블러 해제 혜택은 없음
+    @DisplayName("0원 구독 상품은 생성할 수 없다")
+    void Zero_Price_Tier() {
+        assertThatThrownBy(() -> SubscriptionTier.builder()
+                .channelId(CHANNEL_ID)
+                .name("0원 상품")
+                .monthlyPrice(BigDecimal.ZERO)
+                .build())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -188,19 +160,17 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    @DisplayName("무료 구독 신청(tierId=null): tier 없이 저장되고 tier 조회는 일어나지 않는다")
-    void Free_Subscription() {
+    @DisplayName("구독 상품을 선택하지 않으면 구독할 수 없다")
+    void Tier_Required() {
         userExists();
-        noExistingSubscription();
-        willAnswer(inv -> inv.getArgument(0))
-                .given(subscriptionRepository).save(any(Subscription.class));
 
-        subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(null));
+        assertThatThrownBy(() ->
+                subscriptionService.subscribe(SUBSCRIBER_ID, CHANNEL_ID, new SubscribeRequest(null)))
+                .isInstanceOf(CanvasflowException.class);
 
-        ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
-        verify(subscriptionRepository).save(captor.capture());
-        assertThat(captor.getValue().getTier()).isNull();
         verify(tierRepository, never()).findByIdAndDeletedFalse(anyLong());
+        verify(walletCharger, never()).useForSubscription(anyLong(), anyLong(), anyLong());
+        verify(subscriptionRepository, never()).save(any());
     }
 
     // ===== 2. 신청 실패 케이스 =====
@@ -255,7 +225,7 @@ class SubscriptionServiceTest {
     // ===== 3. 재구독 (핵심: 새 행 insert가 아니라 기존 행 재활성화) =====
 
     @Test
-    @DisplayName("해지했던 채널을 재구독하면 기존 행이 reactivate되고 save는 호출되지 않는다")
+    @DisplayName("해지했던 채널을 재구독하면 기존 행이 재활성화되고 save는 호출되지 않는다")
     void Resubscribe() {
         userExists();
         SubscriptionTier oldTier = supporterTier();
@@ -315,15 +285,6 @@ class SubscriptionServiceTest {
         sub.cancel();
 
         assertThat(sub.hasPaidBenefit()).isFalse();
-    }
-
-    @Test
-    @DisplayName("무료 구독(등급 없음)은 혜택이 없어 블러가 풀리지 않는다")
-    void 무료_구독은_레벨_0() {
-        Subscription sub = existingSubscription(null);
-
-        assertThat(sub.isBenefitActive()).isTrue();   // 팔로우로서는 유효하지만
-        assertThat(sub.hasPaidBenefit()).isFalse();    // 블러 해제 혜택은 없다
     }
 
     // ===== 4. 해지 =====

@@ -9,6 +9,8 @@
  * sessionStorage에 남긴다(탭을 닫으면 사라진다).
  */
 
+import api from "@/lib/api";
+
 const KEY = "4nf_pending_action";
 
 export type PendingAction =
@@ -33,4 +35,16 @@ export function takePendingAction(): PendingAction | null {
 
 export function clearPendingAction() {
   sessionStorage.removeItem(KEY);
+}
+
+/**
+ * 충전이 끝난 뒤 원래 하려던 구매를 실제로 실행한다.
+ * 금액은 서버가 상품/등급 가격에서 직접 조회하므로 여기서는 대상만 넘긴다.
+ */
+export async function runPendingAction(action: PendingAction): Promise<void> {
+  if (action.type === "subscribe") {
+    await api.post(`/api/v1/channels/${action.channelId}/subscriptions`, { tierId: action.tierId });
+  } else {
+    await api.post(`/api/v1/posts/${action.postId}/purchase`, { capability: action.capability });
+  }
 }

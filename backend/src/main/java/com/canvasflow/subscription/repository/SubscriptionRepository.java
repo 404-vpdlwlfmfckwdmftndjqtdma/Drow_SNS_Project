@@ -8,22 +8,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
 
     /** 열람 판정의 핵심 조회 (유니크 제약이 인덱스 역할) */
     Optional<Subscription> findBySubscriberIdAndChannelId(Long subscriberId, Long channelId);
-
-    /** 내가 구독 중인 채널 목록 */
-    List<Subscription> findBySubscriberIdAndStatus(Long subscriberId, SubscriptionStatus status);
-
-    /** 채널의 구독자 목록 */
-    List<Subscription> findByChannelIdAndStatus(Long channelId, SubscriptionStatus status);
-
-    /** 채널 구독자 수 */
-    long countByChannelIdAndStatus(Long channelId, SubscriptionStatus status);
 
     /**
      * 다른 메서드들은 이름만으로 Spring Data JPA가 쿼리를 만들어주지만, fetch join은 메서드 이름 규칙으로 표현할 수 없어서 JPQL을 직접 썼음
@@ -34,10 +24,10 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
      * @param pageable
      * @return
      */
-    @Query(value = "select s from Subscription s left join fetch s.tier " +
+    @Query(value = "select s from Subscription s join fetch s.tier " +
             "where s.subscriberId = :subscriberId and s.status = :status",
             countQuery = "select count(s) from Subscription s " +
-                    "where s.subscriberId = :subscriberId and s.status = :status")
+                    "where s.subscriberId = :subscriberId and s.status = :status and s.tier is not null")
     Page<Subscription> findWithTierBySubscriberIdAndStatus(
             @Param("subscriberId") Long subscriberId,
             @Param("status") SubscriptionStatus status,
