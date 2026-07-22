@@ -53,6 +53,16 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.ok(postService.getDetail(viewerId, postId)));
     }
 
+    // 같은 브라우저의 24시간 내 최초 열람 때 프론트가 한 번만 호출한다. 상세 GET은 조회수를 변경하지 않는다.
+    @PostMapping("/{postId}/views")
+    public ResponseEntity<ApiResponse<Void>> recordView(
+            @AuthenticationPrincipal AuthMember authMember,
+            @PathVariable Long postId) {
+        Long viewerId = authMember != null ? authMember.userId() : null;
+        postService.recordView(viewerId, postId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     //게시글 수정
     @PutMapping("/{postId}")
     public ResponseEntity<ApiResponse<Void>> updatePost(

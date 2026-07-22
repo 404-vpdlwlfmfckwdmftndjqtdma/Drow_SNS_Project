@@ -41,7 +41,6 @@ export default function ChargeButton({ returnUrl = "/payment" }: { returnUrl?: s
     <section className={styles.card}>
       <div className={styles.cardHeader}>
         <h2 className={styles.cardTitle}>충전</h2>
-        <span className={styles.endpoint}>POST /api/v1/orders/charge</span>
       </div>
       <p className={styles.cardDesc}>토스 결제 후 지갑에 토큰이 적립됩니다.</p>
 

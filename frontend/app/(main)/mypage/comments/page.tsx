@@ -5,6 +5,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
 import CommentButton from "@/components/comment/CommentButton";
+import PostAuthorHeader from "@/components/post/PostAuthorHeader";
 import PostLikeButton from "@/components/post/PostLikeButton";
 import type { ApiResponse } from "@/types";
 import styles from "../account-list.module.css";
@@ -13,6 +14,7 @@ interface PostListItem {
   postId: number;
   userId: number;
   nickname: string;
+  profileImageUrl?: string | null;
   content: string;
   likeCount?: number;
   commentCount?: number;
@@ -115,15 +117,14 @@ export default function MyCommentsPage() {
 
             return (
               <article className={styles.activityCard} key={post.postId}>
+                <PostAuthorHeader
+                  className={styles.cardHeader}
+                  userId={post.userId}
+                  nickname={post.nickname}
+                  profileImageUrl={post.profileImageUrl}
+                  createdAt={post.createdAt}
+                />
                 <Link className={styles.cardMain} href={`/posts/${post.postId}`}>
-                  <div className={styles.cardHeader}>
-                    <div className={styles.avatar} />
-                    <div>
-                      <p className={styles.authorName}>{post.nickname}</p>
-                      <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
-                    </div>
-                  </div>
-
                   {post.media.length > 0 && (
                     <div className={styles.thumbnail}>
                       {post.media[0].mediaType === "VIDEO" ? (

@@ -132,7 +132,7 @@ public class PostService {
 
 
     //글 상세 페이지
-    @Transactional
+    @Transactional(readOnly = true)
     public PostViewDto getDetail(Long viewerId, Long postId){
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new CanvasflowException(ErrorCode.POST_NOT_FOUND));
@@ -140,8 +140,6 @@ public class PostService {
         if(post.getDeletedAt() != null){
             throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
         }
-
-        post.increaseViewCount();
 
         List<PostRequestDto.MediaItem> mediaItems = postMediaRepository
                 .findByPostIdInOrderByPostIdAscSortOrderAsc(List.of(postId)).stream()
@@ -158,6 +156,23 @@ public class PostService {
         postViewAssembler.renderForViewer(content, viewerId);
 
         return content.toDto();
+    }
+
+    // 상세 조회(GET)와 조회수 기록을 분리한다. 작성자가 자기 글을 확인하는 것은 조회수에 포함하지 않는다.
+    @Transactional
+    public void recordView(Long viewerId, Long postId) {
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() -> new CanvasflowException(ErrorCode.POST_NOT_FOUND));
+
+        if (post.getDeletedAt() != null) {
+            throw new CanvasflowException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        if (viewerId != null && viewerId.equals(post.getUserId())) {
+            return;
+        }
+
+        post.increaseViewCount();
     }
 
     //게시글 수정

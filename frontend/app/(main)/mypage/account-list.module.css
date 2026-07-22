@@ -61,28 +61,8 @@
   gap: var(--space-sm);
 }
 
-.cardHeader + .body {
+.cardHeader + .cardMain > .body:first-child {
   padding-top: 0;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-  background: var(--color-surface-container-high);
-}
-
-.authorName {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.timestamp {
-  font-size: 12px;
-  color: var(--color-on-surface-variant);
-  margin: 0;
 }
 
 .thumbnail {
