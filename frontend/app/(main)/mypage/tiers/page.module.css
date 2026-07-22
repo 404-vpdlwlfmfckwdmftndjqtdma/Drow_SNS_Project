@@ -212,6 +212,76 @@
   font-size: 13px;
 }
 
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  background: rgba(20, 16, 32, 0.48);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  width: min(100%, 420px);
+  padding: var(--space-lg);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.modalTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.modalText {
+  margin: var(--space-md) 0 0;
+  color: var(--color-on-surface);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.modalHint {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  margin-top: var(--space-lg);
+}
+
+.modalActions > button {
+  min-width: 96px;
+}
+
+.dangerConfirmButton {
+  min-height: 40px;
+  padding: 0 var(--space-md);
+  color: var(--color-on-error);
+  background: var(--color-error);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dangerConfirmButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
   .title {
     font-size: 28px;

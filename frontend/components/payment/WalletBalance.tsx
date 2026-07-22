@@ -34,7 +34,6 @@ export default function WalletBalance({ refreshKey = 0 }: { refreshKey?: number 
     <section className={styles.card}>
       <div className={styles.cardHeader}>
         <h2 className={styles.cardTitle}>보유 토큰</h2>
-        <span className={styles.endpoint}>GET /api/v1/wallet/me</span>
       </div>
 
       {loading ? (

@@ -73,7 +73,8 @@ public interface PostReader {
             List<ViewMedia> media,
             Long viewCount,
             LocalDateTime createdAt,
-            String nickname
+            String nickname,
+            String profileImageUrl
     ) {}
 
     record ViewMedia(String url, MediaType mediaType) {}

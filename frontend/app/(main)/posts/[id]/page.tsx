@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import api from "@/lib/api";
 import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
 import CommentThread from "@/components/comment/CommentThread";
+import PostAuthorHeader from "@/components/post/PostAuthorHeader";
 import PurchaseButton from "@/components/payment/PurchaseButton";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
@@ -15,7 +15,7 @@ interface PostDetailResponse {
   postId: number;
   userId: number;
   nickname: string;
-  profileImageUrl?: string;
+  profileImageUrl?: string | null;
   content: string;
   visibility: "PUBLIC" | "LOCKED";
   tags: string[];
@@ -38,6 +38,8 @@ const CAPABILITY_LABEL: Record<"textBlur" | "imageBlur", string> = {
 // ImageBlurExtension이 블러 걸 때 URL에 이 문자열을 끼워넣는다 (백엔드 posts/imageblur 참고).
 // 원본/블러본을 서버가 URL 자체로 구분해서 내려주기 때문에, 프론트는 URL만 보고 판단하면 된다.
 const BLUR_URL_MARKER = "/upload/e_blur:";
+const POST_VIEW_STORAGE_KEY_PREFIX = "4nf:viewed-post:";
+const POST_VIEW_TTL_MS = 24 * 60 * 60 * 1000;
 
 function isBlurredImageUrl(url: string) {
   return url.includes(BLUR_URL_MARKER);
@@ -86,6 +88,30 @@ export default function PostDetailPage() {
       .finally(() => setLoading(false));
   };
 
+  const recordViewOnce = async () => {
+    const storageKey = `${POST_VIEW_STORAGE_KEY_PREFIX}${postId}`;
+    const viewedAt = Date.now();
+
+    try {
+      const previousViewedAt = Number(localStorage.getItem(storageKey));
+      if (Number.isFinite(previousViewedAt) && viewedAt - previousViewedAt < POST_VIEW_TTL_MS) return;
+      // 요청이 겹치더라도 한 번만 전송되도록 API 호출 전에 기록한다.
+      localStorage.setItem(storageKey, String(viewedAt));
+    } catch {
+      // 저장소를 사용할 수 없는 브라우저에서는 중복 증가를 피하기 위해 기록 요청을 생략한다.
+      return;
+    }
+
+    try {
+      await api.post(`/api/v1/posts/${postId}/views`);
+    } catch {
+      // 일시적인 실패라면 다음 방문에서 다시 시도할 수 있도록 표시를 되돌린다.
+      if (localStorage.getItem(storageKey) === String(viewedAt)) {
+        localStorage.removeItem(storageKey);
+      }
+    }
+  };
+
   // 구매 완료 시 호출 - 잠금 해제된 내용으로 다시 불러오고 모달을 닫는다.
   const handlePurchaseDone = () => {
     setPurchaseCapability(null);
@@ -108,7 +134,11 @@ export default function PostDetailPage() {
   useEffect(() => {
     setMediaIndex(0);
     setLoading(true);
-    fetchPost();
+    const loadPost = async () => {
+      await recordViewOnce();
+      fetchPost();
+    };
+    void loadPost();
   }, [postId]);
 
   const handleDelete = async () => {
@@ -141,20 +171,13 @@ export default function PostDetailPage() {
       <article className={styles.card}>
         <div className={styles.cardInner}>
           <div className={styles.header}>
-            <Link href={`/users/${post.userId}`} className={styles.authorLink}>
-              <div
-                className={styles.avatar}
-                style={
-                  post.profileImageUrl
-                    ? { backgroundImage: `url(${post.profileImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                    : undefined
-                }
-              />
-              <div className={styles.headerText}>
-                <p className={styles.authorName}>{post.nickname ?? `작성자 #${post.userId}`}</p>
-                <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
-              </div>
-            </Link>
+            <PostAuthorHeader
+              className={styles.authorLink}
+              userId={post.userId}
+              nickname={post.nickname}
+              profileImageUrl={post.profileImageUrl}
+              createdAt={post.createdAt}
+            />
             <span className={styles.visibilityTag}>{VISIBILITY_LABEL[post.visibility]}</span>
           </div>
 

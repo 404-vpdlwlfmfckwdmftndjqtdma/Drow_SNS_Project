@@ -152,7 +152,8 @@ public class PostReaderImpl implements PostReader {
                                 .toList(),
                         dto.viewCount(),
                         dto.createdAt(),
-                        dto.nickname()
+                        dto.nickname(),
+                        dto.profileImageUrl()
                 ))
                 .toList();
     }

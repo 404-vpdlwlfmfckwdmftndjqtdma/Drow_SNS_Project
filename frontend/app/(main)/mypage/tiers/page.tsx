@@ -32,6 +32,7 @@ export default function TierManagePage() {
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<TierResponse | null>(null);
 
   // 목록 조회는 공개 API를 쓴다 - 내 채널 = 내 userId
   const load = useCallback(async () => {
@@ -126,11 +127,20 @@ export default function TierManagePage() {
     }
   };
 
-  const handleDelete = async (tierId: number) => {
+  const openDeleteConfirm = (tier: TierResponse) => {
+    setDeleteTarget(tier);
+    setError("");
+    setMessage("");
+  };
+
+  const handleDelete = async () => {
+    if (deleteTarget == null) return;
+
     setSaving(true);
     setError("");
     try {
-      await api.delete(`/api/v1/channels/me/tiers/${tierId}`);
+      await api.delete(`/api/v1/channels/me/tiers/${deleteTarget.id}`);
+      setDeleteTarget(null);
       setMessage("삭제했습니다. 이미 구독 중인 사람의 혜택은 유지됩니다.");
       await load();
     } catch (err) {
@@ -290,7 +300,7 @@ export default function TierManagePage() {
                       <button
                         className={styles.dangerButton}
                         type="button"
-                        onClick={() => handleDelete(tier.id)}
+                        onClick={() => openDeleteConfirm(tier)}
                         disabled={saving}
                       >
                         삭제
@@ -303,6 +313,49 @@ export default function TierManagePage() {
           </ul>
         )}
       </section>
+
+      {deleteTarget && (
+        <div
+          className={styles.modalOverlay}
+          role="presentation"
+          onClick={() => !saving && setDeleteTarget(null)}
+        >
+          <section
+            className={styles.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-tier-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 className={styles.modalTitle} id="delete-tier-title">구독 상품 삭제</h2>
+            <p className={styles.modalText}>
+              <strong>{deleteTarget.name}</strong> 상품을 삭제하시겠습니까?
+            </p>
+            <p className={styles.modalHint}>삭제한 상품은 구독 화면에 더 이상 표시되지 않습니다.</p>
+
+            {error && <p className={styles.error}>{error}</p>}
+
+            <div className={styles.modalActions}>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={saving}
+              >
+                취소
+              </button>
+              <button
+                className={styles.dangerConfirmButton}
+                type="button"
+                onClick={handleDelete}
+                disabled={saving}
+              >
+                {saving ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import { AUTH_CHANGE_EVENT, getCurrentUserId } from "@/lib/auth";
 import { FEED_REFRESH_EVENT } from "@/lib/uiEvents";
 import CommentButton from "@/components/comment/CommentButton";
+import PostAuthorHeader from "@/components/post/PostAuthorHeader";
 import PostLikeButton from "@/components/post/PostLikeButton";
 import type { ApiResponse } from "@/types";
 import styles from "./page.module.css";
@@ -15,7 +16,7 @@ interface PostListItem {
   postId: number;
   userId: number;
   nickname: string;
-  profileImageUrl?: string;
+  profileImageUrl?: string | null;
   content: string;
   likeCount?: number;
   commentCount?: number;
@@ -130,20 +131,13 @@ export default function PostListPage() {
 
           return (
             <article className={styles.card} key={post.postId}>
-              <Link className={styles.cardHeader} href={`/users/${post.userId}`}>
-                <div
-                  className={styles.avatar}
-                  style={
-                    post.profileImageUrl
-                      ? { backgroundImage: `url(${post.profileImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                      : undefined
-                  }
-                />
-                <div>
-                  <p className={styles.authorName}>{post.nickname ?? `작성자 #${post.userId}`}</p>
-                  <p className={styles.timestamp}>{new Date(post.createdAt).toLocaleString()}</p>
-                </div>
-              </Link>
+              <PostAuthorHeader
+                className={styles.cardHeader}
+                userId={post.userId}
+                nickname={post.nickname}
+                profileImageUrl={post.profileImageUrl}
+                createdAt={post.createdAt}
+              />
 
               <Link className={styles.cardMain} href={`/posts/${post.postId}`}>
               <Thumbnail media={post.media} />
