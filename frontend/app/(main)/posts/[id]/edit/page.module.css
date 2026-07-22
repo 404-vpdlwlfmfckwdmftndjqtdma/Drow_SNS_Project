@@ -1,12 +1,51 @@
 .container {
+  position: relative;
   max-width: 1024px;
   margin: 0 auto;
-  padding: var(--space-xl) var(--margin-mobile);
+  padding: var(--space-md) var(--margin-mobile);
 }
 
 @media (min-width: 768px) {
   .container {
-    padding: var(--space-xl) var(--margin-desktop);
+    padding: var(--space-md) var(--margin-desktop);
+  }
+}
+
+/* 사이드바(256px)와 카드(가운데 정렬된 1024px) 사이 여백에 띄우는 사용법 안내.
+   .container가 margin:0 auto로 main(뷰포트 - 256px) 안에서 가운데 정렬되므로,
+   카드 왼쪽 끝은 정확히 50vw - 384px 지점이다 - 거기서 살짝 띄워서 위치를 잡는다.
+   사이드바+카드(1024px)만으로 이미 1280px를 쓰기 때문에, 겹치지 않을 최소 폭 미만에서는 숨긴다. */
+.guide {
+  display: none;
+}
+
+@media (min-width: 1600px) {
+  .guide {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    position: fixed;
+    left: calc(50vw - 540px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 150px;
+    padding: var(--space-md);
+    border-radius: var(--radius-lg);
+    background: rgba(107, 56, 212, 0.1);
+    border: 1px solid rgba(107, 56, 212, 0.3);
+    box-shadow: var(--shadow-card);
+  }
+
+  .guide [data-icon] {
+    color: var(--color-primary);
+    font-size: 22px;
+  }
+
+  .guide p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-primary);
   }
 }
 
@@ -51,27 +90,69 @@
   .container > [data-layout="post-form"] {
     grid-template-columns: 2fr 1fr;
   }
+
+  /* 판매 가격 패널이 있든 없든 수정완료 버튼 위치가 안 바뀌게, 오른쪽 칼럼을 에디터와 같은 높이로 고정한다 */
+  .container [data-panel="side"] {
+    height: 640px;
+  }
 }
 
 .container [data-panel="editor"] {
   background: var(--color-surface-container-lowest);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  min-height: 440px;
+  height: 640px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   box-shadow: var(--shadow-card);
   border: 1px solid var(--color-surface-container-high);
+  /* 스크롤은 계속 동작하되(내용이 넘치면 카드 크기 대신 안에서 스크롤), 스크롤바만 안 보이게 */
+  scrollbar-width: none;
+}
+
+.container [data-panel="editor"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* textarea는 부분 배경색을 못 입혀서, 뒤에 하이라이트 전용 레이어를 똑같은 글꼴/줄간격으로 겹쳐둔다 */
+.textareaWrapper {
+  position: relative;
+  flex: 1;
+  min-height: 160px;
+}
+
+.highlightBackdrop,
+.container [data-panel="editor"] textarea {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-family: inherit;
+  font-size: 20px;
+  line-height: 32px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+}
+
+.highlightBackdrop {
+  color: transparent;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.blurredMark {
+  background: rgba(107, 56, 212, 0.25);
+  color: transparent;
+  border-radius: 3px;
 }
 
 .container [data-panel="editor"] textarea {
-  flex: 1;
-  min-height: 160px;
-  border: none;
   resize: none;
-  font-size: 20px;
-  line-height: 32px;
+  background: transparent;
 }
 
 .container [data-panel="editor"] textarea:focus {
@@ -81,6 +162,52 @@
 .container [data-char-count] {
   align-self: flex-end;
   font-size: 13px;
+  color: var(--color-on-surface-variant);
+}
+
+/* 텍스트 드래그 선택 시 그 자리에 뜨는 떠다니는 "블러 처리" 버튼 (Medium/Notion 선택 툴바 스타일) */
+.blurPopup {
+  position: fixed;
+  z-index: 200;
+  transform: translate(-50%, calc(-100% - 10px));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-inverse-surface, #1f1a2e);
+  color: var(--color-inverse-on-surface, #fff);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-floating);
+  animation: blurPopupIn 0.1s ease-out;
+}
+
+.blurPopup:hover {
+  opacity: 0.9;
+}
+
+.blurPopup .material-symbols-outlined {
+  font-size: 16px;
+}
+
+@keyframes blurPopupIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 10px));
+  }
+}
+
+.blurHint {
+  margin: var(--space-sm) 0 0;
+  font-size: 12px;
   color: var(--color-on-surface-variant);
 }
 
@@ -98,13 +225,77 @@
   border-color: var(--color-primary);
 }
 
+/* 오른쪽 칼럼 - 수정완료 버튼을 항상 맨 아래에 고정한다(판매 가격 패널이 있든 없든 위치가 안 바뀌게) */
+.container [data-panel="side"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.container [data-panel="price"] {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-surface-container-high);
+  margin-bottom: var(--space-md);
+}
+
+.container [data-panel="price"] h3 {
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-xs);
+}
+
+.priceHint {
+  margin: 0 0 var(--space-sm);
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+
+/* 라벨 한 줄 + 그 아래 입력창 한 줄, 세로로 쌓는 컴팩트한 배치 */
+.priceField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--space-sm);
+}
+
+.priceField:last-child {
+  margin-bottom: 0;
+}
+
+.priceFieldLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-on-surface);
+  white-space: nowrap;
+}
+
+.priceFieldLabel [data-icon] {
+  font-size: 20px;
+  color: var(--color-on-surface-variant);
+}
+
+.priceInputGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 .priceInput {
-  width: 100%;
-  padding: var(--space-xs) var(--space-md);
+  flex: 1;
+  width: 0;
+  padding: 6px var(--space-sm);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-surface-container-high);
   background: var(--color-surface-container-low);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .priceInput:focus {
@@ -112,60 +303,9 @@
   border-color: var(--color-primary);
 }
 
-.container [data-panel="settings"] {
-  background: var(--color-surface-container-lowest);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--color-surface-container-high);
-  margin-bottom: var(--space-md);
-}
-
-.container [data-panel="settings"] h3 {
-  font-weight: 700;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin: 0 0 var(--space-md);
-}
-
-.container [data-panel="settings"] label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface-container-high);
-  cursor: pointer;
-  margin-bottom: var(--space-sm);
-}
-
-.container [data-panel="settings"] label:has(input:checked) {
-  border-color: var(--color-primary);
-  background: rgba(107, 56, 212, 0.03);
-}
-
-.container [data-panel="settings"] label p:first-child {
-  font-weight: 700;
-  font-size: 14px;
-  margin: 0;
-}
-
-.container [data-panel="settings"] label p:last-child {
-  font-size: 12px;
+.priceUnit {
+  font-size: 13px;
   color: var(--color-on-surface-variant);
-  margin: 0;
-}
-
-.container [data-panel="settings"] select {
-  margin-top: var(--space-sm);
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface-container-high);
-  background: var(--color-surface-container-low);
-  font-size: 16px;
 }
 
 .container [data-action="submit"] {
@@ -183,6 +323,7 @@
   gap: var(--space-sm);
   cursor: pointer;
   box-shadow: var(--shadow-floating);
+  margin-top: auto;
   margin-bottom: var(--space-md);
   transition: background 0.15s ease, transform 0.1s ease;
 }
